@@ -2,11 +2,11 @@ import { NavLink } from 'react-router-dom';
 import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-const MobileDrawer = ({ 
-  open, 
-  onClose, 
-  productOpen, 
-  toggleProduct 
+const MobileDrawer = ({
+  open,
+  onClose,
+  productOpen,
+  toggleProduct
 }) => {
   const { user } = useAuth();
 
@@ -26,13 +26,13 @@ const MobileDrawer = ({
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">{user.adminProfile.name.split(" ")[0][0]}</span>
-                  </div>
+                  <span className="text-white font-bold text-lg">{user.adminProfile.name.split(" ")[0][0]}</span>
+                </div>
               </div>
               <div>
-                    <p className="font-semibold text-gray-900">Welcome, {user.adminProfile.name.split(" ")[0]}</p>
-                    <p className="text-sm text-gray-500">Admin Dashboard</p>
-                  </div>
+                <p className="font-semibold text-gray-900">Welcome, {user.adminProfile.name.split(" ")[0]}</p>
+                <p className="text-sm text-gray-500">Admin Dashboard</p>
+              </div>
             </div>
             <button
               onClick={onClose}
@@ -130,7 +130,7 @@ const MobileDrawer = ({
 
           {/* Footer */}
           <div className="p-6 border-t border-gray-100 bg-gray-50">
-            <p className="text-xs text-gray-500 text-center">© 2024 AryoPath Admin</p>
+            <p className="text-xs text-gray-500 text-center">© 2024 Ayropath Admin</p>
           </div>
         </div>
       </div>

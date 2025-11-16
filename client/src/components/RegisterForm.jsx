@@ -140,7 +140,7 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
         </h2>
         <p className="text-gray-600">
           {step === 1
-            ? 'Join AryoPath for comprehensive health services'
+            ? 'Join Ayropath for comprehensive health services'
             : `Enter the OTP sent to ${formData.mobileNumber}`
           }
         </p>

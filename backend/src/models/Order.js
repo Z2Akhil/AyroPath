@@ -7,21 +7,21 @@ const orderSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
-  
+
   // User information
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  
+
   // Admin information (for DSA reference)
   adminId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin',
     required: true
   },
-  
+
   // Package information
   package: {
     code: {
@@ -43,7 +43,7 @@ const orderSchema = new mongoose.Schema({
       type: Number
     }
   },
-  
+
   // Beneficiary data
   beneficiaries: [{
     name: {
@@ -63,7 +63,7 @@ const orderSchema = new mongoose.Schema({
       type: String // Thyrocare lead ID
     }
   }],
-  
+
   // Contact information
   contactInfo: {
     email: {
@@ -96,7 +96,7 @@ const orderSchema = new mongoose.Schema({
       }
     }
   },
-  
+
   // Appointment details
   appointment: {
     date: {
@@ -111,7 +111,7 @@ const orderSchema = new mongoose.Schema({
       type: String
     }
   },
-  
+
   // Thyrocare order information
   thyrocare: {
     orderNo: {
@@ -149,7 +149,7 @@ const orderSchema = new mongoose.Schema({
       type: Date
     }
   },
-  
+
   // Report information
   reports: [{
     beneficiaryName: {
@@ -174,7 +174,7 @@ const orderSchema = new mongoose.Schema({
       type: String // Local path to stored PDF
     }
   }],
-  
+
   // Payment information
   payment: {
     type: {
@@ -192,23 +192,23 @@ const orderSchema = new mongoose.Schema({
       default: 'PENDING'
     }
   },
-  
+
   // Order status in our system
   status: {
     type: String,
     enum: ['PENDING', 'CREATED', 'FAILED', 'CANCELLED', 'COMPLETED'],
     default: 'PENDING'
   },
-  
+
   // Additional metadata
   notes: {
     type: String
   },
   source: {
     type: String,
-    default: 'AryoPath'
+    default: 'Ayropath'
   },
-  
+
   // Timestamps
   createdAt: {
     type: Date,
@@ -233,27 +233,27 @@ orderSchema.index({ 'contactInfo.mobile': 1 });
 orderSchema.index({ 'contactInfo.email': 1 });
 
 // Update the updatedAt field before saving
-orderSchema.pre('save', function(next) {
+orderSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   next();
 });
 
 // Static method to generate order ID
-orderSchema.statics.generateOrderId = function() {
+orderSchema.statics.generateOrderId = function () {
   const timestamp = Date.now().toString();
   const random = Math.random().toString(36).substring(2, 8).toUpperCase();
   return `ORD${timestamp.slice(-6)}${random}`;
 };
 
 // Method to update Thyrocare status
-orderSchema.methods.updateThyrocareStatus = async function(newStatus, notes = '') {
+orderSchema.methods.updateThyrocareStatus = async function (newStatus, notes = '') {
   this.thyrocare.status = newStatus;
   this.thyrocare.statusHistory.push({
     status: newStatus,
     timestamp: new Date(),
     notes: notes
   });
-  
+
   // Update our system status based on Thyrocare status
   if (newStatus === 'DONE') {
     this.status = 'COMPLETED';
@@ -262,16 +262,16 @@ orderSchema.methods.updateThyrocareStatus = async function(newStatus, notes = ''
   } else if (this.status === 'PENDING' && newStatus !== 'YET TO ASSIGN') {
     this.status = 'CREATED';
   }
-  
+
   await this.save();
 };
 
 // Method to add report information
-orderSchema.methods.addReport = async function(beneficiaryName, leadId, reportUrl = null) {
-  const reportIndex = this.reports.findIndex(report => 
+orderSchema.methods.addReport = async function (beneficiaryName, leadId, reportUrl = null) {
+  const reportIndex = this.reports.findIndex(report =>
     report.beneficiaryName === beneficiaryName && report.leadId === leadId
   );
-  
+
   if (reportIndex >= 0) {
     // Update existing report
     this.reports[reportIndex].reportUrl = reportUrl;
@@ -287,12 +287,12 @@ orderSchema.methods.addReport = async function(beneficiaryName, leadId, reportUr
       reportDownloaded: false
     });
   }
-  
+
   await this.save();
 };
 
 // Method to mark report as downloaded
-orderSchema.methods.markReportDownloaded = async function(leadId, reportPath = null) {
+orderSchema.methods.markReportDownloaded = async function (leadId, reportPath = null) {
   const report = this.reports.find(r => r.leadId === leadId);
   if (report) {
     report.reportDownloaded = true;
@@ -305,22 +305,22 @@ orderSchema.methods.markReportDownloaded = async function(leadId, reportPath = n
 };
 
 // Static method to find orders by status
-orderSchema.statics.findByStatus = async function(status) {
+orderSchema.statics.findByStatus = async function (status) {
   return await this.find({ status }).populate('userId adminId');
 };
 
 // Static method to find orders by Thyrocare status
-orderSchema.statics.findByThyrocareStatus = async function(thyrocareStatus) {
+orderSchema.statics.findByThyrocareStatus = async function (thyrocareStatus) {
   return await this.find({ 'thyrocare.status': thyrocareStatus }).populate('userId adminId');
 };
 
 // Static method to find orders by user
-orderSchema.statics.findByUser = async function(userId) {
+orderSchema.statics.findByUser = async function (userId) {
   return await this.find({ userId }).populate('adminId').sort({ createdAt: -1 });
 };
 
 // Static method to find orders by admin
-orderSchema.statics.findByAdmin = async function(adminId) {
+orderSchema.statics.findByAdmin = async function (adminId) {
   return await this.find({ adminId }).populate('userId').sort({ createdAt: -1 });
 };
 
