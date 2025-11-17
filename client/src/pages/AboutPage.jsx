@@ -5,25 +5,25 @@ const AboutPage = () => {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-5">
         <div className=" mb-5">
           <h2 className="text-3xl sm:text-3xl font-bold text-gray-800 mb-4">
-            About <span className="text-red-600">Aryopath</span>
+            About <span className="text-red-600">Ayropath</span>
           </h2>
         </div>
 
         <p className="text-gray-700 text-base sm:text-lg leading-relaxed text-justify">
-          Aryopath Technologies Limited stands as India’s foremost automated
+          Ayropath Technologies Limited stands as India’s foremost automated
           laboratory, renowned for its unwavering commitment to quality and
           affordability in diagnostic services. In collaboration with
           <span className="font-semibold"> Thyrocare Technologies Limited</span>,
           one of India’s most advanced and reputed automated laboratories,
-          Aryopath ensures that every test meets the highest standards of
+          Ayropath ensures that every test meets the highest standards of
           precision, reliability, and global quality.
           <br />
           <br />
           By leveraging Thyrocare’s NABL and CAP-accredited laboratory network
-          along with Aryopath’s innovation-driven digital systems, efficient
+          along with Ayropath’s innovation-driven digital systems, efficient
           logistics, and customer-first approach, we deliver fast, dependable,
           and affordable diagnostic solutions across India. Offering a
-          comprehensive test profile menu and rapid turnaround times, Aryopath’s
+          comprehensive test profile menu and rapid turnaround times, Ayropath’s
           focus on preventive care and cost-effective solutions sets new
           industry benchmarks.
           <br />

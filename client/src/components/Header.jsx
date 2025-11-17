@@ -25,15 +25,15 @@ const Logo = ({ logo }) => {
     <Link to="/" className="flex items-center gap-3 group cursor-pointer">
       <div className="flex items-center gap-2">
         <img
-          src={!imgError && logo ? logo : "./logo.jpg"}  
+          src={!imgError && logo ? logo : "./logo.jpg"}
           alt="Company Logo"
           className="w-10 h-10 object-contain"
-          onError={() => setImgError(true)}               
+          onError={() => setImgError(true)}
         />
       </div>
       <div className="leading-tight">
         <p className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-          AryoPath
+          Ayropath
         </p>
         <p className="text-xs text-gray-500 font-medium">
           In association with ThyroCare
@@ -118,7 +118,7 @@ const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose }) => {
                 />
               </div>
               <div>
-                <p className="font-bold text-gray-900">AryoPath</p>
+                <p className="font-bold text-gray-900">Ayropath</p>
                 <p className="text-xs text-gray-500">ThyroCare Partner</p>
               </div>
             </div>
@@ -185,7 +185,7 @@ const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose }) => {
 
           {/* Footer */}
           <div className="p-6 border-t border-gray-100 bg-gray-50">
-            <p className="text-xs text-gray-500 text-center">© {new Date().getFullYear()} AryoPath. All rights reserved.</p>
+            <p className="text-xs text-gray-500 text-center">© {new Date().getFullYear()} Ayropath. All rights reserved.</p>
           </div>
         </div>
       </div>
@@ -203,7 +203,7 @@ export default function Header() {
   const { settings, loading, error } = useSiteSettings();
   const navigate = useNavigate();
   const { cart } = useCart();
-  
+
 
   const handleLogout = () => {
     logout();

@@ -68,7 +68,7 @@ export default function Footer() {
                 className="w-10 h-10 object-contain rounded-full"
               />
               <div>
-                <h3 className="text-xl font-bold">AryoPath</h3>
+                <h3 className="text-xl font-bold">Ayropath</h3>
                 <p className="text-xs text-gray-400">
                   In association with ThyroCare
                 </p>
@@ -219,7 +219,7 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-sm text-gray-400">
               <p>
-                &copy; {new Date().getFullYear()} AryoPath. All rights reserved. |
+                &copy; {new Date().getFullYear()} Ayropath. All rights reserved. |
                 In association with ThyroCare
               </p>
             </div>

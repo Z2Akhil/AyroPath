@@ -4,7 +4,6 @@ import { getAppointmentSlots } from "../api/appointmentSlotApi";
 import { useUser } from "../context/userContext";
 import { axiosInstance } from "../api/axiosInstance";
 import { useCart } from "../context/CartContext";
-import SuccessOrderCard from "./cards/SuccessOrderCard";
 import { useOrderSuccess } from "../context/OrderSuccessContext";
 
 import {
@@ -25,6 +24,7 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState("");
   const [showBeneficiaryManager, setShowBeneficiaryManager] = useState(false);
+  const [wantHardcopy, setWantHardcopy] = useState(false);
   const [contactInfo, setContactInfo] = useState({
     email: "",
     mobile: "",
@@ -159,7 +159,8 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
           slotId: selectedSlot,
           slot: availableSlots.find(slot => slot.id === selectedSlot)?.slot || ""
         },
-        selectedSlot: availableSlots.find(slot => slot.id === selectedSlot)?.slot || ""
+        selectedSlot: availableSlots.find(slot => slot.id === selectedSlot)?.slot || "",
+        reports: wantHardcopy ? "Y" : "N"
       };
 
       console.log(orderData);
@@ -183,7 +184,7 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
         showSuccessCard({
           orderId: result.data.orderId,
           packageName: pkgNames.join(","),
-          amount: pkgRate
+          amount: (pkgRate*numPersons) + (wantHardcopy ? 75 : 0)
         });
       } else {
         alert(`Order creation failed: ${result.message || "Unknown error"}`);
@@ -318,7 +319,7 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
   return (
     <>
       <form onSubmit={handleSubmit} className="w-full bg-white border border-gray-300 rounded-2xl p-6 shadow-sm">
-        <h2 className="text-2xl font-bold text-gray-800 mt-2">{pkgNames.length===1?pkgNames[0]:"Lab Tests Combo"}</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mt-2">{pkgNames.length === 1 ? pkgNames[0] : "Lab Tests Combo"}</h2>
         <h2 className="text-xl font-bold text-gray-800 ">Book Now, Pay Later</h2>
         <p className="text-green-700 font-medium mb-2">Simple Process, No Spam Calls</p>
         <select
@@ -542,11 +543,21 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
             </option>
           ))}
         </select>
-
+        <div className="flex items-center gap-2 mb-3">
+          <input
+            type="checkbox"
+            id="hardcopy"
+            checked={wantHardcopy}
+            onChange={(e) => setWantHardcopy(e.target.checked)}
+            className="w-4 h-4 text-blue-600"
+          />
+          <label htmlFor="hardcopy" className="text-sm text-red-500">
+            Report Hard Copy <span className="font-semibold">(₹75 extra)</span>
+          </label>
+        </div>
         <p className="text-xs text-gray-600 mt-1">
           Order with incomplete/invalid address will be rejected.
         </p>
-
         <button
           type="submit"
           disabled={loading}

@@ -3,7 +3,7 @@ import AdminSession from '../models/AdminSession.js';
 import axios from 'axios';
 
 class OrderController {
-  
+
   // Create a new order
   static async createOrder(req, res) {
     try {
@@ -16,7 +16,8 @@ class OrderController {
         beneficiaries,
         contactInfo,
         appointment,
-        selectedSlot
+        selectedSlot,
+        reports
       } = req.body;
 
       // Validate required fields
@@ -30,7 +31,7 @@ class OrderController {
       // Get active admin session for API key
       const activeSession = await AdminSession.findOne({ isActive: true })
         .populate('adminId');
-      
+
       if (!activeSession) {
         return res.status(500).json({
           success: false,
@@ -74,24 +75,25 @@ class OrderController {
           slot: selectedSlot,
           slotId: appointment.slotId
         },
+        reportsHardcopy:reports,
         payment: {
           amount: packagePrice,
           type: 'POSTPAID'
         },
-        source: 'AryoPath'
+        source: 'Ayropath'
       });
-     console.log(order);
-     
+      console.log(order);
+
       await order.save();
 
       // Now create order in Thyrocare system
       try {
         const thyrocareResponse = await OrderController.createThyrocareOrder(order, activeSession);
-        
+
         // Update order with Thyrocare response
         order.thyrocare.orderNo = thyrocareResponse.order_no;
         order.thyrocare.response = thyrocareResponse;
-        
+
         // Update beneficiary lead IDs if available
         if (thyrocareResponse.ben_data && thyrocareResponse.ben_data.length > 0) {
           thyrocareResponse.ben_data.forEach((benData, index) => {
@@ -100,7 +102,7 @@ class OrderController {
             }
           });
         }
-        
+
         order.status = 'CREATED';
         await order.save();
 
@@ -156,7 +158,7 @@ class OrderController {
         pincode: order.contactInfo.address.pincode,
         products: Array.isArray(order.package.code) ? order.package.code.join(',') : order.package.code,
         ref_code: adminSession.adminId.mobile,
-        reports: 'Y',
+        reports: order.reportsHardcopy,
         service_type: 'HOME',
         ben_data: order.beneficiaries.map(beneficiary => ({
           name: beneficiary.name,
@@ -166,7 +168,7 @@ class OrderController {
         coupon: '',
         order_mode: 'DSA-BOOKING-API',
         collection_type: 'Home Collection',
-        source: 'AryoPath',
+        source: 'Ayropath',
         phlebo_notes: ''
       };
 
@@ -176,7 +178,7 @@ class OrderController {
         beneficiaries: order.beneficiaries.length
       });
       console.log(payload);
-      
+
       const response = await axios.post(
         'https://dx-dsa-service.thyrocare.com/api/booking-master/v2/create-order',
         payload,
@@ -211,7 +213,7 @@ class OrderController {
   static async getUserOrders(req, res) {
     try {
       const orders = await Order.findByUser(req.user._id);
-      
+
       return res.json({
         success: true,
         data: orders
@@ -230,10 +232,10 @@ class OrderController {
   static async getOrderById(req, res) {
     try {
       const { orderId } = req.params;
-      
+
       const order = await Order.findOne({ orderId })
         .populate('userId adminId');
-      
+
       if (!order) {
         return res.status(404).json({
           success: false,
@@ -267,10 +269,10 @@ class OrderController {
   static async retryOrder(req, res) {
     try {
       const { orderId } = req.params;
-      
+
       const order = await Order.findOne({ orderId })
         .populate('adminId');
-      
+
       if (!order) {
         return res.status(404).json({
           success: false,
@@ -289,7 +291,7 @@ class OrderController {
       // Get active admin session
       const activeSession = await AdminSession.findOne({ isActive: true })
         .populate('adminId');
-      
+
       if (!activeSession) {
         return res.status(500).json({
           success: false,
@@ -300,14 +302,14 @@ class OrderController {
       // Retry Thyrocare order creation
       try {
         const thyrocareResponse = await OrderController.createThyrocareOrder(order, activeSession);
-        
+
         order.thyrocare.orderNo = thyrocareResponse.order_no;
         order.thyrocare.response = thyrocareResponse;
         order.thyrocare.error = null;
         order.thyrocare.retryCount += 1;
         order.thyrocare.lastRetryAt = new Date();
         order.status = 'CREATED';
-        
+
         await order.save();
 
         return res.json({

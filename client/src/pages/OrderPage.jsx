@@ -16,9 +16,9 @@ const OrderPage = () => {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
         });
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
           setOrder(result.data);
         } else {
@@ -54,7 +54,7 @@ const OrderPage = () => {
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
           <h2 className="text-xl font-semibold text-gray-900 mt-4">Order Not Found</h2>
           <p className="text-gray-600 mt-2">{error}</p>
-          <button 
+          <button
             onClick={() => window.location.href = '/'}
             className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
           >
@@ -129,7 +129,7 @@ const OrderPage = () => {
                   <span className="font-medium capitalize">{order.status.toLowerCase()}</span>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-gray-600">Order ID</p>
@@ -242,13 +242,13 @@ const OrderPage = () => {
                   Our team will contact you to confirm the appointment. Please keep your phone accessible.
                 </p>
                 <div className="space-y-2">
-                  <button 
+                  <button
                     onClick={() => window.location.href = '/'}
                     className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     Book Another Test
                   </button>
-                  <button 
+                  <button
                     onClick={() => window.location.href = '/account'}
                     className="w-full border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 transition-colors"
                   >
@@ -266,7 +266,7 @@ const OrderPage = () => {
               </p>
               <div className="text-sm text-blue-600">
                 <p>📞 Call: +91-XXXXXXXXXX</p>
-                <p>✉️ Email: support@aryopath.com</p>
+                <p>✉️ Email: support@Ayropath.com</p>
               </div>
             </div>
           </div>

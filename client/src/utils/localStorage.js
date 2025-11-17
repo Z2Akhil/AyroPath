@@ -1,5 +1,5 @@
-const SAVED_BENEFICIARIES_KEY = 'aryopath_saved_beneficiaries';
-const SAVED_CONTACT_INFO_KEY = 'aryopath_saved_contact_info';
+const SAVED_BENEFICIARIES_KEY = 'Ayropath_saved_beneficiaries';
+const SAVED_CONTACT_INFO_KEY = 'Ayropath_saved_contact_info';
 
 export const createBeneficiary = (data) => ({
   id: data.id || Date.now().toString(),
@@ -45,18 +45,18 @@ export const saveBeneficiary = (beneficiary) => {
   try {
     const key = getUserKey(SAVED_BENEFICIARIES_KEY);
     const beneficiaries = getSavedBeneficiaries();
-    
+
     if (beneficiary.isDefault) {
       beneficiaries.forEach(b => b.isDefault = false);
     }
-    
+
     const existingIndex = beneficiaries.findIndex(b => b.id === beneficiary.id);
     if (existingIndex >= 0) {
       beneficiaries[existingIndex] = beneficiary;
     } else {
       beneficiaries.push(beneficiary);
     }
-    
+
     localStorage.setItem(key, JSON.stringify(beneficiaries));
     return true;
   } catch (error) {
@@ -98,14 +98,14 @@ export const saveContactInfo = (contactInfo) => {
   try {
     const key = getUserKey(SAVED_CONTACT_INFO_KEY);
     const existingInfo = getSavedContactInfo();
-    
+
     // Merge with existing data if available
     const mergedInfo = {
       ...(existingInfo || {}),
       ...contactInfo,
       updatedAt: new Date().toISOString()
     };
-    
+
     localStorage.setItem(key, JSON.stringify(mergedInfo));
     return true;
   } catch (error) {
@@ -134,7 +134,7 @@ export const getInitialFormData = () => {
   const defaultBeneficiary = getDefaultBeneficiary();
   const contactInfo = getSavedContactInfo();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  
+
   return {
     beneficiaries: defaultBeneficiary ? [defaultBeneficiary] : [{ name: '', age: '', gender: '' }],
     contactInfo: {

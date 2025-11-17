@@ -33,7 +33,7 @@ const SuccessOrderCard = ({ orderId, packageName, amount, onClose }) => {
             <span className="font-semibold text-gray-800">Package/Test:</span> {packageName}
           </p>
           <p className="text-sm text-gray-700">
-            <span className="font-semibold text-gray-800">Amount Paid:</span> ₹{amount}
+            <span className="font-semibold text-gray-800">Total Amount:</span> ₹{amount}
           </p>
         </div>
 
