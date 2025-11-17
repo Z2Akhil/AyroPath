@@ -149,7 +149,11 @@ const orderSchema = new mongoose.Schema({
       type: Date
     }
   },
-
+  reportsHardcopy: {
+    type: String,
+    enum: ['Y', 'N'],
+    default: 'N'
+  },
   // Report information
   reports: [{
     beneficiaryName: {

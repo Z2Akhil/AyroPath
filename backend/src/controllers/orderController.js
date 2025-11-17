@@ -16,7 +16,8 @@ class OrderController {
         beneficiaries,
         contactInfo,
         appointment,
-        selectedSlot
+        selectedSlot,
+        reports
       } = req.body;
 
       // Validate required fields
@@ -74,6 +75,7 @@ class OrderController {
           slot: selectedSlot,
           slotId: appointment.slotId
         },
+        reportsHardcopy:reports,
         payment: {
           amount: packagePrice,
           type: 'POSTPAID'
@@ -156,7 +158,7 @@ class OrderController {
         pincode: order.contactInfo.address.pincode,
         products: Array.isArray(order.package.code) ? order.package.code.join(',') : order.package.code,
         ref_code: adminSession.adminId.mobile,
-        reports: 'Y',
+        reports: order.reportsHardcopy,
         service_type: 'HOME',
         ben_data: order.beneficiaries.map(beneficiary => ({
           name: beneficiary.name,
