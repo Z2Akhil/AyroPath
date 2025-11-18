@@ -6,7 +6,6 @@ export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Restore user from localStorage
   useEffect(() => {
     const checkAuth = () => {
       const token = localStorage.getItem("authToken");
@@ -25,8 +24,8 @@ export const UserProvider = ({ children }) => {
 
     checkAuth();
   }, []);
-
-  // REGISTER
+ 
+  // Phone-based registration (deprecated - kept for backward compatibility)
   const register = async (name, phone, password, otp) => {
     try {
       const nameParts = name.trim().split(" ");
@@ -61,6 +60,87 @@ export const UserProvider = ({ children }) => {
     }
   };
 
+  // EMAIL REGISTER (without OTP - for backward compatibility)
+  const emailRegister = async (firstName, lastName, email, password) => {
+    try {
+      const response = await authService.emailRegister(firstName, lastName, email, password);
+
+      if (response.success && response.user) {
+        const userData = {
+          id: response.user.id,
+          firstName: response.user.firstName,
+          lastName: response.user.lastName,
+          email: response.user.email,
+          isVerified: response.user.isVerified,
+          authProvider: response.user.authProvider,
+          name: `${response.user.firstName} ${response.user.lastName || ""}`.trim(),
+        };
+
+        if (response.token) {
+          localStorage.setItem("authToken", response.token);
+        }
+
+        localStorage.setItem("user", JSON.stringify(userData));
+        setUser(userData);
+
+        return { success: true, user: userData };
+      }
+
+      throw new Error(response.message || "Registration failed");
+    } catch (error) {
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  };
+
+  // EMAIL REGISTER WITH OTP
+  const emailRegisterWithOTP = async (firstName, lastName, email, password, otp) => {
+    try {
+      const response = await authService.emailRegisterWithOTP(firstName, lastName, email, password, otp);
+
+      if (response.success && response.user) {
+        const userData = {
+          id: response.user.id,
+          firstName: response.user.firstName,
+          lastName: response.user.lastName,
+          email: response.user.email,
+          isVerified: response.user.isVerified,
+          authProvider: response.user.authProvider,
+          name: `${response.user.firstName} ${response.user.lastName || ""}`.trim(),
+        };
+
+        if (response.token) {
+          localStorage.setItem("authToken", response.token);
+        }
+
+        localStorage.setItem("user", JSON.stringify(userData));
+        setUser(userData);
+
+        return { success: true, user: userData };
+      }
+
+      throw new Error(response.message || "Registration failed");
+    } catch (error) {
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  };
+
+  // EMAIL OTP METHODS
+  const requestEmailOTP = async (email, purpose = "email_verification") => {
+    try {
+      return await authService.requestEmailOTP(email, purpose);
+    } catch (error) {
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  };
+
+  const verifyEmailOTP = async (email, otp, purpose = "email_verification") => {
+    try {
+      return await authService.verifyEmailOTP(email, otp, purpose);
+    } catch (error) {
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  };
+
   // LOGIN
   const login = async (phone, password) => {
     try {
@@ -73,6 +153,40 @@ export const UserProvider = ({ children }) => {
           lastName: response.user.lastName,
           mobileNumber: response.user.mobileNumber,
           isVerified: response.user.isVerified,
+          name: `${response.user.firstName} ${response.user.lastName || ""}`.trim(),
+        };
+
+        if (response.token) {
+          localStorage.setItem("authToken", response.token);
+        }
+
+        localStorage.setItem("user", JSON.stringify(userData));
+        setUser(userData);
+
+        return { success: true, user: userData };
+      }
+
+      throw new Error(response.message || "Login failed");
+    } catch (error) {
+      authService.logout();
+      setUser(null);
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  };
+
+  // EMAIL LOGIN
+  const emailLogin = async (email, password) => {
+    try {
+      const response = await authService.emailLogin(email, password);
+
+      if (response.success && response.user) {
+        const userData = {
+          id: response.user.id,
+          firstName: response.user.firstName,
+          lastName: response.user.lastName,
+          email: response.user.email,
+          isVerified: response.user.isVerified,
+          authProvider: response.user.authProvider,
           name: `${response.user.firstName} ${response.user.lastName || ""}`.trim(),
         };
 
@@ -133,6 +247,23 @@ export const UserProvider = ({ children }) => {
     }
   };
 
+  // EMAIL-BASED PASSWORD RESET
+  const forgotPasswordEmail = async (email) => {
+    try {
+      return await authService.forgotPasswordEmail(email);
+    } catch (error) {
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  };
+
+  const resetPasswordEmail = async (email, otp, newPassword) => {
+    try {
+      return await authService.resetPasswordEmail(email, otp, newPassword);
+    } catch (error) {
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  };
+
   // UPDATE PROFILE
   const updateProfile = async (profileData) => {
     if (!user) throw new Error("Not logged in");
@@ -176,12 +307,19 @@ export const UserProvider = ({ children }) => {
     user,
     loading,
     register,
+    emailRegister,
+    emailRegisterWithOTP,
     login,
+    emailLogin,
     logout,
     requestOTP,
     verifyOTP,
+    requestEmailOTP,
+    verifyEmailOTP,
     forgotPassword,
     resetPassword,
+    forgotPasswordEmail,
+    resetPasswordEmail,
     updateProfile,
     hasCompleteContactInfo,
   };

@@ -1,16 +1,15 @@
 import { useState } from 'react';
 import { useUser } from '../context/userContext';
 import { useToast } from '../context/ToastContext';
-import { User, Phone, Lock, Eye, EyeOff, ArrowRight, RefreshCw } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight, RefreshCw } from 'lucide-react';
 
 const RegisterForm = ({ onClose, onSwitchToLogin }) => {
-  const { register, requestOTP, verifyOTP } = useUser();
+  const { emailRegisterWithOTP, requestEmailOTP, verifyEmailOTP } = useUser();
   const { info, success, error: toastError } = useToast();
-  const [step, setStep] = useState(1); // 1: Basic info, 2: OTP verification
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    mobileNumber: '',
+    email: '',
     password: '',
     confirmPassword: '',
     otp: '',
@@ -18,10 +17,11 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [otpLoading, setOtpLoading] = useState(false);
   const [error, setError] = useState('');
+  const [step, setStep] = useState(1); // 1: Registration form, 2: OTP verification
   const [otpSent, setOtpSent] = useState(false);
-  const [countdown, setCountdown] = useState(0);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpTimer, setOtpTimer] = useState(0);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,17 +32,17 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
     setError('');
   };
 
-  const validateStep1 = () => {
+  const validateForm = () => {
     if (!formData.firstName.trim()) {
       setError('First name is required');
       return false;
     }
-    if (!formData.mobileNumber.trim()) {
-      setError('Mobile number is required');
+    if (!formData.email.trim()) {
+      setError('Email is required');
       return false;
     }
-    if (formData.mobileNumber.length !== 10) {
-      setError('Please enter a valid 10-digit mobile number');
+    if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      setError('Please enter a valid email address');
       return false;
     }
     if (!formData.password) {
@@ -61,29 +61,45 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
   };
 
   const handleRequestOTP = async () => {
-    if (!validateStep1()) return;
+    if (!validateForm()) return;
 
     setOtpLoading(true);
     setError('');
 
     try {
-      await requestOTP(formData.mobileNumber, 'verification');
+      await requestEmailOTP(formData.email);
       setOtpSent(true);
       setStep(2);
-      startCountdown();
-      info(`OTP has been sent to ${formData.mobileNumber}`);
+      startOtpTimer();
+      success('OTP sent to your email address');
     } catch (err) {
       setError(err.message);
-      toastError(err.message);
     } finally {
       setOtpLoading(false);
     }
   };
 
-  const startCountdown = () => {
-    setCountdown(30);
+  const handleResendOTP = async () => {
+    if (otpTimer > 0) return;
+
+    setOtpLoading(true);
+    setError('');
+
+    try {
+      await requestEmailOTP(formData.email);
+      startOtpTimer();
+      success('OTP resent to your email address');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const startOtpTimer = () => {
+    setOtpTimer(60); // 60 seconds
     const timer = setInterval(() => {
-      setCountdown(prev => {
+      setOtpTimer(prev => {
         if (prev <= 1) {
           clearInterval(timer);
           return 0;
@@ -91,22 +107,6 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
         return prev - 1;
       });
     }, 1000);
-  };
-
-  const handleResendOTP = async () => {
-    if (countdown > 0) return;
-
-    setOtpLoading(true);
-    setError('');
-
-    try {
-      await requestOTP(formData.mobileNumber, 'verification');
-      startCountdown();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setOtpLoading(false);
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -117,12 +117,24 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
       return;
     }
 
+    // Step 2: Verify OTP and register
+    if (!formData.otp.trim()) {
+      setError('Please enter the OTP');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
-      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
-      await register(fullName, formData.mobileNumber, formData.password, formData.otp);
+      await emailRegisterWithOTP(
+        formData.firstName,
+        formData.lastName,
+        formData.email,
+        formData.password,
+        formData.otp
+      );
+      success('Account created successfully!');
       onClose();
     } catch (err) {
       setError(err.message);
@@ -136,13 +148,10 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
       {/* Header */}
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          {step === 1 ? 'Create Account' : 'Verify OTP'}
+          Create Account
         </h2>
         <p className="text-gray-600">
-          {step === 1
-            ? 'Join Ayropath for comprehensive health services'
-            : `Enter the OTP sent to ${formData.mobileNumber}`
-          }
+          Join Ayropath for comprehensive health services
         </p>
       </div>
 
@@ -153,224 +162,220 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
           </div>
         )}
 
-        {step === 1 ? (
-          <>
-            {/* Name Fields */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  First Name *
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    placeholder="First name"
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg 
-                               placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                               focus:border-blue-500 transition-all duration-200 bg-white"
-                    required
-                  />
-                </div>
+        {/* Name Fields */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              First Name *
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <User className="h-5 w-5 text-gray-400" />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  placeholder="Last name"
-                  className="block w-full px-3 py-3 border border-gray-300 rounded-lg 
-                             placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                             focus:border-blue-500 transition-all duration-200 bg-white"
-                />
-              </div>
+              <input
+                type="text"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                placeholder="First name"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg 
+                           placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
+                           focus:border-blue-500 transition-all duration-200 bg-white"
+                required
+              />
             </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Last Name
+            </label>
+            <input
+              type="text"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              placeholder="Last name"
+              className="block w-full px-3 py-3 border border-gray-300 rounded-lg 
+                         placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
+                         focus:border-blue-500 transition-all duration-200 bg-white"
+            />
+          </div>
+        </div>
 
-            {/* Mobile Number */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mobile Number *
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Phone className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="tel"
-                  name="mobileNumber"
-                  value={formData.mobileNumber}
-                  onChange={handleChange}
-                  placeholder="Enter 10-digit mobile number"
-                  maxLength="10"
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg 
-                             placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                             focus:border-blue-500 transition-all duration-200 bg-white"
-                  required
-                />
-              </div>
+        {/* Email */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Email Address *
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Mail className="h-5 w-5 text-gray-400" />
             </div>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Enter your email address"
+              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg 
+                         placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
+                         focus:border-blue-500 transition-all duration-200 bg-white"
+              required
+            />
+          </div>
+        </div>
 
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Password *
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Create a strong password"
-                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg 
-                             placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                             focus:border-blue-500 transition-all duration-200 bg-white"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  )}
-                </button>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">Must be at least 6 characters</p>
+        {/* Password */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Password *
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Lock className="h-5 w-5 text-gray-400" />
             </div>
-
-            {/* Confirm Password */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm Password *
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  placeholder="Confirm your password"
-                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg 
-                             placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                             focus:border-blue-500 transition-all duration-200 bg-white"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Continue Button */}
+            <input
+              type={showPassword ? 'text' : 'password'}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Create a strong password"
+              className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg 
+                         placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
+                         focus:border-blue-500 transition-all duration-200 bg-white"
+              required
+            />
             <button
-              type="submit"
-              disabled={otpLoading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 
-                         text-white rounded-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none 
-                         focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 
-                         font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center"
             >
-              {otpLoading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              {showPassword ? (
+                <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
               ) : (
-                <>
-                  Continue
-                  <ArrowRight className="w-4 h-4" />
-                </>
+                <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
               )}
             </button>
-          </>
-        ) : (
-          <>
-            {/* OTP Verification */}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">Must be at least 6 characters</p>
+        </div>
+
+        {/* Confirm Password */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Confirm Password *
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Lock className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type={showConfirmPassword ? 'text' : 'password'}
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Confirm your password"
+              className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg 
+                         placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
+                         focus:border-blue-500 transition-all duration-200 bg-white"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+            >
+              {showConfirmPassword ? (
+                <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+              ) : (
+                <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* OTP Verification Step */}
+        {step === 2 && (
+          <div className="space-y-4 border-t border-gray-200 pt-6">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Verify Your Email
+              </h3>
+              <p className="text-gray-600 text-sm">
+                We've sent a 6-digit verification code to{' '}
+                <span className="font-medium text-blue-600">{formData.email}</span>
+              </p>
+            </div>
+
+            {/* OTP Input */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Enter OTP *
+                Enter Verification Code *
               </label>
               <input
                 type="text"
                 name="otp"
                 value={formData.otp}
                 onChange={handleChange}
-                placeholder="Enter 6-digit OTP"
-                maxLength="6"
-                className="block w-full px-3 py-3 border border-gray-300 rounded-lg text-center text-lg
+                placeholder="Enter 6-digit code"
+                maxLength={6}
+                className="block w-full px-3 py-3 border border-gray-300 rounded-lg 
                            placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                           focus:border-blue-500 transition-all duration-200 bg-white font-mono"
+                           focus:border-blue-500 transition-all duration-200 bg-white text-center text-lg font-semibold"
                 required
               />
-              <div className="flex justify-between items-center mt-2">
-                <button
-                  type="button"
-                  onClick={handleResendOTP}
-                  disabled={countdown > 0 || otpLoading}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium disabled:text-gray-400"
-                >
-                  {otpLoading ? (
-                    <RefreshCw className="w-4 h-4 animate-spin inline" />
-                  ) : countdown > 0 ? (
-                    `Resend OTP in ${countdown}s`
-                  ) : (
-                    'Resend OTP'
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="text-sm text-gray-600 hover:text-gray-700 font-medium"
-                >
-                  Change number
-                </button>
-              </div>
             </div>
 
-            {/* Verify Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-green-600 to-green-700 
-                         text-white rounded-lg hover:from-green-700 hover:to-green-800 focus:outline-none 
-                         focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 
-                         font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  Verify & Create Account
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </>
+            {/* Resend OTP */}
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={handleResendOTP}
+                disabled={otpTimer > 0 || otpLoading}
+                className="text-blue-600 hover:text-blue-700 font-medium text-sm disabled:text-gray-400 disabled:cursor-not-allowed"
+              >
+                {otpLoading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Sending...
+                  </div>
+                ) : otpTimer > 0 ? (
+                  `Resend OTP in ${otpTimer}s`
+                ) : (
+                  'Resend OTP'
+                )}
+              </button>
+            </div>
+          </div>
         )}
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={loading || (step === 1 && otpLoading)}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 
+                     text-white rounded-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none 
+                     focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 
+                     font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? (
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : step === 1 ? (
+            otpLoading ? (
+              <div className="flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Sending OTP...
+              </div>
+            ) : (
+              <>
+                Send Verification Code
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )
+          ) : (
+            'Create Account'
+          )}
+        </button>
 
         {/* Divider */}
         <div className="relative">

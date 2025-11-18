@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useUser } from '../context/userContext';
-import { Phone, Lock, Eye, EyeOff, ArrowRight, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, RefreshCw, ArrowLeft } from 'lucide-react';
 
 const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
-  const { forgotPassword, resetPassword } = useUser();
+  const { forgotPasswordEmail, resetPasswordEmail } = useUser();
   const [step, setStep] = useState(1); // 1: Request OTP, 2: Reset password
   const [formData, setFormData] = useState({
-    mobileNumber: '',
+    email: '',
     otp: '',
     newPassword: '',
     confirmPassword: '',
@@ -32,12 +32,12 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
       e.preventDefault();
     }
     
-    if (!formData.mobileNumber.trim()) {
-      setError('Mobile number is required');
+    if (!formData.email.trim()) {
+      setError('Email address is required');
       return;
     }
-    if (formData.mobileNumber.length !== 10) {
-      setError('Please enter a valid 10-digit mobile number');
+    if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      setError('Please enter a valid email address');
       return;
     }
 
@@ -45,8 +45,8 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
     setError('');
 
     try {
-      console.log('Sending forgot password OTP request for:', formData.mobileNumber);
-      const response = await forgotPassword(formData.mobileNumber);
+      console.log('Sending forgot password OTP request for:', formData.email);
+      const response = await forgotPasswordEmail(formData.email);
       console.log('Forgot password response:', response);
       setStep(2);
       startCountdown();
@@ -78,7 +78,7 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
     setError('');
 
     try {
-      await forgotPassword(formData.mobileNumber);
+      await forgotPasswordEmail(formData.email);
       startCountdown();
     } catch (err) {
       setError(err.message);
@@ -120,7 +120,7 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
     setError('');
 
     try {
-      await resetPassword(formData.mobileNumber, formData.otp, formData.newPassword);
+      await resetPasswordEmail(formData.email, formData.otp, formData.newPassword);
       // Password reset successful, redirect to login
       onSwitchToLogin();
     } catch (err) {
@@ -146,7 +146,7 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
         </h2>
         <p className="text-gray-600">
           {step === 1 
-            ? 'Enter your mobile number to receive OTP' 
+            ? 'Enter your email address to receive OTP' 
             : 'Enter the OTP and create a new password'
           }
         </p>
@@ -161,22 +161,21 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
 
         {step === 1 ? (
           <>
-            {/* Mobile Number */}
+            {/* Email Address */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mobile Number *
+                Email Address *
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Phone className="h-5 w-5 text-gray-400" />
+                  <Mail className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type="tel"
-                  name="mobileNumber"
-                  value={formData.mobileNumber}
+                  type="email"
+                  name="email"
+                  value={formData.email}
                   onChange={handleChange}
-                  placeholder="Enter your registered mobile number"
-                  maxLength="10"
+                  placeholder="Enter your registered email address"
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg 
                              placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
                              focus:border-blue-500 transition-all duration-200 bg-white"
