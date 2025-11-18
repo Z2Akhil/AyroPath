@@ -3,6 +3,7 @@ import OTP from "../models/OTP.js";
 import jwt from "jsonwebtoken";
 import OTPGenerator from "../utils/otpGenerator.js";
 import SMSService from "../utils/smsService.js";
+import EmailService from "../utils/emailService.js";
 
 class AuthController {
   static async requestOTP(req, res) {
@@ -484,6 +485,296 @@ class AuthController {
     }
   }
 
+  // Email/Password Registration
+  static async emailRegister(req, res) {
+    try {
+      const { firstName, lastName, email, password } = req.body;
+
+      if (!firstName || !lastName || !email || !password) {
+        return res.status(400).json({
+          success: false,
+          message: "All fields are required (firstName, lastName, email, password)",
+        });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: "Password must be at least 6 characters long",
+        });
+      }
+
+      // Check if user already exists
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: "User with this email already exists",
+        });
+      }
+
+      // Create new user
+      const user = await User.create({
+        firstName,
+        lastName,
+        email,
+        password,
+        isVerified: true, // No email verification required
+        authProvider: "local",
+      });
+
+      // Send welcome email (non-blocking)
+      EmailService.sendWelcomeEmail(email, firstName).catch(err => {
+        console.error("Failed to send welcome email:", err);
+      });
+
+      const token = jwt.sign(
+        {
+          id: user._id,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN }
+      );
+
+      res.json({
+        success: true,
+        message: "Registration successful",
+        token,
+        user: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          isVerified: user.isVerified,
+          authProvider: user.authProvider,
+        },
+      });
+    } catch (err) {
+      console.error("Email registration error: ", err);
+      if (err.code === 11000) {
+        return res.status(400).json({
+          success: false,
+          message: "User with this email already exists",
+        });
+      }
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
+
+  // Email/Password Login
+  static async emailLogin(req, res) {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({
+          success: false,
+          message: "Email and password are required",
+        });
+      }
+
+      const user = await User.findOne({
+        email,
+        authProvider: "local",
+        isActive: true,
+      }).select("+password");
+
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid credentials",
+        });
+      }
+
+      const isPasswordValid = await user.comparePassword(password);
+
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid credentials",
+        });
+      }
+
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRES_IN,
+      });
+
+      res.json({
+        success: true,
+        message: "Login successful",
+        token,
+        user: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          isVerified: user.isVerified,
+          authProvider: user.authProvider,
+        },
+      });
+    } catch (err) {
+      console.error("Email login error: ", err);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
+
+  // Email-based Forgot Password (OTP-based)
+  static async forgotPasswordEmail(req, res) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: "Email is required",
+        });
+      }
+
+      const user = await User.findOne({ email, authProvider: "local" });
+
+      if (!user) {
+        // Don't reveal if user exists or not for security
+        return res.json({
+          success: true,
+          message: "If an account with that email exists, a password reset OTP has been sent",
+        });
+      }
+
+      // Generate OTP for password reset
+      const otp = OTPGenerator.generateOTP();
+      const expiresAt = OTPGenerator.getExpiryTime();
+
+      await OTP.create({
+        email,
+        otp,
+        purpose: "forgot_password_email",
+        expiresAt,
+      });
+
+      // Send OTP via email
+      const emailResult = await EmailService.sendEmailOTP(email, otp, "Password Reset");
+
+      if (!emailResult.success) {
+        return res.status(500).json({
+          success: false,
+          message: "Failed to send OTP email",
+        });
+      }
+
+      // In development mode, include the OTP in the response for testing
+      const responseData = {
+        success: true,
+        message: "If an account with that email exists, a password reset OTP has been sent",
+      };
+
+      if (process.env.NODE_ENV === 'development' || !process.env.SMTP_HOST || process.env.SMTP_HOST === 'your-smtp-host') {
+        responseData.devMode = true;
+        responseData.otp = otp; // Include OTP in response for development
+        responseData.message = "OTP logged to console (development mode)";
+      }
+
+      res.json(responseData);
+    } catch (error) {
+      console.error("Forgot password email error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
+
+  // Email-based Reset Password (OTP-based)
+  static async resetPasswordEmail(req, res) {
+    try {
+      const { email, otp, newPassword } = req.body;
+
+      if (!email || !otp || !newPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "Email, OTP and new password are required",
+        });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: "Password must be at least 6 characters long",
+        });
+      }
+
+      // Verify OTP first
+      const otpRecord = await OTP.findOne({
+        email,
+        purpose: "forgot_password_email",
+        isUsed: false,
+        expiresAt: { $gt: new Date() },
+      }).sort({ createdAt: -1 });
+
+      if (!otpRecord) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid or expired OTP",
+        });
+      }
+
+      if (otpRecord.attempts >= 3) {
+        return res.status(400).json({
+          success: false,
+          message: "Too many failed attempts. Please request new OTP",
+        });
+      }
+
+      if (otpRecord.otp != otp) {
+        otpRecord.attempts += 1;
+        await otpRecord.save();
+
+        return res.status(400).json({
+          success: false,
+          message: "Invalid OTP",
+        });
+      }
+
+      const user = await User.findOne({ email, authProvider: "local" });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+
+      // Update password
+      user.password = newPassword;
+      await user.save();
+
+      // Mark OTP as used
+      otpRecord.isUsed = true;
+      await otpRecord.save();
+
+      // Send confirmation email (non-blocking)
+      EmailService.sendPasswordChangedEmail(user.email, user.firstName).catch(err => {
+        console.error("Failed to send password changed email:", err);
+      });
+
+      res.json({
+        success: true,
+        message: "Password reset successfully",
+      });
+    } catch (error) {
+      console.error("Reset password email error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
+
   // Get current user profile
   static async getProfile(req, res) {
     try {
@@ -494,12 +785,287 @@ class AuthController {
           firstName: req.user.firstName,
           lastName: req.user.lastName,
           mobileNumber: req.user.mobileNumber,
+          email: req.user.email,
           isVerified: req.user.isVerified,
+          authProvider: req.user.authProvider,
           createdAt: req.user.createdAt,
         },
       });
     } catch (error) {
       console.error("Get profile error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
+
+  // Request Email OTP for verification
+  static async requestEmailOTP(req, res) {
+    try {
+      const { email, purpose = "email_verification" } = req.body;
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: "Email is required",
+        });
+      }
+
+      if (purpose == "email_verification") {
+        const existingUser = await User.findOne({ email });
+        if (existingUser && existingUser.isVerified) {
+          return res.status(400).json({
+            success: false,
+            message: "Email is already verified",
+          });
+        }
+      }
+
+      const otp = OTPGenerator.generateOTP();
+      const expiresAt = OTPGenerator.getExpiryTime();
+
+      await OTP.create({
+        email,
+        otp,
+        purpose,
+        expiresAt,
+      });
+
+      const emailResult = await EmailService.sendEmailOTP(email, otp);
+      if (!emailResult.success) {
+        return res.status(500).json({
+          success: false,
+          message: "Failed to send OTP email",
+        });
+      }
+
+      // In development mode, include the OTP in the response for testing
+      const responseData = {
+        success: true,
+        message: "OTP sent successfully to your email",
+        purpose,
+      };
+
+      if (process.env.NODE_ENV === 'development' || !process.env.SMTP_HOST || process.env.SMTP_HOST === 'your-smtp-host') {
+        responseData.devMode = true;
+        responseData.otp = otp; // Include OTP in response for development
+        responseData.message = "OTP logged to console (development mode)";
+      }
+
+      return res.json(responseData);
+    } catch (err) {
+      console.error("Email OTP request error: ", err);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
+
+  // Verify Email OTP
+  static async verifyEmailOTP(req, res) {
+    try {
+      const { email, otp, purpose = "email_verification" } = req.body;
+
+      if (!email || !otp) {
+        return res.status(400).json({
+          success: false,
+          message: "Email and OTP are required",
+        });
+      }
+
+      const otpRecord = await OTP.findOne({
+        email,
+        purpose,
+        isUsed: false,
+        expiresAt: { $gt: new Date() },
+      }).sort({ createdAt: -1 });
+
+      if (!otpRecord) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid or expired OTP",
+        });
+      }
+
+      if (otpRecord.attempts >= 3) {
+        return res.status(400).json({
+          success: false,
+          message: "Too many failed attempts. Please request new OTP",
+        });
+      }
+
+      if (otpRecord.otp != otp) {
+        otpRecord.attempts += 1;
+        await otpRecord.save();
+
+        return res.status(400).json({
+          success: false,
+          message: "Invalid OTP",
+        });
+      }
+
+      otpRecord.isUsed = true;
+      await otpRecord.save();
+
+      let user;
+
+      if (purpose === "email_verification") {
+        user = await User.findOneAndUpdate(
+          { email },
+          { isVerified: true },
+          { new: true, upsert: true }
+        );
+      }
+
+      res.json({
+        success: true,
+        message: "OTP verified successfully",
+        user:
+          purpose === "email_verification"
+            ? {
+                id: user._id,
+                email: user.email,
+                isVerified: user.isVerified,
+              }
+            : undefined,
+        purpose,
+      });
+    } catch (err) {
+      console.error("Email OTP verification error: ", err);
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
+
+  // Email Registration with OTP Verification
+  static async emailRegisterWithOTP(req, res) {
+    try {
+      const { firstName, lastName, email, password, otp } = req.body;
+
+      if (!firstName || !lastName || !email || !password || !otp) {
+        return res.status(400).json({
+          success: false,
+          message: "All fields are required (firstName, lastName, email, password, otp)",
+        });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: "Password must be at least 6 characters long",
+        });
+      }
+
+      // Verify OTP first
+      const otpRecord = await OTP.findOne({
+        email,
+        purpose: "email_verification",
+        isUsed: false,
+        expiresAt: { $gt: new Date() },
+      }).sort({ createdAt: -1 });
+
+      if (!otpRecord) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid or expired OTP",
+        });
+      }
+
+      if (otpRecord.attempts >= 3) {
+        return res.status(400).json({
+          success: false,
+          message: "Too many failed attempts. Please request new OTP",
+        });
+      }
+
+      if (otpRecord.otp != otp) {
+        otpRecord.attempts += 1;
+        await otpRecord.save();
+
+        return res.status(400).json({
+          success: false,
+          message: "Invalid OTP",
+        });
+      }
+
+      // Check if user already exists and is verified
+      const existingUser = await User.findOne({ email });
+      if (existingUser && existingUser.isVerified) {
+        return res.status(400).json({
+          success: false,
+          message: "User with this email already exists.",
+        });
+      }
+
+      // Mark OTP as used
+      otpRecord.isUsed = true;
+      await otpRecord.save();
+
+      // Create or update user
+      let user;
+      if (existingUser) {
+        // Update existing unverified user
+        user = await User.findOneAndUpdate(
+          { email },
+          {
+            firstName,
+            lastName,
+            password,
+            isVerified: true,
+            authProvider: "local",
+            updatedAt: Date.now()
+          },
+          { new: true }
+        );
+      } else {
+        // Create new user
+        user = await User.create({
+          firstName,
+          lastName,
+          email,
+          password,
+          isVerified: true,
+          authProvider: "local",
+        });
+      }
+
+      // Send welcome email (non-blocking)
+      EmailService.sendWelcomeEmail(email, firstName).catch(err => {
+        console.error("Failed to send welcome email:", err);
+      });
+
+      const token = jwt.sign(
+        {
+          id: user._id,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN }
+      );
+
+      res.json({
+        success: true,
+        message: "Registration successful",
+        token,
+        user: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          isVerified: user.isVerified,
+          authProvider: user.authProvider,
+        },
+      });
+    } catch (err) {
+      console.error("Email registration with OTP error: ", err);
+      if (err.code === 11000) {
+        return res.status(400).json({
+          success: false,
+          message: "User with this email already exists",
+        });
+      }
       res.status(500).json({
         success: false,
         message: "Internal server error",
