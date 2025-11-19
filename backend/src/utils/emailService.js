@@ -167,15 +167,15 @@ class EmailService {
     return await this.sendEmail(email, subject, html, text);
   }
 
-  async sendEmailOTP(email, otp) {
-    // Development mode - log OTP to console instead of sending email
-    if (process.env.NODE_ENV === 'development' || !process.env.SMTP_HOST || process.env.SMTP_HOST === 'your-smtp-host') {
-      console.log(`📧 [DEV MODE] Email OTP for ${email}: ${otp}`);
+  async sendEmailOTP(email, otp, purpose = "Verification") {
+    // Check if SMTP is configured - if not, log to console
+    if (!process.env.SMTP_HOST || process.env.SMTP_HOST === 'your-smtp-host' || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.log(`📧 [DEV MODE] ${purpose} OTP for ${email}: ${otp}`);
       console.log(`📧 [DEV MODE] In production, this OTP would be sent via email to ${email}`);
       return { success: true, messageId: 'dev-mode-otp-logged' };
     }
 
-    const subject = 'Your AryoPath Verification Code';
+    const subject = `Your AryoPath ${purpose} Code`;
     const html = `
       <!DOCTYPE html>
       <html>
@@ -191,11 +191,11 @@ class EmailService {
       <body>
         <div class="container">
           <div class="header">
-            <h1>Email Verification</h1>
+            <h1>${purpose}</h1>
           </div>
           <div class="content">
             <h2>Hello,</h2>
-            <p>Thank you for registering with AryoPath. Please use the following verification code to complete your registration:</p>
+            <p>Please use the following verification code to ${purpose.toLowerCase()}:</p>
             
             <div class="otp-code">${otp}</div>
             
@@ -209,7 +209,7 @@ class EmailService {
       </html>
     `;
 
-    const text = `Your AryoPath verification code is: ${otp}\n\nThis code will expire in 10 minutes. If you didn't request this verification, please ignore this email.`;
+    const text = `Your AryoPath ${purpose.toLowerCase()} code is: ${otp}\n\nThis code will expire in 10 minutes. If you didn't request this verification, please ignore this email.`;
 
     return await this.sendEmail(email, subject, html, text);
   }
