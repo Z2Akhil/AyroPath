@@ -1,18 +1,13 @@
 import { useCart } from "../context/CartContext";
-import { Trash2, ShoppingCart } from "lucide-react";
+import { Trash2, ShoppingCart, LogIn } from "lucide-react";
 import Form from "../components/Form";
+import { getCartPriceInfo } from "../utils/cartPriceInfo";
 
 const CartPage = () => {
   const { cart, removeFromCart } = useCart();
-
-  const total = cart?.items?.reduce(
-    (sum, item) => sum + parseFloat(item?.sellingPrice || 0),
-    0
-  ) || 0;
-
+  const priceInfo = getCartPriceInfo(cart?.items);//displayPrice,originalPrice,discountAmount,discountPercentage,margin,payable
   const pkgNames = cart?.items?.map((item) => item?.name) || [];
   const pkgIds = cart?.items?.map((item) => item?.productCode) || [];
-  
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
       {/* Header */}
@@ -96,7 +91,7 @@ const CartPage = () => {
                   Total Payable Amount: 
                 </p>
                 <p className="text-lg sm:text-xl font-bold text-blue-700">
-                  ₹{total.toFixed(2)}
+                  ₹{cart.totalAmount.toFixed(2)}
                 </p>
               </div>
             </div>
@@ -113,7 +108,7 @@ const CartPage = () => {
           </div>
 
           {/* 🧩 Form Section */}
-            <Form pkgName={pkgNames} pkgRate={total} pkgId={pkgIds} />
+            <Form pkgName={pkgNames} priceInfo={priceInfo} pkgId={pkgIds} />
         </div>
       )}
     </div>

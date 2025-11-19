@@ -13,6 +13,7 @@ class OrderController {
         packagePrice,
         originalPrice,
         discountPercentage,
+        discountAmount,
         beneficiaries,
         contactInfo,
         appointment,
@@ -52,7 +53,8 @@ class OrderController {
           name: packageName,
           price: packagePrice,
           originalPrice: originalPrice,
-          discountPercentage: discountPercentage
+          discountPercentage: discountPercentage,
+          discountAmount:discountAmount
         },
         beneficiaries: beneficiaries.map(b => ({
           name: b.name,
@@ -153,7 +155,7 @@ class OrderController {
         address: `${order.contactInfo.address.street}, ${order.contactInfo.address.city}, ${order.contactInfo.address.state}`,
         appt_date: `${order.appointment.date} ${order.appointment.slot.split(' - ')[0]}`,
         order_by: order.beneficiaries[0]?.name || 'Customer',
-        passon: 0,
+        passon: order.package.discountAmount*order.beneficiaries.length,
         pay_type: 'POSTPAID',
         pincode: order.contactInfo.address.pincode,
         products: Array.isArray(order.package.code) ? order.package.code.join(',') : order.package.code,

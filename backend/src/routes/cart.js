@@ -25,7 +25,25 @@ const optionalAuth = async (req, res, next) => {
     next();
   }
 };
+// refresh every row with live product data
+const refreshCartPrices = async (cart) => {
+  console.log('🔄 refreshCartPrices called, items before:');
+  if (!cart || !cart.items.length) return cart;
 
+  for (let i = 0; i < cart.items.length; i++) {
+    const row = cart.items[i];
+    try {
+      const fresh = await getProductDetails(row.productCode, row.productType);
+      // keep the user’s quantity, overwrite everything else
+      cart.items[i] = { ...fresh, quantity: row.quantity };
+    } catch (e) {
+      // product no longer exists → remove it silently
+      cart.items.splice(i, 1);
+      i--;
+    }
+  }
+  return cart;
+};
 // Required auth middleware
 const requiredAuth = async (req, res, next) => {
   try {
@@ -138,7 +156,8 @@ router.get('/', optionalAuth, async (req, res) => {
         guestSessionId: cart.guestSessionId
       });
     }
-    
+    await refreshCartPrices(cart);          // ← new
+    await cart.save(); 
     const summary = cart.getSummary();
     
     res.json({
@@ -163,71 +182,56 @@ router.post('/items', optionalAuth, async (req, res) => {
     const { productCode, productType, quantity = 1 } = req.body;
     const userId = req.user?._id;
     const guestSessionId = req.headers['x-guest-session-id'] || req.cookies?.guestSessionId;
-    
-    console.log('➕ Adding item to cart:', {
-      productCode,
-      productType,
-      quantity,
-      userId: userId || 'guest'
-    });
-    
+
+    console.log('➕ Adding item to cart:', { productCode, productType, quantity, userId: userId || 'guest' });
+
     if (!productCode || !productType) {
-      return res.status(400).json({
-        success: false,
-        message: 'Product code and type are required'
-      });
+      return res.status(400).json({ success: false, message: 'Product code and type are required' });
     }
-    
-    // Get product details
+
+    // 1. latest product data
     const productDetails = await getProductDetails(productCode, productType);
-    
-    // Find or create cart
+
+    // 2. find or create cart
     let cart = await Cart.findByUserOrGuest(userId, guestSessionId);
-    
     if (!cart) {
-      cart = await Cart.createOrUpdateCart(
-        userId, 
-        guestSessionId || generateGuestSessionId(), 
-        []
-      );
+      cart = await Cart.createOrUpdateCart(userId, guestSessionId || generateGuestSessionId(), []);
     }
-    
-    // Add item to cart
-    await cart.addItem({
-      ...productDetails,
-      quantity: parseInt(quantity)
-    });
-    
+
+    // 3. insert / update row
+    const existing = cart.items.find(
+      i => i.productCode === productCode && i.productType === productType
+    );
+    if (existing) {
+      existing.quantity += parseInt(quantity, 10);
+      Object.assign(existing, productDetails); // overwrite price fields
+    } else {
+      cart.items.push({ ...productDetails, quantity: parseInt(quantity, 10) });
+    }
+
+    await cart.save(); // <-- rows now contain fresh prices
+
+    /* ---------------------------------------------------------- */
+    await refreshCartPrices(cart); // ← new  re-sync EVERY row in case others are stale
+    await cart.save();             // ← new  persist the refreshed rows
+    /* ---------------------------------------------------------- */
+
     const summary = cart.getSummary();
-    
-    console.log('✅ Item added to cart:', {
-      cartId: cart._id,
-      totalItems: summary.totalItems,
-      totalAmount: summary.totalAmount
-    });
-    
+
+    console.log('✅ Cart returned with refreshed prices:', summary);
+
     res.json({
       success: true,
       message: 'Item added to cart successfully',
       cart: summary,
       guestSessionId: cart.guestSessionId
     });
-    
   } catch (error) {
     console.error('❌ Error adding item to cart:', error);
-    
     if (error.message.includes('Product not found')) {
-      res.status(404).json({
-        success: false,
-        message: error.message
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        message: 'Failed to add item to cart',
-        error: error.message
-      });
+      return res.status(404).json({ success: false, message: error.message });
     }
+    res.status(500).json({ success: false, message: 'Failed to add item to cart', error: error.message });
   }
 });
 
@@ -263,7 +267,8 @@ router.put('/items/:productCode', optionalAuth, async (req, res) => {
     }
     
     await cart.updateQuantity(productCode, productType, parseInt(quantity));
-    
+    await refreshCartPrices(cart);
+    await cart.save();
     const summary = cart.getSummary();
     
     console.log('✅ Cart item updated:', {
@@ -320,7 +325,8 @@ router.delete('/items/:productCode', optionalAuth, async (req, res) => {
     }
     
     await cart.removeItem(productCode, productType);
-    
+    await refreshCartPrices(cart); // ← new
+    await cart.save(); 
     const summary = cart.getSummary();
     
     console.log('✅ Item removed from cart:', {
@@ -438,7 +444,8 @@ router.post('/merge', requiredAuth, async (req, res) => {
     }
     
     await userCart.save();
-    
+    await refreshCartPrices(cart); // ← new
+    await cart.save(); 
     // Deactivate guest cart
     guestCart.isActive = false;
     await guestCart.save();

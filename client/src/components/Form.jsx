@@ -7,12 +7,12 @@ import { useCart } from "../context/CartContext";
 import { useOrderSuccess } from "../context/OrderSuccessContext";
 
 import {
-  getInitialFormData,
+  getInitialFormData, 
   saveContactInfo
 } from "../utils/localStorage";
 import BeneficiaryManager from "./BeneficiaryManager";
 
-const Form = ({ pkgName, pkgRate, pkgId }) => {
+const Form = ({ pkgName, priceInfo, pkgId }) => {
   const pkgNames = [].concat(pkgName || []);
   const { user } = useUser();
   const [numPersons, setNumPersons] = useState(1);
@@ -145,7 +145,10 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
       const orderData = {
         packageId: pkgId,
         packageName: pkgNames.join(", "),
-        packagePrice: pkgRate,
+        packagePrice: priceInfo.displayPrice,
+        originalPrice:priceInfo.originalPrice,
+        discountPercentage:priceInfo.discountPercentage,
+        discountAmount:priceInfo.discountAmount,
         beneficiaries: selectedBeneficiaries,
         contactInfo: {
           ...contactInfo,
@@ -184,7 +187,7 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
         showSuccessCard({
           orderId: result.data.orderId,
           packageName: pkgNames.join(","),
-          amount: (pkgRate*numPersons) + (wantHardcopy ? 75 : 0)
+          amount: (priceInfo.displayPrice*numPersons) + (wantHardcopy ? 75 : 0)
         });
       } else {
         alert(`Order creation failed: ${result.message || "Unknown error"}`);
@@ -330,7 +333,7 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
           {[...Array(10)].map((_, i) => (
             <option key={i + 1} value={i + 1}>
               {i + 1} {i + 1 === 1 ? 'Person' : 'Persons'}
-              {i + 1 === 1 ? ` (₹${pkgRate})` : ` (₹${(i + 1) * pkgRate} only)`}
+              {i + 1 === 1 ? ` (₹${priceInfo.displayPrice})` : ` (₹${(i + 1) * priceInfo.displayPrice} only)`}
             </option>
           ))}
         </select>
