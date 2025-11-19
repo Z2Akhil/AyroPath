@@ -1,0 +1,70 @@
+services:
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ayropath-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=${MONGODB_ATLAS_URI}
+      - CLIENT_URLS=http://localhost:5173,http://localhost:5174,http://client:5173,http://admin:5174
+      - JWT_SECRET=your-jwt-secret-key-here-change-in-production
+      - JWT_EXPIRES_IN=7d
+      - PORT=3000
+    networks:
+      - ayropath-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Client Frontend
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: ayropath-client
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_TARGET_URL=http://localhost:3000
+    depends_on:
+      - backend
+    networks:
+      - ayropath-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Admin Frontend
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+    container_name: ayropath-admin
+    restart: unless-stopped
+    ports:
+      - "5174:5174"
+    environment:
+      - VITE_TARGET_URL=http://localhost:3000
+    depends_on:
+      - backend
+    networks:
+      - ayropath-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5174/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  ayropath-network:
+    driver: bridge
