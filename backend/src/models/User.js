@@ -17,10 +17,11 @@ const userSchema = new mongoose.Schema({
   },
   mobileNumber: {
     type: String,
-    required: [true, "Mobile number is required"],
     unique: true,
+    sparse: true,
     validate: {
       validator: function (v) {
+        if (!v) return true; // Allow empty/null values
         return validator.isMobilePhone(v, "any", { strictMode: false });
       },
       message: "Invalid mobile number",
@@ -28,14 +29,24 @@ const userSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    trim: true,
+    required: [true, "Email is required"],
+    unique: true,
     lowercase: true,
-    validate: {
-      validator: function (v) {
-        return !v || validator.isEmail(v);
-      },
-      message: "Invalid email address",
-    },
+    validate: [validator.isEmail, "Invalid email address"],
+  },
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true,
+  },
+  authProvider: {
+    type: String,
+    enum: ["local", "google"],
+    default: "local",
+  },
+  emailVerified: {
+    type: Boolean,
+    default: false,
   },
   address: {
     type: String,
