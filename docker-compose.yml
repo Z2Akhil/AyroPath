@@ -28,12 +28,12 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
+      args:
+        VITE_TARGET_URL: ""
     container_name: ayropath-client
     restart: unless-stopped
     ports:
       - "5173:5173"
-    environment:
-      - VITE_TARGET_URL=http://localhost:3000
     depends_on:
       - backend
     networks:
@@ -49,12 +49,12 @@ services:
     build:
       context: ./admin
       dockerfile: Dockerfile
+      args:
+        VITE_TARGET_URL: ""
     container_name: ayropath-admin
     restart: unless-stopped
     ports:
       - "5174:5174"
-    environment:
-      - VITE_TARGET_URL=http://localhost:3000
     depends_on:
       - backend
     networks:
