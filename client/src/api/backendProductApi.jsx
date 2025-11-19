@@ -76,7 +76,7 @@ export const getProductDisplayPrice = (product) => {
   // Use sellingPrice if available and lower than ThyroCare price
   const thyrocarePrice = product.rate?.b2C || 0;
   const sellingPrice = product.sellingPrice || thyrocarePrice;
-  
+  const discountAmount=thyrocarePrice-sellingPrice;
   const hasDiscount = sellingPrice < thyrocarePrice && thyrocarePrice > 0;
   const discountPercentage = hasDiscount 
     ? Math.round(((thyrocarePrice - sellingPrice) / thyrocarePrice) * 100)
@@ -86,6 +86,7 @@ export const getProductDisplayPrice = (product) => {
     displayPrice: sellingPrice,
     originalPrice: thyrocarePrice,
     hasDiscount,
-    discountPercentage
+    discountPercentage,
+    discountAmount,
   };
 };

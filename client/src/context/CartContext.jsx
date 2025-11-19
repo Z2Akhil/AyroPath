@@ -3,6 +3,7 @@ import { useUser } from "./userContext";
 import CartApi from "../api/cartApi";
 
 const CartContext = createContext();
+CartApi.getCart().then(res => console.log(JSON.stringify(res, null, 2)));
 
 export const CartProvider = ({ children }) => {
   const { user } = useUser();
@@ -69,7 +70,7 @@ export const CartProvider = ({ children }) => {
   // Save cart to database (if user is logged in)
   const saveCartToDatabase = async (cartData) => {
     if (!user) return { success: true }; // Skip if not logged in
-    
+
     try {
       // For now, we'll sync each operation individually
       // In a real implementation, you might want to sync the entire cart
@@ -99,52 +100,55 @@ export const CartProvider = ({ children }) => {
   // Add item to cart
   const addToCart = async (item) => {
     setLoading(true);
-    
+
     try {
       const updatedCart = { ...cart };
       const existingItemIndex = updatedCart.items.findIndex(
         cartItem => cartItem.productCode === item.code
       );
 
+      // ALWAYS use price shown in UI
+      const originalPrice = item.originalPrice || item.rate?.b2C || 0;
+      const sellingPrice = item.sellingPrice || originalPrice;
+      const discount = originalPrice > sellingPrice ? (originalPrice - sellingPrice) : 0;
+
       if (existingItemIndex > -1) {
-        // Item already exists, update quantity
+        // Item already exists, increase quantity
         updatedCart.items[existingItemIndex].quantity += 1;
       } else {
         // Add new item
-        const originalPrice = parseFloat(item.rate?.b2C || 0);
-        const sellingPrice = parseFloat(item.rate?.offerRate || 0);
-        const discount = originalPrice > sellingPrice ? originalPrice - sellingPrice : 0;
-        
         updatedCart.items.push({
           productCode: item.code,
-          productType: item.type?.toUpperCase() || 'TEST',
+          productType: item.type?.toUpperCase() || "TEST",
           name: item.name,
           quantity: 1,
-          originalPrice: originalPrice,
-          sellingPrice: sellingPrice,
-          discount: discount
+          originalPrice,
+          sellingPrice,
+          discount,
         });
       }
 
-      // Recalculate totals
       const finalCart = recalculateTotals(updatedCart);
 
-      // Update state and localStorage
       setCart(finalCart);
       saveCartToLocalStorage(finalCart);
 
-      // Save to database if user is logged in
+      // Sync with backend
       if (user) {
-        const itemToAdd = updatedCart.items.find(cartItem => cartItem.productCode === item.code);
+        const itemToAdd = updatedCart.items.find(
+          cartItem => cartItem.productCode === item.code
+        );
+
         await CartApi.addToCart(
           item.code,
-          item.type?.toUpperCase() || 'TEST',
+          item.type?.toUpperCase() || "TEST",
           itemToAdd.quantity
         );
       }
 
       setLoading(false);
       return { success: true, message: "Item added to cart" };
+
     } catch (error) {
       console.error("Error adding to cart:", error);
       setLoading(false);
@@ -152,10 +156,11 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+
   // Remove item from cart
   const removeFromCart = async (productCode) => {
     setLoading(true);
-    
+
     try {
       const updatedCart = { ...cart };
       const itemToRemove = updatedCart.items.find(item => item.productCode === productCode);
@@ -188,14 +193,14 @@ export const CartProvider = ({ children }) => {
   // Update item quantity
   const updateQuantity = async (productCode, quantity) => {
     setLoading(true);
-    
+
     try {
       const updatedCart = { ...cart };
       const item = updatedCart.items.find(item => item.productCode === productCode);
-      
+
       if (item && quantity > 0 && quantity <= 10) {
         item.quantity = quantity;
-        
+
         // Recalculate totals
         const finalCart = recalculateTotals(updatedCart);
 
@@ -212,7 +217,7 @@ export const CartProvider = ({ children }) => {
           );
         }
       }
-      
+
       setLoading(false);
       return { success: true, message: "Quantity updated" };
     } catch (error) {
@@ -225,7 +230,7 @@ export const CartProvider = ({ children }) => {
   // Clear entire cart
   const clearCart = async () => {
     setLoading(true);
-    
+
     try {
       const emptyCart = {
         items: [],
@@ -234,7 +239,7 @@ export const CartProvider = ({ children }) => {
         totalDiscount: 0,
         totalAmount: 0
       };
-      
+
       // Update state and localStorage
       setCart(emptyCart);
       saveCartToLocalStorage(emptyCart);
