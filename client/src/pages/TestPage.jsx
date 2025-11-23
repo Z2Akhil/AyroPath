@@ -15,7 +15,7 @@ const TestPage = ({ limit }) => {
     const fetchTests = async () => {
       try {
         setLoading(true);
-        const data = await getProductsFromBackend("TEST");
+        const data = await getProductsFromBackend("TESTS");
 
         const uniqueTests = Array.from(
           new Map(data.map((test) => [test.code, test])).values()
