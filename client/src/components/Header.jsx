@@ -18,16 +18,32 @@ const NAV_LINKS = [
   { label: 'About Us', href: '/about' },
 ];
 
-const Logo = ({ logo }) => {
+/* ---------- Logo Component ---------- */
+const LogoSkeleton = () => (
+  <div className="flex items-center gap-3 animate-pulse">
+    <div className="w-10 h-10 bg-gray-200 rounded-full" />
+    <div>
+      <div className="h-5 w-20 bg-gray-200 rounded" />
+      <div className="h-3 w-28 bg-gray-200 rounded mt-1" />
+    </div>
+  </div>
+);
+
+/* ---------- Logo Component ---------- */
+const Logo = ({ logo, loading }) => {
   const [imgError, setImgError] = useState(false);
+
+  if (loading) return <LogoSkeleton />;
+
+  const logoSrc = !imgError && logo ? logo : "./logo.jpg";
 
   return (
     <Link to="/" className="flex items-center gap-3 group cursor-pointer">
       <div className="flex items-center gap-2">
         <img
-          src={!imgError && logo ? logo : "./logo.jpg"}
+          src={logoSrc}
           alt="Company Logo"
-          className="w-10 h-10 object-contain"
+          className="w-10 h-10 object-contain rounded-full"
           onError={() => setImgError(true)}
         />
       </div>
@@ -92,7 +108,7 @@ const DesktopNav = ({ user, onLogin, onLogoutConfirm }) => (
 );
 
 /* ---------- mobile drawer ---------- */
-const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose }) => {
+const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose, loading, settings }) => {
   if (!open) return null;
 
   return (
@@ -109,19 +125,7 @@ const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose }) => {
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-100">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <img
-                  src="./logo.jpg"
-                  alt="Company Logo"
-                  className="w-10 h-10 object-contain"
-                />
-              </div>
-              <div>
-                <p className="font-bold text-gray-900">Ayropath</p>
-                <p className="text-xs text-gray-500">ThyroCare Partner</p>
-              </div>
-            </div>
+            <Logo logo={settings?.logo} loading={loading} />
             <button
               onClick={onClose}
               className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -237,8 +241,7 @@ export default function Header() {
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Top Bar */}
           <div className="flex items-center justify-between h-20">
-            <Logo logo={settings?.logo} error={error} />
-
+            <Logo logo={settings?.logo} loading={loading} />
             {/* Desktop Search */}
             <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
               <SearchBar />
@@ -308,6 +311,8 @@ export default function Header() {
         onLogin={() => setAuthOpen(true)}
         onLogoutConfirm={() => setLogoutConfirmOpen(true)}
         onClose={() => setMenuOpen(false)}
+        loading={loading}
+        settings={settings}
       />
 
       {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
