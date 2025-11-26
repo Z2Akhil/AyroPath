@@ -27,7 +27,7 @@ const TestCard = ({ test }) => {
           <span className="text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider block">
             {category || "General"}
           </span>
-          <h2 className="text-base sm:text-lg font-bold text-gray-900 mt-1 line-clamp-2 break-words">
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 mt-1 line-clamp-2 wrap-break-words">
             {name}
           </h2>
         </div>
