@@ -1,36 +1,13 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import OfferCard from "../components/cards/OfferCard";
 import SkeletonOfferCard from "../components/cards/SkeletonOfferCard";
-import { getProductsFromBackend } from "../api/backendProductApi"; // Use our backend API
 import Pagination from "../components/Pagination";
+import { useProducts } from "../context/ProductContext";
 
 const OfferPage = ({limit}) => {
-  const [offers, setOffers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { offers, loading, error } = useProducts();
   const [currentPage,setCurrentPage]=useState(1);
   const [itemsPerPage,setItemsPerPage]=useState(12);
-  useEffect(() => {
-    const fetchOffers = async () => {
-      try {
-        setLoading(true);
-        const data = await getProductsFromBackend("OFFER");
-
-        const uniqueOffers = Array.from(
-          new Map(data.map((offer) => [offer.code, offer])).values()
-        );
-        setOffers(uniqueOffers || []);
-
-      } catch (err) {
-        console.error(err);
-        setError("Failed to fetch offers");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOffers();
-  }, []);
 
   if (loading) {
     return (

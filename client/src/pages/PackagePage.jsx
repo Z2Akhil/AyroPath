@@ -1,36 +1,13 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import PackageCard from "../components/cards/PackageCard";
 import SkeletonPackageCard from "../components/cards/SkeletonPackageCard";
-import { getProductsFromBackend } from "../api/backendProductApi"; // Use our backend API
 import Pagination from "../components/Pagination";
+import { useProducts } from "../context/ProductContext";
 
 const PackagePage = ({limit}) => {
-  const [packages, setPackages] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { packages, loading, error } = useProducts();
   const[currentPage,setCurrentPage]=useState(1);
   const [itemsPerPage,setItemsPerPage]=useState(12);
-
-  useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        setLoading(true);
-        const data = await getProductsFromBackend("PROFILE");
-        const uniquePackages=Array.from(
-          new Map(data.map((pkg)=>[pkg.code,pkg])).values()
-        )
-        setPackages(uniquePackages || []);
-        
-      } catch (err) {
-        console.error(err);
-        setError("Failed to fetch packages");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPackages();
-  }, []);
 
   if (loading) {
     return (

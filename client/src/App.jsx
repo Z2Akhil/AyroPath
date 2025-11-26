@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { UserProvider } from './context/UserProvider';
+import { ProductProvider } from './context/ProductContext';
 import { ToastProvider } from './context/ToastContext';
 import { CartProvider } from './context/CartContext';
 import { BeneficiaryProvider } from './context/BeneficiaryContext';
@@ -25,7 +26,8 @@ function App() {
   return (
     <ToastProvider>
       <UserProvider>
-        <CartProvider>
+        <ProductProvider>
+          <CartProvider>
           <OrderSuccessProvider>
             <BeneficiaryProvider>
               <SiteSettingsProvider>
@@ -61,6 +63,7 @@ function App() {
             </BeneficiaryProvider>
           </OrderSuccessProvider>
         </CartProvider>
+      </ProductProvider>
       </UserProvider>
     </ToastProvider>
   );

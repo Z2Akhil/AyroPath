@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Phone, Mail, Clock, MapPin, ChevronDown, ChevronUp } from "lucide-react";
 import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn } from "react-icons/fa";
 import { useSiteSettings } from "../context/SiteSettingsContext";
-
+import { Link } from 'react-router-dom';
 export default function Footer() {
   const { settings, loading, error } = useSiteSettings();
   const [openSection, setOpenSection] = useState(null);
@@ -111,34 +111,34 @@ export default function Footer() {
                 }`}
             >
               <li>
-                <a href="/" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2 mt-2">
+                <Link to="/" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2 mt-2">
                   <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
                   Home
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/packages" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
+                <Link to="/packages" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
                   <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
                   Popular Packages
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/tests" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
+                <Link to="/tests" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
                   <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
                   All Tests
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/offers" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
+                <Link to="/offers" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
                   <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
                   Special Offers
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/about" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
+                <Link to="/about" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
                   <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
                   About Us
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -224,9 +224,9 @@ export default function Footer() {
               </p>
             </div>
             <div className="flex items-center gap-6 text-sm text-gray-400">
-              <a href="#" className="hover:text-blue-400 transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-blue-400 transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-blue-400 transition-colors">Refund Policy</a>
+              <Link to="#" className="hover:text-blue-400 transition-colors">Privacy Policy</Link>
+              <Link to="#" className="hover:text-blue-400 transition-colors">Terms of Service</Link>
+              <Link to="#" className="hover:text-blue-400 transition-colors">Refund Policy</Link>
             </div>
           </div>
         </div>

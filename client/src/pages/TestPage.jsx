@@ -1,37 +1,13 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import TestCard from "../components/cards/TestCard";
 import SkeletonTestCard from "../components/cards/SkeletonTestCard";
-import { getProductsFromBackend } from "../api/backendProductApi"; // Use our backend API
 import Pagination from "../components/Pagination";
+import { useProducts } from "../context/ProductContext";
 
 const TestPage = ({ limit }) => {
-  const [tests, setTests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { tests, loading, error } = useProducts();
   const [currentPage,setCurrentPage]=useState(1);
   const [itemsPerPage,setItemsPerPage]=useState(12);
-
-  useEffect(() => {
-    const fetchTests = async () => {
-      try {
-        setLoading(true);
-        const data = await getProductsFromBackend("TEST");
-
-        const uniqueTests = Array.from(
-          new Map(data.map((test) => [test.code, test])).values()
-        );
-
-        setTests(uniqueTests || []);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to fetch tests");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTests();
-  }, []);
 
   if (loading) {
     return (
