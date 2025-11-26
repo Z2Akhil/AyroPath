@@ -1,52 +1,39 @@
 import { AlertCircle, Home, Percent, Share2, ChevronDown, Calendar, CreditCard, CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import Form from "../components/Form.jsx";
-import { getProductsFromBackend, getProductDisplayPrice } from "../api/backendProductApi";
+import { getProductDisplayPrice } from "../api/backendProductApi";
 import SkeletonPackageDetailed from "../components/cards/SkeletonPackageDetailed";
+import { useProducts } from "../context/ProductContext";
 
 const PackageDetailedPage = () => {
   const { code } = useParams();
+  const { allProducts, loading, error } = useProducts();
   const [openCategory, setOpenCategory] = useState(new Set());
-  const [packages, setPackages] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [pkg, setPkg] = useState(null);
 
   useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        setLoading(true);
-        const data = await getProductsFromBackend("ALL");
-        setPackages(data || []);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to fetch packages");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPackages();
-  }, []);
+    if (allProducts.length > 0 && code) {
+      const foundPkg = allProducts.find((p) => p.code === code);
+      setPkg(foundPkg || null);
+    }
+  }, [allProducts, code]);
 
   // Initialize categories when packages are loaded
   useEffect(() => {
-    if (packages.length > 0 && code) {
-      const pkg = packages.find((p) => p.code === code);
-      if (pkg && pkg.childs) {
-        const groupedTests = pkg.childs.reduce((acc, test) => {
-          if (!acc[test.groupName]) acc[test.groupName] = [];
-          acc[test.groupName].push(test.name);
-          return acc;
-        }, {});
-        
-        if (Object.keys(groupedTests).length > 0) {
-          const allCategories = new Set(Object.keys(groupedTests));
-          setOpenCategory(allCategories);
-        }
+    if (pkg && pkg.childs) {
+      const groupedTests = pkg.childs.reduce((acc, test) => {
+        if (!acc[test.groupName]) acc[test.groupName] = [];
+        acc[test.groupName].push(test.name);
+        return acc;
+      }, {});
+      
+      if (Object.keys(groupedTests).length > 0) {
+        const allCategories = new Set(Object.keys(groupedTests));
+        setOpenCategory(allCategories);
       }
     }
-  }, [packages, code]);
+  }, [pkg]);
 
   const handleShare = async (pkg) => {
     const shareUrl = `${window.location.origin}/package/${pkg.code}`;
@@ -76,7 +63,7 @@ const PackageDetailedPage = () => {
     return <div className="text-center py-20 text-red-500">{error}</div>;
   }
 
-  const pkg = packages.find((p) => p.code === code);
+
 
   if (!pkg) {
     return (
@@ -111,10 +98,10 @@ const PackageDetailedPage = () => {
         {/* Breadcrumb */}
         <nav className="flex mb-8" aria-label="Breadcrumb">
           <ol className="flex items-center space-x-2 text-sm text-gray-600">
-            <li><a href="/" className="hover:text-blue-600 transition-colors">Home</a></li>
+            <li><Link to="/" className="hover:text-blue-600 transition-colors">Home</Link></li>
             <li className="flex items-center">
               <ChevronDown className="w-4 h-4 rotate-270" />
-              <a href="/packages" className="ml-2 hover:text-blue-600 transition-colors">Packages</a>
+              <Link to="/packages" className="ml-2 hover:text-blue-600 transition-colors">Packages</Link>
             </li>
             <li className="flex items-center">
               <ChevronDown className="w-4 h-4 rotate-270" />
