@@ -43,7 +43,7 @@ export const ProductProvider = ({ children }) => {
           // Tests -> type === "TEST"
           // Offers -> type === "OFFER" (if applicable)
           
-          const pkgs = uniqueProducts.filter(p => p.type === "PROFILE" || p.type === "POPULAR"); 
+          const pkgs = uniqueProducts.filter(p => p.type === "PROFILE" || p.type === "POP"); 
           const tsts = uniqueProducts.filter(p => p.type === "TEST");
           const offrs = uniqueProducts.filter(p => p.type === "OFFER");
 
