@@ -2,7 +2,7 @@ import { useCart } from "../context/CartContext";
 import { Trash2, ShoppingCart, LogIn } from "lucide-react";
 import Form from "../components/Form";
 import { getCartPriceInfo } from "../utils/cartPriceInfo";
-
+import {Link} from "react-router-dom";
 const CartPage = () => {
   const { cart, removeFromCart } = useCart();
   const priceInfo = getCartPriceInfo(cart?.items);//displayPrice,originalPrice,discountAmount,discountPercentage,margin,payable
@@ -98,12 +98,12 @@ const CartPage = () => {
 
             {/* Add More Button */}
             <div className="p-4 bg-white">
-              <a
-                href="/tests"
+              <Link
+                to="/tests"
                 className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm sm:text-base px-5 py-2.5 rounded-md shadow-sm transition"
               >
                 + Add More Tests
-              </a>
+              </Link>
             </div>
           </div>
 
