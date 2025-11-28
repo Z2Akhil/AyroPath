@@ -84,7 +84,6 @@ const DesktopNav = ({ user, onLogin, onLogoutConfirm }) => (
             <User className="w-4 h-4 text-white" />
           </div>
           <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600">Hi, {user.name}</span>
-          <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-blue-600" />
         </Link>
         <button
           onClick={onLogoutConfirm}
@@ -204,8 +203,7 @@ export default function Header() {
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const { user, logout } = useUser();
   const { success } = useToast();
-  const { settings, loading, error } = useSiteSettings();
-  const navigate = useNavigate();
+  const { settings, loading } = useSiteSettings();
   const { cart } = useCart();
 
 
