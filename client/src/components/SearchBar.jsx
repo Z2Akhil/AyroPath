@@ -96,15 +96,15 @@ const SearchBar = () => {
         <div ref={wrapperRef} className="relative w-full max-w-xl mx-auto">
             
             {/* Input box */}
-            <div className="flex items-center bg-white border-2 border-gray-300 rounded-full px-4 py-2 shadow-sm focus-within:border-blue-500 transition">
-                <Search className="h-5 w-5 text-gray-500 mr-2" />
+            <div className="flex items-center bg-white border border-gray-300 rounded-full px-4 py-2 shadow-none focus-within:border-blue-500 transition">
+                <Search className="h-5 w-5 text-gray-400 mr-2" />
                 <input
                     type="text"
                     value={query}
                     onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
-                    placeholder="Search tests, packages, and offers..."
-                    className="flex-1 outline-none text-sm"
+                    placeholder="search tests, packages, and offers..."
+                    className="flex-1 outline-none text-sm placeholder:text-gray-500"
                 />
             </div>
 

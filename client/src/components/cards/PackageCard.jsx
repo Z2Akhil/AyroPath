@@ -15,7 +15,7 @@ const PackageCard = ({ pkg }) => {
   } = pkg;
 
   const imgSrc = imageLocation || imageMaster?.[0]?.imgLocations || "/packagePic.png";
-  
+
   // Get enhanced pricing information
   const priceInfo = getProductDisplayPrice(pkg);
 
@@ -38,7 +38,7 @@ const PackageCard = ({ pkg }) => {
             {category}
           </span>
         )}
-        
+
         <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/70 to-transparent text-white px-3 py-2 text-sm sm:text-base font-semibold">
           {name}
         </div>
@@ -86,7 +86,7 @@ const PackageCard = ({ pkg }) => {
           ) : (
             <div className="flex items-center gap-3 flex-wrap">
               <p className="text-gray-900 font-bold text-xl sm:text-2xl">
-                ₹{priceInfo.displayPrice} 
+                ₹{priceInfo.displayPrice}
               </p>
             </div>
           )}
@@ -109,20 +109,11 @@ const PackageCard = ({ pkg }) => {
         </div>
 
         {/* Footer - Fixed at bottom */}
-        <div className="border-t pt-3 mt-auto">
-          <ul className="space-y-1 text-xs text-gray-600">
-            <li className="flex items-center gap-1">
-              <span>🏅</span>
-              <span>NABL, CAP, ISO 9001 Certified</span>
-            </li>
-            <li className="flex items-center gap-1">
-              <span>🏠</span>
-              <span>Free Home Sample Pickup</span>
-            </li>
-            <li className="flex items-center gap-1">
-              <span>💻</span>
-              <span>Online Report Delivery</span>
-            </li>
+        <div className="border-t border-gray-300 pt-3 mt-auto">
+          <ul className="list-item space-y-1 text-xs text-gray-600">
+            <li>NABL, CAP, ISO 9001 Certified</li>
+            <li>Free Home Sample Pickup</li>
+            <li>Online Report Delivery</li>
           </ul>
         </div>
       </div>

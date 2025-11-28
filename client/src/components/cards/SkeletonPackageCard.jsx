@@ -1,4 +1,3 @@
-import React from "react";
 import SkeletonText from "../SkeletonText";
 
 const SkeletonPackageCard = () => {
@@ -58,7 +57,7 @@ const SkeletonPackageCard = () => {
         </div>
 
         {/* Footer */}
-        <div className="border-t pt-3 mt-auto">
+        <div className="border-t border-gray-200 pt-3 mt-auto">
           <div className="space-y-2">
             <SkeletonText width="100%" height="0.75rem" />
             <SkeletonText width="90%" height="0.75rem" />
