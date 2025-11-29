@@ -23,7 +23,7 @@ const AuthModal = ({ onClose }) => {
   };
 
   return (
-    <Modal title={getModalTitle()} onClose={onClose}>
+    <Modal title={getModalTitle()} onClose={onClose} closeOnOverlayClick={false}>
       {view === 'login' ? (
         <LoginForm 
           onClose={onClose} 
