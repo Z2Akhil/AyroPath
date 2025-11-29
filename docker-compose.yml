@@ -9,12 +9,24 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=${NODE_ENV}
       - MONGODB_URI=${MONGODB_ATLAS_URI}
-      - CLIENT_URLS=http://localhost:5173,http://localhost:5174,http://client:5173,http://admin:5174
-      - JWT_SECRET=your-jwt-secret-key-here-change-in-production
-      - JWT_EXPIRES_IN=7d
-      - PORT=3000
+      - CLIENT_URLS=${CLIENT_URLS}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - PORT=${PORT}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - FROM_EMAIL=${FROM_EMAIL}
+      - THYROCARE_API_URL=${THYROCARE_API_URL}
+      - THYROCARE_USERNAME=${THYROCARE_USERNAME}
+      - THYROCARE_PASSWORD=${THYROCARE_PASSWORD}
+      - FAST2SMS_API_KEY=${FAST2SMS_API_KEY}
+      - FAST2SMS_API_URL=${FAST2SMS_API_URL}
+      - OTP_RATE_LIMIT_WINDOW=${OTP_RATE_LIMIT_WINDOW}
+      - OTP_RATE_LIMIT_MAX=${OTP_RATE_LIMIT_MAX}
     networks:
       - ayropath-network
     healthcheck:
@@ -29,7 +41,7 @@ services:
       context: ./client
       dockerfile: Dockerfile
       args:
-        VITE_TARGET_URL: ""
+        VITE_TARGET_URL: ${VITE_TARGET_URL}
     container_name: ayropath-client
     restart: unless-stopped
     ports:
@@ -50,7 +62,7 @@ services:
       context: ./admin
       dockerfile: Dockerfile
       args:
-        VITE_TARGET_URL: ""
+        VITE_TARGET_URL: ${VITE_TARGET_URL}
     container_name: ayropath-admin
     restart: unless-stopped
     ports:
