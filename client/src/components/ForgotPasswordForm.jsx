@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useUser } from '../context/userContext';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, RefreshCw, ArrowLeft } from 'lucide-react';
-
+import { useToast } from '../context/ToastContext';
 const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
   const { forgotPasswordEmail, resetPasswordEmail } = useUser();
   const [step, setStep] = useState(1); // 1: Request OTP, 2: Reset password
@@ -17,7 +17,7 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
   const [otpLoading, setOtpLoading] = useState(false);
   const [error, setError] = useState('');
   const [countdown, setCountdown] = useState(0);
-
+  const { info, success, error: toastError } = useToast();
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -52,7 +52,7 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
       startCountdown();
     } catch (err) {
       console.error('Forgot password error:', err);
-      setError(err.message);
+      toastError(err.message);
     } finally {
       setOtpLoading(false);
     }
@@ -81,7 +81,7 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
       await forgotPasswordEmail(formData.email);
       startCountdown();
     } catch (err) {
-      setError(err.message);
+      toastError(err.message);
     } finally {
       setOtpLoading(false);
     }
@@ -124,7 +124,7 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
       // Password reset successful, redirect to login
       onSwitchToLogin();
     } catch (err) {
-      setError(err.message);
+      toastError(err.message);
     } finally {
       setLoading(false);
     }
@@ -134,13 +134,6 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
     <div className="w-full max-w-md mx-auto">
       {/* Header */}
       <div className="text-center mb-8">
-        <button
-          onClick={() => step === 1 ? onClose() : setStep(1)}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-700 mb-4 mx-auto"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </button>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
           {step === 1 ? 'Reset Password' : 'Create New Password'}
         </h2>

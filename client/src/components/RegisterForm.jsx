@@ -73,7 +73,7 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
       startOtpTimer();
       success('OTP sent to your email address');
     } catch (err) {
-      setError(err.message);
+      toastError(err.message);
     } finally {
       setOtpLoading(false);
     }
@@ -90,7 +90,7 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
       startOtpTimer();
       success('OTP resent to your email address');
     } catch (err) {
-      setError(err.message);
+      toastError(err.message);
     } finally {
       setOtpLoading(false);
     }
@@ -137,7 +137,7 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
       success('Account created successfully!');
       onClose();
     } catch (err) {
-      setError(err.message);
+      toastError(err.message);
     } finally {
       setLoading(false);
     }
