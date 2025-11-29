@@ -9,7 +9,7 @@ const CartPage = () => {
   const pkgNames = cart?.items?.map((item) => item?.name) || [];
   const pkgIds = cart?.items?.map((item) => item?.productCode) || [];
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto py-12 px-1 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <ShoppingCart className="text-blue-600 w-7 h-7" />
