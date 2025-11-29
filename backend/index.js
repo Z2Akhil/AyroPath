@@ -65,8 +65,8 @@ app.use("/api/beneficiaries", beneficiaryRouter);
 app.use("/api/settings", SiteSettingsRouter);
 app.use("/api/orders", orderRouter);
 
-// --- Health check route ---
-app.get("/", (req, res) => res.json({ success: true, message: "API is running fine", timestamp: new Date().toISOString() }));
+// base /api health check
+app.get("/api", (req, res) => res.json({ success: true, message: "AyroPath API base" }));
 
 // --- Error handling ---
 app.use((err, req, res, next) => {
