@@ -4,7 +4,7 @@ const isProduction = import.meta.env.MODE === "production";
 
 // Decide which base URL to use
 const baseURL = isProduction
-  ? `${import.meta.env.VITE_TARGET_URL}/api`   // Production backend (from Vercel env)
+  ? `${import.meta.env.VITE_TARGET_URL}`
   : "http://localhost:3000/api";
 
 export const axiosInstance = axios.create({
