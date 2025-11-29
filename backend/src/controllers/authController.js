@@ -991,13 +991,15 @@ class AuthController {
         });
       }
 
-      // Check if user already exists and is verified
+      // Check if user already exists
       const existingUser = await User.findOne({ email });
-      if (existingUser && existingUser.isVerified) {
-        return res.status(400).json({
-          success: false,
-          message: "User with this email already exists.",
-        });
+      if (existingUser) {
+        if (existingUser.isVerified) {
+          return res.status(400).json({
+            success: false,
+            message: "User with this email already exists and is verified.",
+          });
+        }
       }
 
       // Mark OTP as used
