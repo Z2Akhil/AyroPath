@@ -29,8 +29,12 @@ const PackageDetailedPage = () => {
       }, {});
       
       if (Object.keys(groupedTests).length > 0) {
-        const allCategories = new Set(Object.keys(groupedTests));
-        setOpenCategory(allCategories);
+        // Only open all categories by default on large screens (desktop)
+        // On mobile/tablet (stacked layout), keep them closed to reduce scrolling to the form
+        if (window.innerWidth >= 1024) {
+          const allCategories = new Set(Object.keys(groupedTests));
+          setOpenCategory(allCategories);
+        }
       }
     }
   }, [pkg]);
