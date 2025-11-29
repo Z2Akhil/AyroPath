@@ -1,6 +1,6 @@
 import { AlertCircle, Home, Percent, Share2, ChevronDown, Calendar, CreditCard, CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import Form from "../components/Form.jsx";
 import { getProductDisplayPrice } from "../api/backendProductApi";
 import SkeletonPackageDetailed from "../components/cards/SkeletonPackageDetailed";
@@ -8,6 +8,8 @@ import { useProducts } from "../context/ProductContext";
 
 const PackageDetailedPage = () => {
   const { code } = useParams();
+  const location = useLocation();
+  const from = location.state?.from;
   const { allProducts, loading, error } = useProducts();
   const [openCategory, setOpenCategory] = useState(new Set());
   const [pkg, setPkg] = useState(null);
@@ -29,8 +31,12 @@ const PackageDetailedPage = () => {
       }, {});
       
       if (Object.keys(groupedTests).length > 0) {
-        const allCategories = new Set(Object.keys(groupedTests));
-        setOpenCategory(allCategories);
+        // Only open all categories by default on large screens (desktop)
+        // On mobile/tablet (stacked layout), keep them closed to reduce scrolling to the form
+        if (window.innerWidth >= 1024) {
+          const allCategories = new Set(Object.keys(groupedTests));
+          setOpenCategory(allCategories);
+        }
       }
     }
   }, [pkg]);
@@ -94,14 +100,18 @@ const PackageDetailedPage = () => {
 
   return (
     <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-1 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="flex mb-8" aria-label="Breadcrumb">
           <ol className="flex items-center space-x-2 text-sm text-gray-600">
             <li><Link to="/" className="hover:text-blue-600 transition-colors">Home</Link></li>
             <li className="flex items-center">
               <ChevronDown className="w-4 h-4 rotate-270" />
-              <Link to="/packages" className="ml-2 hover:text-blue-600 transition-colors">Packages</Link>
+              {from === 'offer' ? (
+                <Link to="/offers" className="ml-2 hover:text-blue-600 transition-colors">Offers</Link>
+              ) : (
+                <Link to="/packages" className="ml-2 hover:text-blue-600 transition-colors">Packages</Link>
+              )}
             </li>
             <li className="flex items-center">
               <ChevronDown className="w-4 h-4 rotate-270" />
@@ -114,7 +124,7 @@ const PackageDetailedPage = () => {
           {/* LEFT: Package Details */}
           <div className="lg:col-span-2 space-y-6">
             {/* Main Card */}
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <div className="bg-white rounded-xl shadow-lg p-1 border border-gray-100">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-6">
                 <div className="flex-1">
                   <h1 className="text-3xl font-bold text-gray-900 mb-2 leading-tight">{pkg.name}</h1>
@@ -233,10 +243,7 @@ const PackageDetailedPage = () => {
           {/* RIGHT: Booking Form */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-lg border border-gray-100 sticky top-8">
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Book This Test</h3>
                 <Form pkgName={pkg.name} priceInfo={priceInfo} pkgId={code} />
-              </div>
             </div>
           </div>
         </div>

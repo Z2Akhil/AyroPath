@@ -3,11 +3,20 @@
 import React from 'react';
 import { X } from 'lucide-react';
 
-const Modal = ({ children, title, onClose }) => {
+const Modal = ({ children, title, onClose, closeOnOverlayClick = true }) => {
+  React.useEffect(() => {
+    // Prevent scrolling on the body when the modal is open
+    document.body.style.overflow = 'hidden';
+    return () => {
+      // Re-enable scrolling when the modal is closed
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   return (
     <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
-      onClick={onClose}
+      onClick={closeOnOverlayClick ? onClose : undefined}
     >
       <div
         className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden transform transition-all duration-300 animate-scale-in"

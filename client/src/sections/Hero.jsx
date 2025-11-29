@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSiteSettings } from "../context/SiteSettingsContext";
-
+import {Link} from "react-router-dom";
 const Hero = () => {
   const { settings, loading, error } = useSiteSettings();
   const [imgError, setImgError] = useState(false);
@@ -41,18 +41,18 @@ const Hero = () => {
           lab services directly to you.
         </p>
         <div className="flex flex-wrap gap-4">
-          <a
-            href="/tests"
+          <Link
+            to="/tests"
             className="bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-800 transition"
           >
             Book a Test
-          </a>
-          <a
-            href="/offers"
+          </Link>
+          <Link
+            to="/offers"
             className="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition"
           >
             View Offers
-          </a>
+          </Link>
         </div>
       </div>
 

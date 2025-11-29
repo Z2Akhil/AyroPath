@@ -205,12 +205,13 @@ export default function Header() {
   const { success } = useToast();
   const { settings, loading } = useSiteSettings();
   const { cart } = useCart();
-
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
     setLogoutConfirmOpen(false);
     success('You have been logged out successfully');
+    navigate('/');
   };
 
   return (

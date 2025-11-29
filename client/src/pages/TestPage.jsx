@@ -11,7 +11,7 @@ const TestPage = ({ limit }) => {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-10">
         <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">
           Available Tests
         </h1>
@@ -37,7 +37,7 @@ const TestPage = ({ limit }) => {
   const displayTests = limit ? tests.slice(0, limit) : tests.slice(startIndex,endIndex);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+    <div className="max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-10">
       <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">
         Available Tests
       </h1>

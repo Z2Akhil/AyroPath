@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useUser } from '../context/userContext';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, RefreshCw, ArrowLeft } from 'lucide-react';
-
+import { useToast } from '../context/ToastContext';
 const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
   const { forgotPasswordEmail, resetPasswordEmail } = useUser();
   const [step, setStep] = useState(1); // 1: Request OTP, 2: Reset password
@@ -15,35 +15,29 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
-  const [error, setError] = useState('');
   const [countdown, setCountdown] = useState(0);
-
+  const { info, success, error: toastError } = useToast();
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-    setError('');
   };
 
   const handleRequestOTP = async (e) => {
     if (e) {
       e.preventDefault();
     }
-    
     if (!formData.email.trim()) {
-      setError('Email address is required');
+      toastError('Email address is required');
       return;
     }
     if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      setError('Please enter a valid email address');
+      toastError('Please enter a valid email address');
       return;
     }
-
     setOtpLoading(true);
-    setError('');
-
     try {
       console.log('Sending forgot password OTP request for:', formData.email);
       const response = await forgotPasswordEmail(formData.email);
@@ -52,7 +46,7 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
       startCountdown();
     } catch (err) {
       console.error('Forgot password error:', err);
-      setError(err.message);
+      toastError(err.message);
     } finally {
       setOtpLoading(false);
     }
@@ -73,15 +67,12 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
 
   const handleResendOTP = async () => {
     if (countdown > 0) return;
-
     setOtpLoading(true);
-    setError('');
-
     try {
       await forgotPasswordEmail(formData.email);
       startCountdown();
     } catch (err) {
-      setError(err.message);
+      toastError(err.message);
     } finally {
       setOtpLoading(false);
     }
@@ -89,23 +80,23 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
 
   const validateStep2 = () => {
     if (!formData.otp.trim()) {
-      setError('OTP is required');
+      toastError('OTP is required');
       return false;
     }
     if (formData.otp.length !== 6) {
-      setError('Please enter a valid 6-digit OTP');
+      toastError('Please enter a valid 6-digit OTP');
       return false;
     }
     if (!formData.newPassword) {
-      setError('New password is required');
+      toastError('New password is required');
       return false;
     }
     if (formData.newPassword.length < 6) {
-      setError('Password must be at least 6 characters long');
+      toastError('Password must be at least 6 characters long');
       return false;
     }
     if (formData.newPassword !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      toastError('Passwords do not match');
       return false;
     }
     return true;
@@ -117,14 +108,13 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
     if (!validateStep2()) return;
 
     setLoading(true);
-    setError('');
 
     try {
       await resetPasswordEmail(formData.email, formData.otp, formData.newPassword);
       // Password reset successful, redirect to login
       onSwitchToLogin();
     } catch (err) {
-      setError(err.message);
+      toastError(err.message);
     } finally {
       setLoading(false);
     }
@@ -134,13 +124,6 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
     <div className="w-full max-w-md mx-auto">
       {/* Header */}
       <div className="text-center mb-8">
-        <button
-          onClick={() => step === 1 ? onClose() : setStep(1)}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-700 mb-4 mx-auto"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </button>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
           {step === 1 ? 'Reset Password' : 'Create New Password'}
         </h2>
@@ -153,11 +136,6 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
       </div>
 
       <form onSubmit={step === 1 ? handleRequestOTP : handleResetPassword} className="space-y-6">
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-700 text-sm font-medium">{error}</p>
-          </div>
-        )}
 
         {step === 1 ? (
           <>
