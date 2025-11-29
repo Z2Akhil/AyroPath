@@ -1,4 +1,4 @@
-import { api } from "./axiosInstance";
+import { axiosInstance as api } from "../api/axiosInstance";
 
 export const authService = {
   async requestOTP(mobileNumber, purpose = 'verification') {
