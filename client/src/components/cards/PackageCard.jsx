@@ -96,12 +96,14 @@ const PackageCard = ({ pkg }) => {
         <div className="flex gap-2 mb-3">
           <Link
             to={`/packages/${pkg.code}`}
+            state={{ from: 'packages' }}
             className="bg-gray-200 border-blue-700 text-black-700 px-3 py-2 rounded-md hover:bg-gray-300 transition-colors text-sm font-medium flex-1 text-center"
           >
             View More
           </Link>
           <Link
             to={`/packages/${pkg.code}`}
+            state={{ from: 'packages' }}
             className="bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-800 transition-colors text-sm font-medium flex-1 text-center"
           >
             Book Now
