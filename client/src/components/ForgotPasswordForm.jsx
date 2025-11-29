@@ -15,7 +15,6 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
-  const [error, setError] = useState('');
   const [countdown, setCountdown] = useState(0);
   const { info, success, error: toastError } = useToast();
   const handleChange = (e) => {
@@ -24,26 +23,21 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
       ...prev,
       [name]: value
     }));
-    setError('');
   };
 
   const handleRequestOTP = async (e) => {
     if (e) {
       e.preventDefault();
     }
-    
     if (!formData.email.trim()) {
-      setError('Email address is required');
+      toastError('Email address is required');
       return;
     }
     if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      setError('Please enter a valid email address');
+      toastError('Please enter a valid email address');
       return;
     }
-
     setOtpLoading(true);
-    setError('');
-
     try {
       console.log('Sending forgot password OTP request for:', formData.email);
       const response = await forgotPasswordEmail(formData.email);
@@ -73,10 +67,7 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
 
   const handleResendOTP = async () => {
     if (countdown > 0) return;
-
     setOtpLoading(true);
-    setError('');
-
     try {
       await forgotPasswordEmail(formData.email);
       startCountdown();
@@ -89,23 +80,23 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
 
   const validateStep2 = () => {
     if (!formData.otp.trim()) {
-      setError('OTP is required');
+      toastError('OTP is required');
       return false;
     }
     if (formData.otp.length !== 6) {
-      setError('Please enter a valid 6-digit OTP');
+      toastError('Please enter a valid 6-digit OTP');
       return false;
     }
     if (!formData.newPassword) {
-      setError('New password is required');
+      toastError('New password is required');
       return false;
     }
     if (formData.newPassword.length < 6) {
-      setError('Password must be at least 6 characters long');
+      toastError('Password must be at least 6 characters long');
       return false;
     }
     if (formData.newPassword !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      toastError('Passwords do not match');
       return false;
     }
     return true;
@@ -117,7 +108,6 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
     if (!validateStep2()) return;
 
     setLoading(true);
-    setError('');
 
     try {
       await resetPasswordEmail(formData.email, formData.otp, formData.newPassword);
@@ -146,11 +136,6 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
       </div>
 
       <form onSubmit={step === 1 ? handleRequestOTP : handleResetPassword} className="space-y-6">
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-700 text-sm font-medium">{error}</p>
-          </div>
-        )}
 
         {step === 1 ? (
           <>

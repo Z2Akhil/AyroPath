@@ -17,7 +17,6 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [step, setStep] = useState(1); // 1: Registration form, 2: OTP verification
   const [otpSent, setOtpSent] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
@@ -29,32 +28,31 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
       ...prev,
       [name]: value
     }));
-    setError('');
   };
 
   const validateForm = () => {
     if (!formData.firstName.trim()) {
-      setError('First name is required');
+      toastError('First name is required');
       return false;
     }
     if (!formData.email.trim()) {
-      setError('Email is required');
+      toastError('Email is required');
       return false;
     }
     if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      setError('Please enter a valid email address');
+      toastError('Please enter a valid email address');
       return false;
     }
     if (!formData.password) {
-      setError('Password is required');
+      toastError('Password is required');
       return false;
     }
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+      toastError('Password must be at least 6 characters long');
       return false;
     }
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      toastError('Passwords do not match');
       return false;
     }
     return true;
@@ -64,8 +62,6 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
     if (!validateForm()) return;
 
     setOtpLoading(true);
-    setError('');
-
     try {
       await requestEmailOTP(formData.email);
       setOtpSent(true);
@@ -83,8 +79,6 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
     if (otpTimer > 0) return;
 
     setOtpLoading(true);
-    setError('');
-
     try {
       await requestEmailOTP(formData.email);
       startOtpTimer();
@@ -119,13 +113,10 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
 
     // Step 2: Verify OTP and register
     if (!formData.otp.trim()) {
-      setError('Please enter the OTP');
+      toastError('Please enter the OTP');
       return;
     }
-
     setLoading(true);
-    setError('');
-
     try {
       await emailRegisterWithOTP(
         formData.firstName,
@@ -156,12 +147,6 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-700 text-sm font-medium">{error}</p>
-          </div>
-        )}
-
         {/* Name Fields */}
         <div className="grid grid-cols-2 gap-4">
           <div>
