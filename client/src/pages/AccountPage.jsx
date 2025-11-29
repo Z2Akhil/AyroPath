@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useUser } from '../context/userContext';
 import { User, Edit3, Save, Phone, Lock, Loader, ShoppingCart, FileText } from 'lucide-react';
 import ForgotPasswordForm from '../components/ForgotPasswordForm';
@@ -106,12 +106,7 @@ const AccountPage = () => {
   }
 
   if (!user) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 text-center text-gray-600">
-        <h2 className="text-2xl font-semibold mb-4">Access Denied</h2>
-        <p>Please log in to view your account details.</p>
-      </div>
-    );
+    return <Navigate to="/login" replace />;
   }
 
   return (
