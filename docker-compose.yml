@@ -1,5 +1,4 @@
 services:
-  # Backend API
   backend:
     build:
       context: ./backend
@@ -33,7 +32,6 @@ services:
       timeout: 10s
       retries: 3
 
-  # Client Frontend
   client:
     build:
       context: ./client
