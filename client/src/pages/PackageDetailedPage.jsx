@@ -100,7 +100,7 @@ const PackageDetailedPage = () => {
 
   return (
     <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-1 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="flex mb-8" aria-label="Breadcrumb">
           <ol className="flex items-center space-x-2 text-sm text-gray-600">
@@ -124,7 +124,7 @@ const PackageDetailedPage = () => {
           {/* LEFT: Package Details */}
           <div className="lg:col-span-2 space-y-6">
             {/* Main Card */}
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <div className="bg-white rounded-xl shadow-lg p-1 border border-gray-100">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-6">
                 <div className="flex-1">
                   <h1 className="text-3xl font-bold text-gray-900 mb-2 leading-tight">{pkg.name}</h1>
@@ -243,10 +243,7 @@ const PackageDetailedPage = () => {
           {/* RIGHT: Booking Form */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-lg border border-gray-100 sticky top-8">
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Book This Test</h3>
                 <Form pkgName={pkg.name} priceInfo={priceInfo} pkgId={code} />
-              </div>
             </div>
           </div>
         </div>
