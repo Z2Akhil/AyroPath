@@ -1,6 +1,6 @@
 import { AlertCircle, Home, Percent, Share2, ChevronDown, Calendar, CreditCard, CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import Form from "../components/Form.jsx";
 import { getProductDisplayPrice } from "../api/backendProductApi";
 import SkeletonPackageDetailed from "../components/cards/SkeletonPackageDetailed";
@@ -8,6 +8,8 @@ import { useProducts } from "../context/ProductContext";
 
 const PackageDetailedPage = () => {
   const { code } = useParams();
+  const location = useLocation();
+  const from = location.state?.from;
   const { allProducts, loading, error } = useProducts();
   const [openCategory, setOpenCategory] = useState(new Set());
   const [pkg, setPkg] = useState(null);
@@ -29,8 +31,12 @@ const PackageDetailedPage = () => {
       }, {});
       
       if (Object.keys(groupedTests).length > 0) {
-        const allCategories = new Set(Object.keys(groupedTests));
-        setOpenCategory(allCategories);
+        // Only open all categories by default on large screens (desktop)
+        // On mobile/tablet (stacked layout), keep them closed to reduce scrolling to the form
+        if (window.innerWidth >= 1024) {
+          const allCategories = new Set(Object.keys(groupedTests));
+          setOpenCategory(allCategories);
+        }
       }
     }
   }, [pkg]);
@@ -101,7 +107,11 @@ const PackageDetailedPage = () => {
             <li><Link to="/" className="hover:text-blue-600 transition-colors">Home</Link></li>
             <li className="flex items-center">
               <ChevronDown className="w-4 h-4 rotate-270" />
-              <Link to="/packages" className="ml-2 hover:text-blue-600 transition-colors">Packages</Link>
+              {from === 'offer' ? (
+                <Link to="/offers" className="ml-2 hover:text-blue-600 transition-colors">Offers</Link>
+              ) : (
+                <Link to="/packages" className="ml-2 hover:text-blue-600 transition-colors">Packages</Link>
+              )}
             </li>
             <li className="flex items-center">
               <ChevronDown className="w-4 h-4 rotate-270" />

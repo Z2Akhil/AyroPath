@@ -50,6 +50,7 @@ const OfferCard = ({ pkg }) => {
         {/* Right side: Book button */}
         <Link
           to={`/packages/${pkg.code}`}
+          state={{ from: 'offer' }}
           className="bg-green-600 text-white font-medium px-5 py-2 rounded hover:bg-green-700 transition text-sm"
         >
           Book
