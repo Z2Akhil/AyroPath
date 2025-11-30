@@ -1,6 +1,6 @@
-# AryoPath Docker Setup
+# AyroPath Docker Setup
 
-This document describes how to run the AryoPath application using Docker Compose with MongoDB Atlas.
+This document describes how to run the AyroPath application using Docker Compose with MongoDB Atlas.
 
 ## Prerequisites
 
@@ -14,7 +14,7 @@ This document describes how to run the AryoPath application using Docker Compose
 1. **Clone the repository** (if not already done)
    ```bash
    git clone <repository-url>
-   cd AryoPath
+   cd AyroPath
    ```
 
 2. **Configure MongoDB Atlas connection**
@@ -34,18 +34,18 @@ This document describes how to run the AryoPath application using Docker Compose
 ## Services Overview
 
 ### 1. Backend API
-- **Container**: `aryopath-backend`
+- **Container**: `ayropath-backend`
 - **Port**: 3000
 - **Environment**: Production
 - **Dependencies**: MongoDB Atlas
 
 ### 2. Client Frontend
-- **Container**: `aryopath-client`
+- **Container**: `ayropath-client`
 - **Port**: 5173
 - **Features**: Customer-facing lab test booking
 
 ### 3. Admin Frontend
-- **Container**: `aryopath-admin`
+- **Container**: `ayropath-admin`
 - **Port**: 5174
 - **Features**: Admin dashboard for management
 

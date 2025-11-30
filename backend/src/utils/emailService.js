@@ -42,7 +42,7 @@ class EmailService {
   }
 
   async sendWelcomeEmail(email, firstName) {
-    const subject = 'Welcome to AryoPath - Your Health Journey Starts Here!';
+    const subject = 'Welcome to AyroPath - Your Health Journey Starts Here!';
     const html = `
       <!DOCTYPE html>
       <html>
@@ -58,14 +58,14 @@ class EmailService {
       <body>
         <div class="container">
           <div class="header">
-            <h1>Welcome to AryoPath!</h1>
+            <h1>Welcome to AyroPath!</h1>
             <p>Your trusted partner in health diagnostics</p>
           </div>
           <div class="content">
             <h2>Hello ${firstName},</h2>
-            <p>Welcome to AryoPath! We're excited to have you on board and look forward to helping you with all your health diagnostic needs.</p>
+            <p>Welcome to AyroPath! We're excited to have you on board and look forward to helping you with all your health diagnostic needs.</p>
             
-            <p>With your AryoPath account, you can:</p>
+            <p>With your AyroPath account, you can:</p>
             <ul>
               <li>Book diagnostic tests easily</li>
               <li>Track your test results</li>
@@ -75,20 +75,20 @@ class EmailService {
 
             <p>If you have any questions or need assistance, feel free to reach out to our support team.</p>
             
-            <p>Best regards,<br>The AryoPath Team</p>
+            <p>Best regards,<br>The AyroPath Team</p>
           </div>
         </div>
       </body>
       </html>
     `;
 
-    const text = `Welcome to AryoPath, ${firstName}! We're excited to have you on board. You can now book diagnostic tests, track results, and manage your health profile.`;
+    const text = `Welcome to AyroPath, ${firstName}! We're excited to have you on board. You can now book diagnostic tests, track results, and manage your health profile.`;
 
     return await this.sendEmail(email, subject, html, text);
   }
 
   async sendPasswordResetEmail(email, resetToken) {
-    const subject = 'Reset Your AryoPath Password';
+    const subject = 'Reset Your AyroPath Password';
     const resetLink = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
     
     const html = `
@@ -110,7 +110,7 @@ class EmailService {
           </div>
           <div class="content">
             <h2>Hello,</h2>
-            <p>We received a request to reset your password for your AryoPath account.</p>
+            <p>We received a request to reset your password for your AyroPath account.</p>
             <p>Click the button below to reset your password:</p>
             
             <a href="${resetLink}" class="button">Reset Password</a>
@@ -118,7 +118,7 @@ class EmailService {
             <p>If you didn't request this reset, please ignore this email. Your password will remain unchanged.</p>
             <p>This link will expire in 1 hour for security reasons.</p>
             
-            <p>Best regards,<br>The AryoPath Team</p>
+            <p>Best regards,<br>The AyroPath Team</p>
           </div>
         </div>
       </body>
@@ -131,7 +131,7 @@ class EmailService {
   }
 
   async sendPasswordChangedEmail(email, firstName) {
-    const subject = 'Your AryoPath Password Has Been Changed';
+    const subject = 'Your AyroPath Password Has Been Changed';
     const html = `
       <!DOCTYPE html>
       <html>
@@ -150,19 +150,19 @@ class EmailService {
           </div>
           <div class="content">
             <h2>Hello ${firstName},</h2>
-            <p>This is a confirmation that your AryoPath account password has been successfully changed.</p>
+            <p>This is a confirmation that your AyroPath account password has been successfully changed.</p>
             
             <p>If you made this change, no further action is needed.</p>
             <p>If you didn't make this change, please contact our support team immediately.</p>
             
-            <p>Best regards,<br>The AryoPath Team</p>
+            <p>Best regards,<br>The AyroPath Team</p>
           </div>
         </div>
       </body>
       </html>
     `;
 
-    const text = `Your AryoPath password has been successfully changed. If you didn't make this change, please contact support immediately.`;
+    const text = `Your AyroPath password has been successfully changed. If you didn't make this change, please contact support immediately.`;
 
     return await this.sendEmail(email, subject, html, text);
   }
@@ -175,7 +175,7 @@ class EmailService {
       return { success: true, messageId: 'dev-mode-otp-logged' };
     }
 
-    const subject = `Your AryoPath ${purpose} Code`;
+    const subject = `Your AyroPath ${purpose} Code`;
     const html = `
       <!DOCTYPE html>
       <html>
@@ -202,14 +202,14 @@ class EmailService {
             <p>This code will expire in 10 minutes for security reasons.</p>
             <p>If you didn't request this verification, please ignore this email.</p>
             
-            <p>Best regards,<br>The AryoPath Team</p>
+            <p>Best regards,<br>The AyroPath Team</p>
           </div>
         </div>
       </body>
       </html>
     `;
 
-    const text = `Your AryoPath ${purpose.toLowerCase()} code is: ${otp}\n\nThis code will expire in 10 minutes. If you didn't request this verification, please ignore this email.`;
+    const text = `Your AyroPath ${purpose.toLowerCase()} code is: ${otp}\n\nThis code will expire in 10 minutes. If you didn't request this verification, please ignore this email.`;
 
     return await this.sendEmail(email, subject, html, text);
   }
