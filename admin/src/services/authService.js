@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const LOGIN_API_URL = `${import.meta.env.VITE_TARGET_URL}/api/admin/login`;
+const LOGIN_API_URL = `${import.meta.env.VITE_TARGET_URL}/admin/login`;
 
 class AuthService {
   /**
