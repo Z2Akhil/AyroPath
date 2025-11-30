@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { axiosInstance } from '../api/axiosInstance';
 import {
   Mail,
@@ -129,11 +129,6 @@ export default function SettingsPage() {
 
   return (
     <div className="p-6 relative">
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800">
-          Manage contact info, brand images, and social links
-        </h2>
-      </div>
 
       <div className="space-y-6">
         {/* Contact Information */}
