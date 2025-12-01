@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const LOGIN_API_URL = `${import.meta.env.VITE_TARGET_URL}/admin/login`;
+const isProduction = import.meta.env.MODE === "production";
+const LOGIN_API_URL = isProduction ? `${import.meta.env.VITE_TARGET_URL}/admin/login` : `${import.meta.env.VITE_TARGET_URL}/api/admin/login`;
 
 class AuthService {
   /**
