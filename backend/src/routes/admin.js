@@ -12,6 +12,7 @@ import Profile from '../models/Profile.js';
 import Offer from '../models/Offer.js';
 import User from '../models/User.js';
 import SMSAdminController from '../controllers/smsAdminController.js';
+import UserAdminController from '../controllers/userAdminController.js';
 
 const router = express.Router();
 
@@ -727,6 +728,12 @@ router.get('/users', adminAuth, async (req, res) => {
     });
   }
 });
+
+// Enhanced User Management Routes
+router.get('/users/search', adminAuth, UserAdminController.searchUsers);
+router.get('/users/:userId', adminAuth, UserAdminController.getUserDetails);
+router.put('/users/:userId', adminAuth, UserAdminController.updateUser);
+router.patch('/users/:userId/status', adminAuth, UserAdminController.toggleUserStatus);
 
 // SMS Management Routes
 router.get('/sms/wallet', adminAuth, SMSAdminController.getWalletBalance);
