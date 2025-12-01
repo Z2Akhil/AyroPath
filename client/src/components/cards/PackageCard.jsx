@@ -1,6 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link,useNavigate  } from "react-router-dom";
 import { getProductDisplayPrice } from "../../api/backendProductApi";
-
+import {useState} from "react";
+import ImagePreviewModal from "../ImagePreviewModal";
 const PackageCard = ({ pkg }) => {
   const {
     name = "Health Package",
@@ -13,16 +14,18 @@ const PackageCard = ({ pkg }) => {
     imageMaster = [],
     isCustomized
   } = pkg;
-
+  const navigate = useNavigate();
   const imgSrc = imageLocation || imageMaster?.[0]?.imgLocations || "/packagePic.png";
-
+  const [previewPkg, setPreviewPkg] = useState(null);
   // Get enhanced pricing information
   const priceInfo = getProductDisplayPrice(pkg);
 
   return (
     <div className="w-full sm:max-w-sm bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full">
       {/* Image Section - Fixed Height */}
-      <div className="relative h-48 sm:h-52 shrink-0">
+      <div 
+      onClick={() => setPreviewPkg(pkg)}
+      className="relative h-48 sm:h-52 shrink-0">
         <img
           src={imgSrc}
           alt={name}
@@ -43,11 +46,16 @@ const PackageCard = ({ pkg }) => {
           {name}
         </div>
       </div>
-
+      {/* ---- modal ---- */}
+       {previewPkg && (
+        <ImagePreviewModal pkg={previewPkg} onClose={() => setPreviewPkg(null)} />
+      )}
       {/* Content Section - Flexible */}
       <div className="p-3 sm:p-4 flex flex-col grow">
         {/* Title - Fixed Height */}
-        <h2 className="text-base sm:text-lg font-bold text-gray-800 mb-2 line-clamp-1">
+        <h2 
+        onClick={()=>navigate(`/packages/${pkg.code}`)}
+        className="text-base sm:text-lg font-bold text-gray-800 mb-2 line-clamp-1">
           {name}
         </h2>
 
