@@ -74,7 +74,13 @@ export const getProductDisplayPrice = (product) => {
   }
 
   // Use sellingPrice if available and lower than ThyroCare price
-  const thyrocarePrice = product.rate?.b2C || 0;
+  let thyrocarePrice = 0;
+  if(product.type==='OFFER'){
+    thyrocarePrice=product.rate?.offerRate || 0;
+  }else{
+    thyrocarePrice=product.rate?.b2C || 0;
+  }
+
   const sellingPrice = product.sellingPrice || thyrocarePrice;
   const discountAmount=thyrocarePrice-sellingPrice;
   const hasDiscount = sellingPrice < thyrocarePrice && thyrocarePrice > 0;

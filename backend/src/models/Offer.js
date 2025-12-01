@@ -73,7 +73,7 @@ offerSchema.index({ 'thyrocareData.category': 1 });
 // Pre-save hook to auto-calculate selling price
 offerSchema.pre('save', function(next) {
   if (this.isModified('customPricing.discount')) {
-    const thyrocareRate = this.thyrocareData.rate?.b2C || 0;
+    const thyrocareRate = this.thyrocareData.rate?.offerRate || 0;
     const thyrocareMargin = this.thyrocareData.margin || 0;
     const discount = this.customPricing.discount || 0;
     
@@ -233,7 +233,7 @@ offerSchema.statics.findOrCreateFromThyroCare = async function(thyrocareProduct)
 
 // Method to get combined data for frontend
 offerSchema.methods.getCombinedData = function() {
-  const thyrocareRate = this.thyrocareData.rate?.b2C || 0;
+  const thyrocareRate = this.thyrocareData.rate?.offerRate || 0;
   const thyrocareMargin = this.thyrocareData.margin || 0;
   const discount = this.customPricing.discount || 0;
   const sellingPrice = this.customPricing.sellingPrice || thyrocareRate;
