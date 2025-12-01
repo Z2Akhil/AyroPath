@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link,useNavigate } from "react-router-dom";
 import { getProductDisplayPrice } from "../../api/backendProductApi";
 
 const OfferCard = ({ pkg }) => {
@@ -7,7 +7,7 @@ const OfferCard = ({ pkg }) => {
 
   // Get enhanced pricing information using the same logic as other cards
   const priceInfo = getProductDisplayPrice(pkg);
-
+  const navigate =useNavigate();
   // Display first 3 tests as preview
   const testPreview =
     childs.slice(0, 3).map((child) => child.name).join(", ") +
@@ -16,7 +16,7 @@ const OfferCard = ({ pkg }) => {
   return (
     <div className="bg-white shadow-lg rounded-xl p-5 max-w-sm w-full flex flex-col justify-between hover:shadow-xl transition">
       {/* Package Name */}
-      <h2 className="font-bold text-lg text-gray-900 mb-2 uppercase">{name}</h2>
+      <h2 onClick={()=>navigate(`/packages/${pkg.code}`)} className="font-bold text-lg text-gray-900 mb-2 uppercase">{name}</h2>
 
       {/* Test List */}
       <p className="text-gray-700 text-sm mb-6 lowercase">
