@@ -300,7 +300,7 @@ export default function Header() {
       </header>
 
       {/* Mobile Search Bar - shown on mobile below header */}
-      <div className="lg:hidden bg-white/90 backdrop-blur-xl border-b border-gray-200/80 px-4 py-3">
+      <div className="lg:hidden bg-white/90 backdrop-blur-xl border-b border-gray-200/80 px-4 py-3 relative z-30">
         <SearchBar />
       </div>
 
