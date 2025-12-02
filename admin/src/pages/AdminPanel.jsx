@@ -23,6 +23,7 @@ export default function AdminPanel() {
     if (path.includes('/packages')) return 'Packages';
     if (path.includes('/tests')) return 'Tests';
     if (path.includes('/users')) return 'Users';
+    if (path.includes('/notifications')) return 'Notifications';
     if (path.includes('/account')) return 'Account';
     if (path.includes('/settings')) return 'Settings';
     
@@ -95,6 +96,12 @@ export default function AdminPanel() {
             className="block px-4 py-2 rounded-md hover:bg-blue-50 font-medium"
           >
             Users
+          </NavLink>
+          <NavLink
+            to="notifications"
+            className="block px-4 py-2 rounded-md hover:bg-blue-50 font-medium"
+          >
+            Notifications
           </NavLink>
           <NavLink
             to="settings"

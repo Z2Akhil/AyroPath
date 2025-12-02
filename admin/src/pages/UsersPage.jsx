@@ -208,7 +208,7 @@ const UsersPage = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Verified Users</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {users.filter(u => u.isVerified).length}
+                          {users.filter(u => u.emailVerified).length}
                   <span className="text-sm text-gray-500 ml-2">
                     (on this page)
                   </span>
@@ -334,7 +334,7 @@ const UsersPage = () => {
                         }`}>
                           {user.isActive ? 'Active' : 'Inactive'}
                         </span>
-                        {user.isVerified && (
+                        {user.emailVerified && (
                           <span className="ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                             Verified
                           </span>

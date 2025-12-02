@@ -14,6 +14,7 @@ import cartRouter from "./src/routes/cart.js";
 import SiteSettingsRouter from "./src/routes/siteSettings.js";
 import beneficiaryRouter from "./src/routes/beneficiary.js";
 import orderRouter from "./src/routes/order.js";
+import notificationRouter from "./src/routes/notification.js";
 import ThyrocareRefreshService from "./src/services/thyrocareRefreshService.js";
 
 const app = express();
@@ -64,6 +65,7 @@ app.use("/api/cart", cartRouter);
 app.use("/api/beneficiaries", beneficiaryRouter);
 app.use("/api/settings", SiteSettingsRouter);
 app.use("/api/orders", orderRouter);
+app.use("/api/admin/notifications", notificationRouter);
 
 // base /api health check
 app.get("/api", (req, res) => res.json({ success: true, message: "AyroPath API base" }));

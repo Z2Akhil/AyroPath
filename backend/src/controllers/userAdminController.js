@@ -334,7 +334,7 @@ class UserAdminController {
       
       // Filter by verification status
       if (verified !== undefined) {
-        query.isVerified = verified === 'true';
+        query.emailVerified = verified === 'true';
       }
 
       // Calculate pagination
