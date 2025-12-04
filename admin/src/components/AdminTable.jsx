@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Pencil, RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
 import { axiosInstance } from "../api/axiosInstance";
+import Pagination from "./Pagination";
 
 const AdminTable = ({ data, onEdit }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -9,10 +10,19 @@ const AdminTable = ({ data, onEdit }) => {
   const [loadingStates, setLoadingStates] = useState({});
   const [unsavedChanges, setUnsavedChanges] = useState({});
 
-  React.useEffect(() => {
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  useEffect(() => {
     setLocalData(data || []);
     setUnsavedChanges({});
   }, [data]);
+
+  // Reset to first page when search or sort changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, sortOption]);
 
   if (!localData || localData.length === 0)
     return <p className="text-center p-4">No data available.</p>;
@@ -121,6 +131,13 @@ const AdminTable = ({ data, onEdit }) => {
     return filtered;
   }, [localData, searchTerm, sortOption, hideCategory]);
 
+  // --- Pagination Logic ---
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredData.slice(start, start + itemsPerPage);
+  }, [filteredData, currentPage, itemsPerPage]);
+
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
       {/* --- Top Controls --- */}
@@ -161,8 +178,8 @@ const AdminTable = ({ data, onEdit }) => {
             </tr>
           </thead>
           <tbody>
-            {filteredData.length > 0 ? (
-              filteredData.map((item, idx) => {
+            {paginatedData.length > 0 ? (
+              paginatedData.map((item, idx) => {
                 const thyrocareRate = parseFloat(item.thyrocareRate || 0);
                 const thyrocareMargin = parseFloat(item.thyrocareMargin || 0);
                 const discount = parseFloat(item.discount || 0);
@@ -258,9 +275,17 @@ const AdminTable = ({ data, onEdit }) => {
         </table>
       </div>
       
-      <div className="bg-gray-50 border-t border-gray-200 px-4 py-2 text-xs text-gray-600">
-        <div className="flex justify-between items-center">
-          <span>Showing {filteredData.length} of {localData.length} products</span>
+      <div className="bg-gray-50 border-t border-gray-200 px-4 py-2">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          onItemsPerPageChange={setItemsPerPage}
+          totalItems={filteredData.length}
+        />
+        <div className="flex justify-between items-center mt-2 text-xs text-gray-600">
+          <span>Showing {paginatedData.length} of {filteredData.length} products (Total: {localData.length})</span>
           {Object.values(unsavedChanges).filter(Boolean).length > 0 && (
             <span className="text-orange-600 font-medium">
               {Object.values(unsavedChanges).filter(Boolean).length} unsaved changes
