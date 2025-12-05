@@ -8,7 +8,7 @@ import AuthModal from './AuthModal';
 import ConfirmationDialog from './ConfirmationDialog';
 import { useCart } from "../context/CartContext";
 import SearchBar from './SearchBar';
-
+import Thyrocare from '../../public/thyrocare.png';
 /* ---------- config ---------- */
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
@@ -38,22 +38,21 @@ const Logo = ({ logo, loading }) => {
   const logoSrc = !imgError && logo ? logo : "./logo.jpg";
 
   return (
-    <Link to="/" className="flex items-center gap-3 group cursor-pointer">
+    <Link to="/" className="flex items-center  group cursor-pointer">
       <div className="flex items-center gap-2">
         <img
           src={logoSrc}
           alt="Company Logo"
-          className="w-10 h-10 object-contain rounded-full"
+          className="w-15 h-15 object-contain rounded-full"
           onError={() => setImgError(true)}
         />
       </div>
       <div className="leading-tight">
-        <p className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-          Ayropath
-        </p>
-        <p className="text-xs text-gray-500 font-medium">
-          In association with ThyroCare
-        </p>
+        <img
+          src={Thyrocare}
+          alt="In association with ThyroCare"
+          className="h-30 w-30 object-contain mt-1"
+        />
       </div>
     </Link>
   );
