@@ -141,7 +141,7 @@ const SearchBar = () => {
                                                         : "bg-blue-100 text-blue-700"}
                                                     `}
                                                 >
-                                                    {item.type === "TEST" ? "Test" : "Package"}
+                                                    {item.type === "TEST" ? "Test" :item.type === "OFFER" ? "Offer" : "Package"}
                                                 </span>
                                             </div>
 

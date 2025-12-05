@@ -1,14 +1,11 @@
 import { useEffect, useState, useMemo } from "react";
 import AdminTable from "../AdminTable";
-import Pagination from "../Pagination";
 import { getProducts } from "../../api/getProductApi";
 
 const PackageCatalog = () => {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     const fetchPackages = async () => {
@@ -36,18 +33,6 @@ const PackageCatalog = () => {
     fetchPackages();
   }, []);
 
-  const paginatedPackages = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return packages.slice(startIndex, endIndex);
-  }, [packages, currentPage, itemsPerPage]);
-
-  const totalPages = Math.ceil(packages.length / itemsPerPage);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [itemsPerPage]);
-
   const handleEdit = (item) => {
     console.log("Edit package:", item);
     // You can implement a modal for detailed editing here
@@ -66,16 +51,8 @@ const PackageCatalog = () => {
       {packages.length > 0 ? (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
           <AdminTable
-            data={paginatedPackages}
+            data={packages}
             onEdit={handleEdit}
-          />
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            itemsPerPage={itemsPerPage}
-            onItemsPerPageChange={setItemsPerPage}
-            totalItems={packages.length}
           />
         </div>
       ) : (

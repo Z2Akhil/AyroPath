@@ -1,14 +1,11 @@
 import { useEffect, useState, useMemo } from "react";
 import AdminTable from "../AdminTable";
-import Pagination from "../Pagination";
 import { getProducts } from "../../api/getProductApi";
 
 const TestCatalog = () => {
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     const fetchTests = async () => {
@@ -35,18 +32,6 @@ const TestCatalog = () => {
     fetchTests();
   }, []);
 
-  const paginatedTests = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return tests.slice(startIndex, endIndex);
-  }, [tests, currentPage, itemsPerPage]);
-
-  const totalPages = Math.ceil(tests.length / itemsPerPage);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [itemsPerPage]);
-
   const handleEdit = (item) => {
     console.log("Edit test:", item);
     // You can implement a modal for detailed editing here
@@ -71,16 +56,8 @@ const TestCatalog = () => {
       {tests.length > 0 ? (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
           <AdminTable
-            data={paginatedTests}
+            data={tests}
             onEdit={handleEdit}
-          />
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            itemsPerPage={itemsPerPage}
-            onItemsPerPageChange={setItemsPerPage}
-            totalItems={tests.length}
           />
         </div>
       ) : (

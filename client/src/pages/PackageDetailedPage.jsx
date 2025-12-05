@@ -42,7 +42,7 @@ const PackageDetailedPage = () => {
   }, [pkg]);
 
   const handleShare = async (pkg) => {
-    const shareUrl = `${window.location.origin}/package/${pkg.code}`;
+    const shareUrl = `${window.location.origin}/packages/${pkg.code}`;
     const shareData = {
       title: pkg.name,
       text: `Check out this test package: ${pkg.name}`,
