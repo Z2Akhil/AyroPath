@@ -1145,4 +1145,214 @@ router.put('/orders/:orderId', adminAuth, async (req, res) => {
   }
 });
 
+// Order Status Sync Endpoints
+import OrderStatusSyncService from '../services/OrderStatusSyncService.js';
+
+// Sync status for all orders
+router.post('/orders/sync-status/all', adminAuth, async (req, res) => {
+  const startTime = Date.now();
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const userAgent = req.get('User-Agent') || '';
+
+  try {
+    console.log('Admin requested sync for all orders:', req.admin.name);
+
+    const result = await OrderStatusSyncService.syncAllOrdersStatus();
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'ORDER_STATUS_SYNC',
+      description: `Admin ${req.admin.name} synced status for all orders`,
+      resource: 'orders',
+      endpoint: '/api/admin/orders/sync-status/all',
+      method: 'POST',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 200,
+      responseTime: Date.now() - startTime,
+      metadata: {
+        total: result.total,
+        successful: result.successful,
+        failed: result.failed,
+        statusChanged: result.statusChanged
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'Order status sync completed',
+      ...result
+    });
+
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    console.error('Order status sync error:', error);
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'ERROR',
+      description: `Failed to sync order status: ${error.message}`,
+      resource: 'orders',
+      endpoint: '/api/admin/orders/sync-status/all',
+      method: 'POST',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 500,
+      responseTime: responseTime,
+      errorMessage: error.message
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to sync order status'
+    });
+  }
+});
+
+// Sync status for specific orders
+router.post('/orders/sync-status/batch', adminAuth, async (req, res) => {
+  const startTime = Date.now();
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const userAgent = req.get('User-Agent') || '';
+
+  try {
+    const { orderIds } = req.body;
+
+    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'orderIds array is required'
+      });
+    }
+
+    console.log('Admin requested sync for specific orders:', {
+      admin: req.admin.name,
+      orderCount: orderIds.length
+    });
+
+    const result = await OrderStatusSyncService.syncOrdersStatus(orderIds);
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'ORDER_STATUS_SYNC',
+      description: `Admin ${req.admin.name} synced status for ${orderIds.length} orders`,
+      resource: 'orders',
+      endpoint: '/api/admin/orders/sync-status/batch',
+      method: 'POST',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 200,
+      responseTime: Date.now() - startTime,
+      metadata: {
+        total: result.total,
+        successful: result.successful,
+        failed: result.failed,
+        statusChanged: result.statusChanged
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'Order status sync completed',
+      ...result
+    });
+
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    console.error('Order status sync error:', error);
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'ERROR',
+      description: `Failed to sync order status: ${error.message}`,
+      resource: 'orders',
+      endpoint: '/api/admin/orders/sync-status/batch',
+      method: 'POST',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 500,
+      responseTime: responseTime,
+      errorMessage: error.message
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to sync order status'
+    });
+  }
+});
+
+// Sync status for single order
+router.post('/orders/:orderId/sync-status', adminAuth, async (req, res) => {
+  const startTime = Date.now();
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const userAgent = req.get('User-Agent') || '';
+
+  try {
+    const { orderId } = req.params;
+
+    console.log('Admin requested sync for single order:', {
+      admin: req.admin.name,
+      orderId
+    });
+
+    const result = await OrderStatusSyncService.syncOrderStatus(orderId);
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'ORDER_STATUS_SYNC',
+      description: `Admin ${req.admin.name} synced status for order ${orderId}`,
+      resource: 'orders',
+      endpoint: '/api/admin/orders/:orderId/sync-status',
+      method: 'POST',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 200,
+      responseTime: Date.now() - startTime,
+      metadata: {
+        orderId,
+        success: result.success,
+        statusChanged: result.statusChanged,
+        oldStatus: result.oldStatus,
+        newStatus: result.newStatus
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'Order status sync completed',
+      ...result
+    });
+
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    console.error('Order status sync error:', error);
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'ERROR',
+      description: `Failed to sync order status: ${error.message}`,
+      resource: 'orders',
+      endpoint: '/api/admin/orders/:orderId/sync-status',
+      method: 'POST',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 500,
+      responseTime: responseTime,
+      errorMessage: error.message
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to sync order status'
+    });
+  }
+});
+
 export default router;
