@@ -11,6 +11,7 @@ import Test from '../models/Test.js';
 import Profile from '../models/Profile.js';
 import Offer from '../models/Offer.js';
 import User from '../models/User.js';
+import Order from '../models/Order.js';
 import SMSAdminController from '../controllers/smsAdminController.js';
 import UserAdminController from '../controllers/userAdminController.js';
 
@@ -741,5 +742,407 @@ router.get('/sms/statistics', adminAuth, SMSAdminController.getSMSStatistics);
 router.get('/sms/history', adminAuth, SMSAdminController.getSMSHistory);
 router.get('/sms/history/:id', adminAuth, SMSAdminController.getSMSDetails);
 router.post('/sms/test', adminAuth, SMSAdminController.sendTestSMS);
+
+// Order Management Routes
+router.get('/orders', adminAuth, async (req, res) => {
+  const startTime = Date.now();
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const userAgent = req.get('User-Agent') || '';
+
+  try {
+    const { 
+      page = 1, 
+      limit = 20, 
+      status, 
+      thyrocareStatus, 
+      startDate, 
+      endDate,
+      search 
+    } = req.query;
+
+    console.log('Fetching orders for admin:', req.admin.name, { 
+      page, limit, status, thyrocareStatus, startDate, endDate, search 
+    });
+
+    // Build query
+    const query = {};
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (thyrocareStatus) {
+      query['thyrocare.status'] = thyrocareStatus;
+    }
+
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.createdAt.$lte = new Date(endDate);
+      }
+    }
+
+    if (search) {
+      query.$or = [
+        { orderId: { $regex: search, $options: 'i' } },
+        { 'contactInfo.email': { $regex: search, $options: 'i' } },
+        { 'contactInfo.mobile': { $regex: search, $options: 'i' } },
+        { 'package.name': { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Fetch orders with pagination
+    const orders = await Order.find(query)
+      .populate('userId', 'firstName lastName email mobileNumber')
+      .populate('adminId', 'name email mobile')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const totalOrders = await Order.countDocuments(query);
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'ORDERS_FETCH',
+      description: `Admin ${req.admin.name} fetched orders`,
+      resource: 'orders',
+      endpoint: '/api/admin/orders',
+      method: 'GET',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 200,
+      responseTime: Date.now() - startTime,
+      metadata: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalOrders,
+        filters: { status, thyrocareStatus, startDate, endDate, search }
+      }
+    });
+
+    res.json({
+      success: true,
+      orders,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalOrders / parseInt(limit)),
+        totalOrders,
+        hasNextPage: skip + orders.length < totalOrders,
+        hasPrevPage: parseInt(page) > 1
+      }
+    });
+
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    console.error('Orders fetch error:', error);
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'ERROR',
+      description: `Failed to fetch orders: ${error.message}`,
+      resource: 'orders',
+      endpoint: '/api/admin/orders',
+      method: 'GET',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 500,
+      responseTime: responseTime,
+      errorMessage: error.message
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch orders'
+    });
+  }
+});
+
+router.get('/orders/stats', adminAuth, async (req, res) => {
+  const startTime = Date.now();
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const userAgent = req.get('User-Agent') || '';
+
+  try {
+    console.log('Fetching order stats for admin:', req.admin.name);
+
+    // Get counts by status
+    const totalOrders = await Order.countDocuments();
+    const pendingOrders = await Order.countDocuments({ status: 'PENDING' });
+    const createdOrders = await Order.countDocuments({ status: 'CREATED' });
+    const failedOrders = await Order.countDocuments({ status: 'FAILED' });
+    const completedOrders = await Order.countDocuments({ status: 'COMPLETED' });
+    const cancelledOrders = await Order.countDocuments({ status: 'CANCELLED' });
+
+    // Get counts by Thyrocare status
+    const thyrocareStatusCounts = {
+      YET_TO_ASSIGN: await Order.countDocuments({ 'thyrocare.status': 'YET TO ASSIGN' }),
+      ASSIGNED: await Order.countDocuments({ 'thyrocare.status': 'ASSIGNED' }),
+      ACCEPTED: await Order.countDocuments({ 'thyrocare.status': 'ACCEPTED' }),
+      SERVICED: await Order.countDocuments({ 'thyrocare.status': 'SERVICED' }),
+      DONE: await Order.countDocuments({ 'thyrocare.status': 'DONE' }),
+      FAILED: await Order.countDocuments({ 'thyrocare.status': 'FAILED' })
+    };
+
+    // Get today's orders
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todaysOrders = await Order.countDocuments({
+      createdAt: { $gte: today, $lt: tomorrow }
+    });
+
+    // Get this week's orders
+    const weekStart = new Date(today);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
+    const thisWeeksOrders = await Order.countDocuments({
+      createdAt: { $gte: weekStart }
+    });
+
+    // Get this month's orders
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const thisMonthsOrders = await Order.countDocuments({
+      createdAt: { $gte: monthStart }
+    });
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'ORDER_STATS_FETCH',
+      description: `Admin ${req.admin.name} fetched order statistics`,
+      resource: 'orders',
+      endpoint: '/api/admin/orders/stats',
+      method: 'GET',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 200,
+      responseTime: Date.now() - startTime,
+      metadata: {
+        totalOrders,
+        todaysOrders,
+        thisWeeksOrders,
+        thisMonthsOrders
+      }
+    });
+
+    res.json({
+      success: true,
+      stats: {
+        totalOrders,
+        byStatus: {
+          PENDING: pendingOrders,
+          CREATED: createdOrders,
+          FAILED: failedOrders,
+          COMPLETED: completedOrders,
+          CANCELLED: cancelledOrders
+        },
+        byThyrocareStatus: thyrocareStatusCounts,
+        todaysOrders,
+        thisWeeksOrders,
+        thisMonthsOrders
+      }
+    });
+
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    console.error('Order stats fetch error:', error);
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'ERROR',
+      description: `Failed to fetch order statistics: ${error.message}`,
+      resource: 'orders',
+      endpoint: '/api/admin/orders/stats',
+      method: 'GET',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 500,
+      responseTime: responseTime,
+      errorMessage: error.message
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch order statistics'
+    });
+  }
+});
+
+router.get('/orders/:orderId', adminAuth, async (req, res) => {
+  const startTime = Date.now();
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const userAgent = req.get('User-Agent') || '';
+
+  try {
+    const { orderId } = req.params;
+
+    console.log('Fetching order details for admin:', req.admin.name, { orderId });
+
+    const order = await Order.findOne({ orderId })
+      .populate('userId', 'firstName lastName email mobileNumber')
+      .populate('adminId', 'name email mobile');
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'ORDER_DETAILS_FETCH',
+      description: `Admin ${req.admin.name} fetched order details for ${orderId}`,
+      resource: 'orders',
+      endpoint: '/api/admin/orders/:orderId',
+      method: 'GET',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 200,
+      responseTime: Date.now() - startTime,
+      metadata: {
+        orderId,
+        orderStatus: order.status,
+        thyrocareStatus: order.thyrocare.status
+      }
+    });
+
+    res.json({
+      success: true,
+      order
+    });
+
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    console.error('Order details fetch error:', error);
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'ERROR',
+      description: `Failed to fetch order details: ${error.message}`,
+      resource: 'orders',
+      endpoint: '/api/admin/orders/:orderId',
+      method: 'GET',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 500,
+      responseTime: responseTime,
+      errorMessage: error.message
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch order details'
+    });
+  }
+});
+
+router.put('/orders/:orderId', adminAuth, async (req, res) => {
+  const startTime = Date.now();
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const userAgent = req.get('User-Agent') || '';
+
+  try {
+    const { orderId } = req.params;
+    const updates = req.body;
+
+    console.log('Updating order for admin:', req.admin.name, { orderId, updates });
+
+    const order = await Order.findOne({ orderId });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+
+    // Update allowed fields
+    const allowedUpdates = ['status', 'notes', 'thyrocare.status'];
+    const updateData = {};
+
+    allowedUpdates.forEach(field => {
+      if (updates[field] !== undefined) {
+        if (field === 'thyrocare.status') {
+          order.thyrocare.status = updates[field];
+          order.thyrocare.statusHistory.push({
+            status: updates[field],
+            timestamp: new Date(),
+            notes: updates.notes || 'Updated by admin'
+          });
+        } else {
+          updateData[field] = updates[field];
+        }
+      }
+    });
+
+    // Apply updates
+    Object.keys(updateData).forEach(key => {
+      order[key] = updateData[key];
+    });
+
+    await order.save();
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'ORDER_UPDATE',
+      description: `Admin ${req.admin.name} updated order ${orderId}`,
+      resource: 'orders',
+      endpoint: '/api/admin/orders/:orderId',
+      method: 'PUT',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 200,
+      responseTime: Date.now() - startTime,
+      metadata: {
+        orderId,
+        updates: Object.keys(updates)
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'Order updated successfully',
+      order
+    });
+
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    console.error('Order update error:', error);
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'ERROR',
+      description: `Failed to update order: ${error.message}`,
+      resource: 'orders',
+      endpoint: '/api/admin/orders/:orderId',
+      method: 'PUT',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 500,
+      responseTime: responseTime,
+      errorMessage: error.message
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update order'
+    });
+  }
+});
 
 export default router;
