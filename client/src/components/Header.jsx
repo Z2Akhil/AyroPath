@@ -8,7 +8,6 @@ import AuthModal from './AuthModal';
 import ConfirmationDialog from './ConfirmationDialog';
 import { useCart } from "../context/CartContext";
 import SearchBar from './SearchBar';
-import Thyrocare from '../../public/thyrocare.png';
 /* ---------- config ---------- */
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
@@ -49,7 +48,7 @@ const Logo = ({ logo, loading }) => {
       </div>
       <div className="leading-tight">
         <img
-          src={Thyrocare}
+          src="/Thyrocare.png" 
           alt="In association with ThyroCare"
           className="h-30 w-30 object-contain mt-1"
         />
