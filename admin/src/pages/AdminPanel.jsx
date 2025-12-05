@@ -17,7 +17,7 @@ export default function AdminPanel() {
     const path = location.pathname;
     
     if (path.includes('/home') || path === '/') return 'Home';
-    if (path.includes('/reports')) return 'Reports';
+    if (path.includes('/analytics')) return 'Analytics';
     if (path.includes('/orders')) return 'Orders';
     if (path.includes('/offers')) return 'Offers';
     if (path.includes('/packages')) return 'Packages';
@@ -51,7 +51,7 @@ export default function AdminPanel() {
             to="reports"
             className="block px-4 py-2 rounded-md hover:bg-blue-50 font-medium"
           >
-            Reports
+            Analytics
           </NavLink>
           <NavLink
             to="orders"

@@ -6,7 +6,7 @@ import PackageCatalog from "./components/catalog/Package.jsx";
 import OfferCatalog from "./components/catalog/Offer.jsx";
 import TestCatalog from "./components/catalog/Test.jsx";
 import HomePage from "./pages/HomePage";
-import ReportsPage from "./pages/ReportPage";
+import AnalyticPage from "./pages/AnalyticPage.jsx";
 import OrdersPage from "./pages/OrderPage";
 import AccountPage from "./pages/AccountPage";
 import UsersPage from "./pages/UsersPage";
@@ -33,7 +33,7 @@ function App() {
         >
           <Route index element={<HomePage />} />
           <Route path="home" element={<HomePage />} />
-          <Route path="reports" element={<ReportsPage />} />
+          <Route path="reports" element={<AnalyticPage />} />
           <Route path="orders" element={<OrdersPage />} />
           <Route path="packages" element={<PackageCatalog />} />
           <Route path="offers" element={<OfferCatalog />} />
