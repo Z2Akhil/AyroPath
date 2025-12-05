@@ -72,6 +72,32 @@ export const orderAdminApi = {
    */
   retryOrder: (orderId) => {
     return axiosInstance.post(`/orders/${orderId}/retry`);
+  },
+
+  /**
+   * Sync Thyrocare status for specific orders
+   * @param {Array<string>} orderIds - Array of order IDs to sync
+   * @returns {Promise<Object>} Sync result
+   */
+  syncOrdersStatus: (orderIds) => {
+    return axiosInstance.post('/admin/orders/sync-status/batch', { orderIds });
+  },
+
+  /**
+   * Sync Thyrocare status for all orders
+   * @returns {Promise<Object>} Sync result
+   */
+  syncAllOrdersStatus: () => {
+    return axiosInstance.post('/admin/orders/sync-status/all');
+  },
+
+  /**
+   * Sync Thyrocare status for a single order
+   * @param {string} orderId - Order ID
+   * @returns {Promise<Object>} Sync result
+   */
+  syncOrderStatus: (orderId) => {
+    return axiosInstance.post(`/admin/orders/${orderId}/sync-status`);
   }
 };
 

@@ -150,6 +150,9 @@ const orderSchema = new mongoose.Schema({
     },
     lastRetryAt: {
       type: Date
+    },
+    lastSyncedAt: {
+      type: Date
     }
   },
   reportsHardcopy: {

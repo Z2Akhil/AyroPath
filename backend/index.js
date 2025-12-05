@@ -16,6 +16,7 @@ import beneficiaryRouter from "./src/routes/beneficiary.js";
 import orderRouter from "./src/routes/order.js";
 import notificationRouter from "./src/routes/notification.js";
 import ThyrocareRefreshService from "./src/services/thyrocareRefreshService.js";
+import OrderStatusSyncService from "./src/services/OrderStatusSyncService.js";
 
 const app = express();
 
@@ -86,10 +87,20 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(async () => {
     console.log("✅ MongoDB Connected");
     await ThyrocareRefreshService.checkAndRefreshOnStartup();
+    
+    // Daily order status sync scheduler removed
+    // Status is refreshed on-demand when users/admins view orders
+    
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
   })
   .catch((err) => console.error("❌ MongoDB Connection Error:", err));
+
+// --- Daily Order Status Sync Scheduler (Removed) ---
+// Note: Daily scheduler removed to respect Thyrocare API limits
+// Order status is now refreshed on-demand:
+// 1. When users view their orders (auto-refresh)
+// 2. When admins manually refresh specific orders
 
 // --- Graceful shutdown ---
 process.on("SIGINT", async () => {

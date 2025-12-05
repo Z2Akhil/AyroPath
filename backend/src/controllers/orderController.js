@@ -215,10 +215,45 @@ class OrderController {
   static async getUserOrders(req, res) {
     try {
       const orders = await Order.findByUser(req.user._id);
-
+      
+      // Auto-refresh Thyrocare status for orders that need it
+      // Only refresh orders that haven't been synced in the last 1 hour
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      const ordersToRefresh = orders.filter(order => 
+        order.thyrocare?.orderNo && 
+        (!order.thyrocare.lastSyncedAt || order.thyrocare.lastSyncedAt < oneHourAgo)
+      );
+      
+      if (ordersToRefresh.length > 0) {
+        console.log(`🔄 Auto-refreshing Thyrocare status for ${ordersToRefresh.length} user orders`);
+        
+        // Import OrderStatusSyncService
+        const OrderStatusSyncService = (await import('../services/OrderStatusSyncService.js')).default;
+        
+        // Refresh each order (but don't wait for all to complete before responding)
+        // We'll refresh in background to avoid delaying the response
+        ordersToRefresh.forEach(async (order) => {
+          try {
+            await OrderStatusSyncService.syncOrderStatus(order._id);
+          } catch (syncError) {
+            console.error(`Failed to auto-refresh order ${order.orderId}:`, syncError);
+            // Don't throw - we don't want to fail the whole request
+          }
+        });
+      }
+      
+      // Return orders immediately (they'll be updated in background)
+      // Note: The returned orders will have old status, but they'll be fresh on next load
+      // Alternatively, we could wait for refreshes, but that would slow down the response
+      
       return res.json({
         success: true,
-        data: orders
+        data: orders,
+        metadata: {
+          totalOrders: orders.length,
+          autoRefreshed: ordersToRefresh.length,
+          note: 'Order status is being refreshed in background. Refresh page to see updated status.'
+        }
       });
     } catch (error) {
       console.error('Error fetching user orders:', error);
