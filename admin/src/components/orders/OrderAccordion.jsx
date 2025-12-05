@@ -1,9 +1,51 @@
 import { 
   ChevronDown, ChevronUp, Package, User, CheckCircle, Truck, Users, CreditCard, 
-  FileText, Copy, Download
+  FileText, Copy, Download, RefreshCw
 } from 'lucide-react';
+import { useState } from 'react';
+import orderAdminApi from '../../api/orderAdminApi';
 
-const OrderAccordion = ({ order, loading, error, onRetry, isExpanded, onToggle }) => {
+const OrderAccordion = ({ order, loading, error, onRetry, isExpanded, onToggle, onRefresh }) => {
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState('');
+  const [refreshSuccess, setRefreshSuccess] = useState(false);
+  
+  const handleRefreshStatus = async () => {
+    if (!order?._id) return;
+    
+    try {
+      setRefreshing(true);
+      setRefreshError('');
+      setRefreshSuccess(false);
+      
+      console.log('Refreshing Thyrocare status for order:', order.orderId);
+      const response = await orderAdminApi.syncOrderStatus(order._id);
+      
+      setRefreshSuccess(true);
+      console.log('Refresh successful:', response.data);
+      
+      // Call parent refresh callback if provided
+      if (onRefresh) {
+        onRefresh();
+      }
+      
+      // Auto-clear success message after 3 seconds
+      setTimeout(() => {
+        setRefreshSuccess(false);
+      }, 3000);
+      
+    } catch (err) {
+      console.error('Error refreshing order status:', err);
+      setRefreshError(err.response?.data?.error || 'Failed to refresh status');
+      
+      // Auto-clear error after 5 seconds
+      setTimeout(() => {
+        setRefreshError('');
+      }, 5000);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -141,23 +183,39 @@ const OrderAccordion = ({ order, loading, error, onRetry, isExpanded, onToggle }
           {new Date(order.createdAt).toLocaleDateString()}
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-          <button
-            type="button"
-            onClick={onToggle}
-            className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
-          >
-            {isExpanded ? (
-              <>
-                <ChevronUp className="h-4 w-4" />
-                Hide Details
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-4 w-4" />
-                View Details
-              </>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onToggle}
+              className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="h-4 w-4" />
+                  Hide Details
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  View Details
+                </>
+              )}
+            </button>
+            
+            {/* Refresh button for Thyrocare status */}
+            {order.thyrocare?.orderNo && (
+              <button
+                type="button"
+                onClick={handleRefreshStatus}
+                disabled={refreshing}
+                className="text-green-600 hover:text-green-900 flex items-center gap-1 disabled:opacity-50"
+                title="Refresh Thyrocare Status"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Refreshing...' : 'Refresh'}
+              </button>
             )}
-          </button>
+          </div>
         </td>
       </tr>
 
@@ -192,7 +250,22 @@ const OrderAccordion = ({ order, loading, error, onRetry, isExpanded, onToggle }
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Final Price:</span>
-                      <span className="font-medium text-green-600">₹{order.package?.sellingPrice || 0}</span>
+                      <span className="font-medium text-green-600">
+                        ₹{(() => {
+                          const price = order.package?.price || 0;
+                          const discount = order.package?.discount || 0;
+                          const sellingPrice = order.package?.sellingPrice;
+                          
+                          // If sellingPrice exists and is not 0, use it
+                          if (sellingPrice && sellingPrice > 0) {
+                            return sellingPrice;
+                          }
+                          
+                          // Otherwise calculate price - discount
+                          const calculatedPrice = price - discount;
+                          return calculatedPrice > 0 ? calculatedPrice : price;
+                        })()}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -298,14 +371,29 @@ const OrderAccordion = ({ order, loading, error, onRetry, isExpanded, onToggle }
                             {order.thyrocare.status}
                           </span>
                         </div>
-                        {order.thyrocare.orderId && (
-                          <div className="text-sm text-gray-600">
+                        <div className="text-sm text-gray-600 space-y-1">
+                          {order.thyrocare.orderNo && (
                             <div className="flex justify-between">
-                              <span>Thyrocare Order ID:</span>
-                              <span className="font-medium">{order.thyrocare.orderId}</span>
+                              <span>Thyrocare Order No:</span>
+                              <span className="font-medium flex items-center gap-1">
+                                {order.thyrocare.orderNo}
+                                <button 
+                                  onClick={() => copyToClipboard(order.thyrocare.orderNo)}
+                                  className="p-1 hover:bg-gray-100 rounded"
+                                  title="Copy to clipboard"
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </button>
+                              </span>
                             </div>
-                          </div>
-                        )}
+                          )}
+                          {order.thyrocare.lastSyncedAt && (
+                            <div className="flex justify-between">
+                              <span>Last Synced:</span>
+                              <span className="font-medium">{formatDate(order.thyrocare.lastSyncedAt)}</span>
+                            </div>
+                          )}
+                        </div>
                       </>
                     ) : (
                       <p className="text-gray-500">No Thyrocare information available</p>
@@ -337,111 +425,55 @@ const OrderAccordion = ({ order, loading, error, onRetry, isExpanded, onToggle }
                           <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Relationship
                           </th>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Report
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {order.beneficiaries.map((beneficiary, index) => (
-                          <tr key={index}>
-                            <td className="px-3 py-2 whitespace-nowrap text-sm">
-                              {beneficiary.name}
-                            </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-sm">
-                              {beneficiary.age}
-                            </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-sm">
-                              {beneficiary.gender}
-                            </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-sm">
-                              {beneficiary.relationship}
-                            </td>
-                          </tr>
-                        ))}
+                        {order.beneficiaries.map((beneficiary, index) => {
+                          // Find report for this beneficiary
+                          const beneficiaryReport = order.reports?.find(report => 
+                            report.beneficiaryName === beneficiary.name || 
+                            report.leadId === beneficiary.leadId
+                          );
+                          
+                          return (
+                            <tr key={index}>
+                              <td className="px-3 py-2 whitespace-nowrap text-sm">
+                                {beneficiary.name || 'N/A'}
+                              </td>
+                              <td className="px-3 py-2 whitespace-nowrap text-sm">
+                                {beneficiary.age || 'N/A'}
+                              </td>
+                              <td className="px-3 py-2 whitespace-nowrap text-sm">
+                                {beneficiary.gender || 'N/A'}
+                              </td>
+                              <td className="px-3 py-2 whitespace-nowrap text-sm">
+                                {beneficiary.relationship || beneficiary.relation || beneficiary.relationshipType || 'N/A'}
+                              </td>
+                              <td className="px-3 py-2 whitespace-nowrap text-sm">
+                                {beneficiaryReport?.reportUrl ? (
+                                  <a 
+                                    href={beneficiaryReport.reportUrl} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-800 underline"
+                                  >
+                                    View
+                                  </a>
+                                ) : (
+                                  <span className="text-gray-500">N/A</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
                 </div>
               )}
-
-              {/* Payment Information */}
-              {order.payment && (
-                <div className="bg-white rounded-lg p-4 border border-gray-200">
-                  <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                    <CreditCard className="h-4 w-4" />
-                    Payment Information
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-gray-600">Payment ID:</span>
-                        <span className="font-medium">{order.payment.paymentId || 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-gray-600">Method:</span>
-                        <span className="font-medium">{order.payment.method || 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Status:</span>
-                        <span className={`font-medium ${
-                          order.payment.status === 'SUCCESS' ? 'text-green-600' : 
-                          order.payment.status === 'PENDING' ? 'text-yellow-600' : 'text-red-600'
-                        }`}>
-                          {order.payment.status || 'N/A'}
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-gray-600">Amount:</span>
-                        <span className="font-medium">₹{order.payment.amount || 0}</span>
-                      </div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-gray-600">Currency:</span>
-                        <span className="font-medium">{order.payment.currency || 'INR'}</span>
-                      </div>
-                      {order.payment.createdAt && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Paid At:</span>
-                          <span className="font-medium">{formatDate(order.payment.createdAt)}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Notes and Actions */}
-              <div className="flex flex-col md:flex-row gap-6">
-                {order.notes && (
-                  <div className="bg-white rounded-lg p-4 border border-gray-200 flex-1">
-                    <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      Notes
-                    </h4>
-                    <p className="text-gray-700 whitespace-pre-wrap">{order.notes}</p>
-                  </div>
-                )}
-                
-                <div className="bg-white rounded-lg p-4 border border-gray-200">
-                  <h4 className="font-medium text-gray-900 mb-3">Actions</h4>
-                  <div className="flex flex-col gap-2">
-                    <button
-                      onClick={() => {
-                        console.log('Download invoice for order:', order.orderId);
-                      }}
-                      className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-2 justify-center"
-                    >
-                      <Download className="h-4 w-4" />
-                      Download Invoice
-                    </button>
-                    <button
-                      onClick={onToggle}
-                      className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
-                    >
-                      Close Details
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
           </td>
         </tr>

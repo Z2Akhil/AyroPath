@@ -7,7 +7,8 @@ const OrdersTable = ({
   searchTerm, 
   statusFilter, 
   thyrocareStatusFilter, 
-  dateRange 
+  dateRange,
+  onRefreshOrder 
 }) => {
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [expandedOrderData, setExpandedOrderData] = useState(null);
@@ -106,6 +107,14 @@ const OrdersTable = ({
                 onRetry={() => handleRetry(order.orderId)}
                 isExpanded={expandedOrderId === order.orderId}
                 onToggle={() => handleToggleOrder(order.orderId)}
+                onRefresh={() => {
+                  // First refresh the expanded order details
+                  handleRetry(order.orderId);
+                  // Then refresh the entire order list to update main row
+                  if (onRefreshOrder) {
+                    onRefreshOrder();
+                  }
+                }}
               />
             ))}
           </tbody>

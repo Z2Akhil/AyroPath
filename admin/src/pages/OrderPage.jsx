@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import orderAdminApi from '../api/orderAdminApi';
 import Pagination from '../components/Pagination';
 import { OrderStats, OrderFilters, OrdersTable } from '../components/orders';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 
 const OrderPage = () => {
   const { user: _user } = useAuth();
@@ -12,6 +12,11 @@ const OrderPage = () => {
   const [error, setError] = useState('');
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
+  
+  // Sync status states
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncResult, setSyncResult] = useState(null);
+  const [syncError, setSyncError] = useState('');
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -106,6 +111,47 @@ const OrderPage = () => {
     setCurrentPage(1);
   };
   
+  const handleSyncThyrocareStatus = useCallback(async () => {
+    try {
+      setSyncLoading(true);
+      setSyncError('');
+      setSyncResult(null);
+      
+      // Get order IDs of currently displayed orders
+      const orderIds = orders.map(order => order._id);
+      
+      if (orderIds.length === 0) {
+        setSyncError('No orders to sync');
+        return;
+      }
+      
+      console.log('Syncing Thyrocare status for orders:', orderIds);
+      
+      const response = await orderAdminApi.syncOrdersStatus(orderIds);
+      
+      setSyncResult(response.data);
+      
+      // Refresh orders to show updated status
+      await fetchOrders();
+      
+      // Auto-clear success message after 5 seconds
+      setTimeout(() => {
+        setSyncResult(null);
+      }, 5000);
+      
+    } catch (err) {
+      console.error('Error syncing Thyrocare status:', err);
+      setSyncError(err.response?.data?.error || 'Failed to sync Thyrocare status');
+      
+      // Auto-clear error message after 5 seconds
+      setTimeout(() => {
+        setSyncError('');
+      }, 5000);
+    } finally {
+      setSyncLoading(false);
+    }
+  }, [orders, fetchOrders]);
+  
   const handleStatusFilterChange = (e) => {
     setStatusFilter(e.target.value);
     setCurrentPage(1);
@@ -172,6 +218,31 @@ const OrderPage = () => {
           </div>
         )}
         
+        {/* Sync Result Messages */}
+        {syncResult && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center gap-2 text-green-700 mb-2">
+              <CheckCircle className="h-4 w-4" />
+              <span className="font-medium">Thyrocare Status Sync Completed</span>
+            </div>
+            <div className="text-sm text-green-600">
+              <p>Total: {syncResult.total} orders</p>
+              <p>Successful: {syncResult.successful} orders</p>
+              <p>Failed: {syncResult.failed} orders</p>
+              <p>Status Changes: {syncResult.statusChanged} orders</p>
+            </div>
+          </div>
+        )}
+        
+        {syncError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 flex items-center gap-2">
+              <XCircle className="h-4 w-4" />
+              {syncError}
+            </p>
+          </div>
+        )}
+        
         {/* Search and Filters */}
         <OrderFilters
           searchTerm={searchTerm}
@@ -185,6 +256,7 @@ const OrderPage = () => {
           onClearFilters={clearFilters}
           onRefresh={fetchOrders}
           loading={loading}
+          syncLoading={syncLoading}
         />
 
         {/* Orders Table */}
@@ -194,6 +266,7 @@ const OrderPage = () => {
           statusFilter={statusFilter}
           thyrocareStatusFilter={thyrocareStatusFilter}
           dateRange={dateRange}
+          onRefreshOrder={fetchOrders}
         />
         
         {/* Pagination */}
