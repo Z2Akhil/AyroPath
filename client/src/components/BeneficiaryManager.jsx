@@ -266,7 +266,7 @@ const BeneficiaryManager = ({ isOpen, onClose, onSelectBeneficiary, showAuthModa
                 </button>
 
                 {/* Beneficiaries List */}
-                <div className="space-y-3">
+                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
                   {loading ? (
                     <div className="text-center py-8">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
