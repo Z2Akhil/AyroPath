@@ -75,7 +75,7 @@ const DashboardCard = ({
           {data.slice(0, 5).map((item, index) => (
             <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
               <div className="flex-1">
-                <div className="font-medium text-gray-700">
+                <div className="font-medium text-gray-700 truncate max-w-[180px]">
                   {item.name || item.title || item.customer || item.id || `Item ${index + 1}`}
                 </div>
                 <div className="text-sm text-gray-500 flex items-center space-x-2">
