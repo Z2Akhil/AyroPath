@@ -334,4 +334,76 @@ orderSchema.statics.findByAdmin = async function (adminId) {
   return await this.find({ adminId }).populate('userId').sort({ createdAt: -1 });
 };
 
+// Method to get categorized status
+orderSchema.methods.getCategorizedStatus = function () {
+  const systemStatus = this.status;
+  const thyrocareStatus = this.thyrocare?.status;
+  
+  // Completed category
+  if (systemStatus === 'COMPLETED' || thyrocareStatus === 'DONE') {
+    return 'COMPLETED';
+  }
+  
+  // Failed category
+  if (systemStatus === 'FAILED' || thyrocareStatus === 'FAILED') {
+    return 'FAILED';
+  }
+  
+  // Pending category (everything else)
+  return 'PENDING';
+};
+
+// Static method to get order counts by categorized status
+orderSchema.statics.getCategorizedStats = async function (adminId = null) {
+  const matchStage = adminId ? { adminId } : {};
+  
+  const result = await this.aggregate([
+    { $match: matchStage },
+    {
+      $addFields: {
+        categorizedStatus: {
+          $switch: {
+            branches: [
+              {
+                case: { $or: [
+                  { $eq: ['$status', 'COMPLETED'] },
+                  { $eq: ['$thyrocare.status', 'DONE'] }
+                ]},
+                then: 'COMPLETED'
+              },
+              {
+                case: { $or: [
+                  { $eq: ['$status', 'FAILED'] },
+                  { $eq: ['$thyrocare.status', 'FAILED'] }
+                ]},
+                then: 'FAILED'
+              }
+            ],
+            default: 'PENDING'
+          }
+        }
+      }
+    },
+    {
+      $group: {
+        _id: '$categorizedStatus',
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+  
+  // Format the result
+  const stats = {
+    COMPLETED: 0,
+    FAILED: 0,
+    PENDING: 0
+  };
+  
+  result.forEach(item => {
+    stats[item._id] = item.count;
+  });
+  
+  return stats;
+};
+
 export default mongoose.model('Order', orderSchema);

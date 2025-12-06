@@ -16,6 +16,11 @@ const OrderStats = ({ stats, loading }) => {
     );
   }
 
+  // Use categorized stats if available, otherwise fall back to old stats
+  const completedCount = stats.byCategorizedStatus?.COMPLETED || stats.byStatus.COMPLETED;
+  const pendingCount = stats.byCategorizedStatus?.PENDING || stats.byStatus.PENDING;
+  const failedCount = stats.byCategorizedStatus?.FAILED || stats.byStatus.FAILED;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <div className="bg-white rounded-lg p-6 shadow-sm border-l-4 border-blue-500">
@@ -32,7 +37,7 @@ const OrderStats = ({ stats, loading }) => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600">Completed</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.byStatus.COMPLETED}</p>
+            <p className="text-2xl font-bold text-gray-900">{completedCount}</p>
           </div>
           <CheckCircle className="h-8 w-8 text-green-500" />
         </div>
@@ -42,7 +47,7 @@ const OrderStats = ({ stats, loading }) => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600">Pending</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.byStatus.PENDING}</p>
+            <p className="text-2xl font-bold text-gray-900">{pendingCount}</p>
           </div>
           <Clock className="h-8 w-8 text-yellow-500" />
         </div>
@@ -52,7 +57,7 @@ const OrderStats = ({ stats, loading }) => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600">Failed</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.byStatus.FAILED}</p>
+            <p className="text-2xl font-bold text-gray-900">{failedCount}</p>
           </div>
           <XCircle className="h-8 w-8 text-red-500" />
         </div>
