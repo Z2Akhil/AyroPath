@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { axiosInstance } from '../api/axiosInstance';
 import { MetricCard, AnalyticsChart, DateRangePicker } from '../components/analytics';
-import { 
-  ShoppingCart, 
-  DollarSign, 
-  Users, 
+import {
+  ShoppingCart,
+  DollarSign,
+  Users,
   TrendingUp,
   Package,
   CheckCircle,
@@ -19,11 +19,11 @@ const AnalyticPage = () => {
   const [loading, setLoading] = useState(true);
   const [trendsLoading, setTrendsLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   // Analytics data states
   const [overviewData, setOverviewData] = useState(null);
   const [trendsData, setTrendsData] = useState(null);
-  
+
   // Date range states
   const [dateRange, setDateRange] = useState({
     startDate: '',
@@ -63,18 +63,18 @@ const AnalyticPage = () => {
     const mockOrderTrends = [];
     const mockUserTrends = [];
     const today = new Date();
-    
+
     for (let i = 29; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
-      
+
       mockOrderTrends.push({
         date: dateStr,
         orderCount: Math.floor(Math.random() * 20) + 5,
         revenue: Math.floor(Math.random() * 200000) + 50000
       });
-      
+
       mockUserTrends.push({
         date: dateStr,
         userCount: Math.floor(Math.random() * 8) + 2
@@ -95,24 +95,24 @@ const AnalyticPage = () => {
     try {
       setLoading(true);
       setError('');
-      
+
       const params = {
         startDate: dateRange.startDate || undefined,
         endDate: dateRange.endDate || undefined
       };
-      
+
       const response = await axiosInstance.get('/admin/analytics/overview', { params });
-      
+
       if (response.data.success) {
         setOverviewData(response.data.overview);
       } else {
         throw new Error(response.data.error || 'Failed to fetch analytics overview');
       }
-      
+
     } catch (err) {
       console.error('Error fetching analytics overview:', err);
       setError(`Failed to load live analytics data: ${err.message}. Using demo data for display.`);
-      
+
       // Use mock data as fallback
       const mockData = generateMockData();
       setOverviewData(mockData.overview);
@@ -125,24 +125,24 @@ const AnalyticPage = () => {
   const fetchAnalyticsTrends = useCallback(async () => {
     try {
       setTrendsLoading(true);
-      
+
       const params = {
         period: 'daily',
         startDate: dateRange.startDate || undefined,
         endDate: dateRange.endDate || undefined
       };
-      
+
       const response = await axiosInstance.get('/admin/analytics/trends', { params });
-      
+
       if (response.data.success) {
         setTrendsData(response.data.trends);
       } else {
         throw new Error(response.data.error || 'Failed to fetch analytics trends');
       }
-      
+
     } catch (err) {
       console.error('Error fetching analytics trends:', err);
-      
+
       // Use mock data as fallback
       const mockData = generateMockData();
       setTrendsData(mockData.trends);
@@ -163,14 +163,14 @@ const AnalyticPage = () => {
   }, [fetchAnalyticsOverview, fetchAnalyticsTrends]);
 
   // Prepare order status data for pie chart
-  const orderStatusData = overviewData?.orderStatus ? 
+  const orderStatusData = overviewData?.orderStatus ?
     Object.entries(overviewData.orderStatus).map(([status, count]) => ({
       name: status,
       value: count
     })).filter(item => item.value > 0) : [];
 
   // Prepare Thyrocare status data for bar chart
-  const thyrocareStatusData = overviewData?.thyrocareStatus ? 
+  const thyrocareStatusData = overviewData?.thyrocareStatus ?
     Object.entries(overviewData.thyrocareStatus).map(([status, count]) => ({
       name: status.replace(/_/g, ' '),
       count: count
@@ -228,7 +228,7 @@ const AnalyticPage = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Analytics Dashboard</h1>
           </div>
-          <DateRangePicker 
+          <DateRangePicker
             onDateChange={handleDateChange}
             loading={loading}
           />
@@ -251,7 +251,7 @@ const AnalyticPage = () => {
             icon={ShoppingCart}
             loading={loading}
           />
-          
+
           <MetricCard
             title="Total Revenue"
             value={formatCurrency(overviewData?.metrics?.totalRevenue || 0)}
@@ -260,7 +260,7 @@ const AnalyticPage = () => {
             icon={IndianRupee}
             loading={loading}
           />
-          
+
           <MetricCard
             title="Active Users"
             value={overviewData?.metrics?.activeUsers || 0}
@@ -269,7 +269,7 @@ const AnalyticPage = () => {
             icon={Users}
             loading={loading}
           />
-          
+
           <MetricCard
             title="Conversion Rate"
             value={`${overviewData?.metrics?.conversionRate || 0}%`}
@@ -336,21 +336,21 @@ const AnalyticPage = () => {
             icon={Package}
             loading={loading}
           />
-          
+
           <MetricCard
             title="New Users"
             value={overviewData?.metrics?.newUsers || 0}
             icon={Users}
             loading={loading}
           />
-          
+
           <MetricCard
             title="Completed Orders"
             value={overviewData?.orderStatus?.COMPLETED || 0}
             icon={CheckCircle}
             loading={loading}
           />
-          
+
           <MetricCard
             title="Pending Orders"
             value={overviewData?.orderStatus?.PENDING || 0}
