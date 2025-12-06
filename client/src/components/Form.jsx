@@ -7,7 +7,7 @@ import { useCart } from "../context/CartContext";
 import { useOrderSuccess } from "../context/OrderSuccessContext";
 
 import {
-  getInitialFormData, 
+  getInitialFormData,
   saveContactInfo
 } from "../utils/localStorage";
 import BeneficiaryManager from "./BeneficiaryManager";
@@ -69,7 +69,12 @@ const Form = ({ pkgName, priceInfo, pkgId }) => {
   };
 
   const handleSelectBeneficiary = (beneficiary) => {
-    const isAlreadySelected = selectedBeneficiaries.some(b => b.name === beneficiary.name);
+    const isAlreadySelected = selectedBeneficiaries.some(b =>
+      b.name === beneficiary.name &&
+      b.age === beneficiary.age &&
+      b.gender === beneficiary.gender &&
+      b.relationship === beneficiary.relationship
+    );
     if (isAlreadySelected) {
       alert('This beneficiary is already selected. Please choose a different beneficiary.');
       return;
@@ -146,9 +151,9 @@ const Form = ({ pkgName, priceInfo, pkgId }) => {
         packageId: pkgId,
         packageName: pkgNames.join(", "),
         packagePrice: priceInfo.displayPrice,
-        originalPrice:priceInfo.originalPrice,
-        discountPercentage:priceInfo.discountPercentage,
-        discountAmount:priceInfo.discountAmount,
+        originalPrice: priceInfo.originalPrice,
+        discountPercentage: priceInfo.discountPercentage,
+        discountAmount: priceInfo.discountAmount,
         beneficiaries: selectedBeneficiaries,
         contactInfo: {
           ...contactInfo,
@@ -187,7 +192,7 @@ const Form = ({ pkgName, priceInfo, pkgId }) => {
         showSuccessCard({
           orderId: result.data.orderId,
           packageName: pkgNames.join(","),
-          amount: (priceInfo.displayPrice*numPersons) + (wantHardcopy ? 75 : 0)
+          amount: (priceInfo.displayPrice * numPersons) + (wantHardcopy ? 75 : 0)
         });
       } else {
         alert(`Order creation failed: ${result.message || "Unknown error"}`);
