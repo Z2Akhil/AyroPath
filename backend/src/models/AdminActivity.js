@@ -36,7 +36,10 @@ const adminActivitySchema = new mongoose.Schema({
       'ORDERS_FETCH',
       'ORDER_STATS_FETCH',
       'ORDER_DETAILS_FETCH',
-      'ORDER_STATUS_SYNC'
+      'ORDER_STATUS_SYNC',
+      'ANALYTICS_FETCH',
+      'ANALYTICS_TRENDS_FETCH',
+      'DASHBOARD_FETCH'
     ]
   },
   description: {
