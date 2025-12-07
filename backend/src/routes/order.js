@@ -16,4 +16,7 @@ router.get('/:orderId', auth, OrderController.getOrderById);
 // Retry failed order
 router.post('/:orderId/retry', auth, OrderController.retryOrder);
 
+// Download report for order
+router.get('/:orderId/reports/download', auth, OrderController.downloadReport);
+
 export default router;

@@ -1,8 +1,12 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Phone, Mail, FileText, Calendar, User, Package, IndianRupee, AlertCircle, CheckCircle, Clock, XCircle, HelpCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, Phone, Mail, FileText, Calendar, User, Package, IndianRupee, AlertCircle, CheckCircle, Clock, XCircle, HelpCircle, Download, FileDown, Users } from 'lucide-react';
+import { axiosInstance } from '../../api/axiosInstance';
 
 const OrderCard = ({ order, showContactSupport = true }) => {
   const [expanded, setExpanded] = useState(false);
+  const [downloadingReport, setDownloadingReport] = useState(false);
+  const [downloadError, setDownloadError] = useState(null);
+  const [downloadSuccess, setDownloadSuccess] = useState(null);
 
   // Status badge configuration
   const getStatusConfig = (status) => {
@@ -45,6 +49,54 @@ const OrderCard = ({ order, showContactSupport = true }) => {
     }
   };
 
+  // Check if order is DONE/COMPLETED and has reports
+  const isOrderCompleted = () => {
+    const status = (order.status || '').toUpperCase();
+    const thyrocareStatus = (order.thyrocare?.status || '').toUpperCase();
+    return status === 'COMPLETED' || thyrocareStatus === 'DONE' || status === 'DONE';
+  };
+
+  const hasReports = () => {
+    return order.reports && order.reports.length > 0 && order.reports.some(r => r.reportUrl);
+  };
+
+  const canDownloadReports = () => {
+    return isOrderCompleted() && hasReports();
+  };
+
+  const handleDownloadReport = async (beneficiaryIndex = 0) => {
+    if (!canDownloadReports()) return;
+    
+    setDownloadingReport(true);
+    setDownloadError(null);
+    setDownloadSuccess(null);
+
+    try {
+      const response = await axiosInstance.get(`/orders/${order.orderId}/reports/download`, {
+        params: { beneficiaryIndex }
+      });
+
+      if (response.data.success) {
+        const reportData = response.data.data;
+        
+        // Open report URL in new tab
+        window.open(reportData.downloadUrl, '_blank');
+        
+        setDownloadSuccess(`Report download initiated for ${reportData.beneficiaryName}`);
+        
+        // Clear success message after 5 seconds
+        setTimeout(() => setDownloadSuccess(null), 5000);
+      } else {
+        setDownloadError(response.data.message || 'Failed to download report');
+      }
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      setDownloadError(error.response?.data?.message || 'Failed to download report. Please try again.');
+    } finally {
+      setDownloadingReport(false);
+    }
+  };
+
   const statusConfig = getStatusConfig(order.status);
   const formattedDate = order.appointment?.date 
     ? new Date(order.appointment.date).toLocaleDateString('en-IN', {
@@ -68,6 +120,12 @@ const OrderCard = ({ order, showContactSupport = true }) => {
             <div className="flex items-center gap-2 mb-1">
               <FileText className="h-5 w-5 text-blue-600" />
               <h3 className="font-semibold text-gray-800">Order #{order.orderId}</h3>
+              {canDownloadReports() && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                  <FileDown className="h-3 w-3" />
+                  Reports Available
+                </span>
+              )}
             </div>
             <p className="text-sm text-gray-600">{packageInfo.name || 'Package'}</p>
           </div>
@@ -129,6 +187,23 @@ const OrderCard = ({ order, showContactSupport = true }) => {
       {/* Expanded Details */}
       {expanded && (
         <div className="border-t border-gray-100 p-4 bg-gray-50">
+          {/* Download Messages */}
+          {downloadError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 text-sm flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" /> {downloadError}
+              </p>
+            </div>
+          )}
+          
+          {downloadSuccess && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-green-600 text-sm flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" /> {downloadSuccess}
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Order Details */}
             <div className="space-y-3">
@@ -199,6 +274,57 @@ const OrderCard = ({ order, showContactSupport = true }) => {
                   <span className="text-xs">(Ref: {thyrocareInfo.referenceId})</span>
                 )}
               </div>
+              {thyrocareInfo.lastSyncedAt && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Last synced: {new Date(thyrocareInfo.lastSyncedAt).toLocaleString('en-IN')}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Report Download Section */}
+          {canDownloadReports() && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <h4 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
+                <FileDown className="h-4 w-4" />
+                Download Reports
+              </h4>
+              
+              <div className="space-y-3">
+                {order.reports.map((report, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Users className="h-4 w-4 text-gray-400" />
+                      <div>
+                        <p className="font-medium text-sm">{report.beneficiaryName}</p>
+                        <p className="text-xs text-gray-500">Report available</p>
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={() => handleDownloadReport(index)}
+                      disabled={downloadingReport}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {downloadingReport ? (
+                        <>
+                          <Clock className="h-3 w-3 animate-spin" />
+                          Downloading...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-3 w-3" />
+                          Download Report
+                        </>
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+              
+              <p className="text-xs text-gray-500 mt-2">
+                Reports will open in a new tab. Make sure pop-ups are enabled for this site.
+              </p>
             </div>
           )}
 

@@ -380,6 +380,90 @@ class OrderController {
       });
     }
   }
+
+  // Download report for order
+  static async downloadReport(req, res) {
+    try {
+      const { orderId } = req.params;
+      const { beneficiaryIndex = 0 } = req.query;
+
+      const order = await Order.findOne({ orderId });
+
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: 'Order not found'
+        });
+      }
+
+      // Check permissions
+      if (order.userId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied'
+        });
+      }
+
+      // Check if order is DONE/COMPLETED
+      if (order.thyrocare?.status !== 'DONE' && order.status !== 'COMPLETED') {
+        return res.status(400).json({
+          success: false,
+          message: 'Reports are only available for completed orders'
+        });
+      }
+
+      // Check if reports exist
+      if (!order.reports || order.reports.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'No reports available for this order'
+        });
+      }
+
+      // Get the specific report (default to first one)
+      const reportIndex = parseInt(beneficiaryIndex);
+      if (reportIndex < 0 || reportIndex >= order.reports.length) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid beneficiary index. Valid range: 0-${order.reports.length - 1}`
+        });
+      }
+
+      const report = order.reports[reportIndex];
+
+      // Check if report URL exists
+      if (!report.reportUrl) {
+        return res.status(404).json({
+          success: false,
+          message: 'Report URL not available'
+        });
+      }
+
+      // Mark report as downloaded
+      await order.markReportDownloaded(report.leadId);
+
+      // Redirect to the report URL (Thyrocare report URL)
+      return res.json({
+        success: true,
+        message: 'Report download initiated',
+        data: {
+          orderId: order.orderId,
+          beneficiaryName: report.beneficiaryName,
+          reportUrl: report.reportUrl,
+          downloadUrl: report.reportUrl, // Direct URL for frontend to use
+          instructions: 'Click the download button to open the report in a new tab'
+        }
+      });
+
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to download report',
+        error: error.message
+      });
+    }
+  }
 }
 
 export default OrderController;
