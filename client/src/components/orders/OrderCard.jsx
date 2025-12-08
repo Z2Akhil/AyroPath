@@ -11,7 +11,7 @@ const OrderCard = ({ order, showContactSupport = true }) => {
   // Status badge configuration
   const getStatusConfig = (status) => {
     const statusUpper = (status || '').toUpperCase();
-    
+
     switch (statusUpper) {
       case 'COMPLETED':
       case 'DONE':
@@ -66,7 +66,7 @@ const OrderCard = ({ order, showContactSupport = true }) => {
 
   const handleDownloadReport = async (beneficiaryIndex = 0) => {
     if (!canDownloadReports()) return;
-    
+
     setDownloadingReport(true);
     setDownloadError(null);
     setDownloadSuccess(null);
@@ -78,12 +78,12 @@ const OrderCard = ({ order, showContactSupport = true }) => {
 
       if (response.data.success) {
         const reportData = response.data.data;
-        
+
         // Open report URL in new tab
         window.open(reportData.downloadUrl, '_blank');
-        
+
         setDownloadSuccess(`Report download initiated for ${reportData.beneficiaryName}`);
-        
+
         // Clear success message after 5 seconds
         setTimeout(() => setDownloadSuccess(null), 5000);
       } else {
@@ -98,13 +98,13 @@ const OrderCard = ({ order, showContactSupport = true }) => {
   };
 
   const statusConfig = getStatusConfig(order.status);
-  const formattedDate = order.appointment?.date 
+  const formattedDate = order.appointment?.date
     ? new Date(order.appointment.date).toLocaleDateString('en-IN', {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      })
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
     : 'Not scheduled';
 
   const contactInfo = order.contactInfo || {};
@@ -112,7 +112,7 @@ const OrderCard = ({ order, showContactSupport = true }) => {
   const thyrocareInfo = order.thyrocare || {};
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-x-auto">
       {/* Order Header */}
       <div className="p-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -149,34 +149,34 @@ const OrderCard = ({ order, showContactSupport = true }) => {
         </div>
 
         {/* Quick Info Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap gap-x-6 gap-y-3 mt-4">
+          <div className="flex items-center gap-2 min-w-[120px] flex-1">
             <IndianRupee className="h-4 w-4 text-green-600" />
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-gray-500">Amount</p>
               <p className="font-medium">₹{packageInfo.price?.toLocaleString() || '0'}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-[120px] flex-1">
             <Calendar className="h-4 w-4 text-purple-600" />
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-gray-500">Appointment</p>
-              <p className="font-medium text-sm">{formattedDate}</p>
+              <p className="font-medium text-sm truncate">{formattedDate}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-[120px] flex-1">
             <User className="h-4 w-4 text-blue-600" />
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-gray-500">Customer</p>
               <p className="font-medium text-sm truncate">{contactInfo.name || contactInfo.email || 'N/A'}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-[120px] flex-1">
             <Package className="h-4 w-4 text-orange-600" />
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-gray-500">Tests</p>
               <p className="font-medium text-sm">{packageInfo.testsCount || 'N/A'}</p>
             </div>
@@ -195,7 +195,7 @@ const OrderCard = ({ order, showContactSupport = true }) => {
               </p>
             </div>
           )}
-          
+
           {downloadSuccess && (
             <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-green-600 text-sm flex items-center gap-2">
@@ -211,7 +211,7 @@ const OrderCard = ({ order, showContactSupport = true }) => {
                 <FileText className="h-4 w-4" />
                 Order Details
               </h4>
-              
+
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Order ID:</span>
@@ -240,7 +240,7 @@ const OrderCard = ({ order, showContactSupport = true }) => {
                 <Calendar className="h-4 w-4" />
                 Appointment & Contact
               </h4>
-              
+
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Date:</span>
@@ -289,7 +289,7 @@ const OrderCard = ({ order, showContactSupport = true }) => {
                 <FileDown className="h-4 w-4" />
                 Download Reports
               </h4>
-              
+
               <div className="space-y-3">
                 {order.reports.map((report, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
@@ -300,7 +300,7 @@ const OrderCard = ({ order, showContactSupport = true }) => {
                         <p className="text-xs text-gray-500">Report available</p>
                       </div>
                     </div>
-                    
+
                     <button
                       onClick={() => handleDownloadReport(index)}
                       disabled={downloadingReport}
@@ -321,7 +321,7 @@ const OrderCard = ({ order, showContactSupport = true }) => {
                   </div>
                 ))}
               </div>
-              
+
               <p className="text-xs text-gray-500 mt-2">
                 Reports will open in a new tab. Make sure pop-ups are enabled for this site.
               </p>

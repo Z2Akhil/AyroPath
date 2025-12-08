@@ -408,7 +408,7 @@ const AccountPage = () => {
                 className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
               >
                 <Calendar className="h-4 w-4" />
-                View Order History
+                View Order History and Reports
               </Link>
             </div>
 

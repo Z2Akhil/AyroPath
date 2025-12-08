@@ -18,7 +18,12 @@ const OrderHistory = () => {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage]);
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -27,7 +32,7 @@ const OrderHistory = () => {
         const completedOrders = allOrders.filter((o) =>
           COMPLETED_STATUSES.includes(o.status?.toUpperCase())
         );
-        
+
         setAllOrders(completedOrders);
         setFilteredOrders(completedOrders);
         setLoading(false);
@@ -47,7 +52,7 @@ const OrderHistory = () => {
     // Apply search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      result = result.filter(order => 
+      result = result.filter(order =>
         order.orderId?.toLowerCase().includes(term) ||
         order.package?.name?.toLowerCase().includes(term) ||
         order.status?.toLowerCase().includes(term)
@@ -56,7 +61,7 @@ const OrderHistory = () => {
 
     // Apply status filter
     if (statusFilter !== "ALL") {
-      result = result.filter(order => 
+      result = result.filter(order =>
         order.status?.toUpperCase() === statusFilter.toUpperCase()
       );
     }
@@ -133,7 +138,7 @@ const OrderHistory = () => {
           <h1 className="text-3xl font-bold text-gray-800">Order History</h1>
           <p className="text-gray-600 mt-1">View and manage your completed orders</p>
         </div>
-        
+
         <button
           onClick={exportToCSV}
           disabled={filteredOrders.length === 0}
@@ -151,7 +156,7 @@ const OrderHistory = () => {
             <Filter className="h-5 w-5 text-blue-600" />
             Filters
           </h2>
-          
+
           {(searchTerm || statusFilter !== "ALL" || dateRange.start || dateRange.end) && (
             <button
               onClick={clearFilters}
@@ -247,7 +252,7 @@ const OrderHistory = () => {
             </div>
             <h3 className="text-lg font-medium text-gray-700 mb-2">No Orders Found</h3>
             <p className="text-gray-500 mb-6">
-              {allOrders.length === 0 
+              {allOrders.length === 0
                 ? "You don't have any completed orders yet."
                 : "No orders match your current filters."}
             </p>
