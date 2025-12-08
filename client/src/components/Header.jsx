@@ -46,9 +46,9 @@ const Logo = ({ logo, loading }) => {
           onError={() => setImgError(true)}
         />
       </div>
-      <div className="leading-tight">
+      <div className="leading-tight ">
         <img
-          src="/Thyrocare.png" 
+          src="/Thyrocare.png"
           alt="In association with ThyroCare"
           className="h-30 w-30 object-contain mt-1"
         />
@@ -120,51 +120,46 @@ const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose, loading, 
       <div className="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-out-cubic
                       animate-slide-in-right">
         <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-100">
-            <Logo logo={settings?.logo} loading={loading} />
-            <button
-              onClick={onClose}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-            >
-              <X size={20} className="text-gray-600" />
-            </button>
-          </div>
-
-          {/* User Section */}
-          <div className="p-6 border-b border-gray-100">
+          {/* Top Bar: Account + Close Button */}
+          <div className="p-6 border-b border-gray-100 flex items-center justify-between">
             {user ? (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Link to="/account" onClick={onClose} className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">Welcome, {user.name}</p>
-                      <p className="text-sm text-gray-500">Manage your account</p>
-                    </div>
-                  </Link>
+              <Link to="/account" onClick={onClose} className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                  <User className="w-6 h-6 text-white" />
                 </div>
-                <button
-                  onClick={() => { onLogoutConfirm(); onClose(); }}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 rounded-lg 
-                             hover:bg-red-100 transition-colors font-medium"
-                >
-                  <LogOut size={18} />
-                  <span>Logout</span>
-                </button>
-              </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Welcome, {user.name}</p>
+                  <p className="text-sm text-gray-500">Manage your account</p>
+                </div>
+              </Link>
             ) : (
               <button
                 onClick={() => { onLogin(); onClose(); }}
-                className="w-full px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-lg 
-                           hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium shadow-lg"
+                className="px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-lg 
+                 hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium shadow-lg"
               >
                 Login to Your Account
               </button>
             )}
+
+            <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+              <X size={20} className="text-gray-600" />
+            </button>
           </div>
+
+          {/* Logout Button (only if logged in) */}
+          {user && (
+            <div className="px-6 pb-4 border-b border-gray-100">
+              <button
+                onClick={() => { onLogoutConfirm(); onClose(); }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 rounded-lg 
+                 hover:bg-red-100 transition-colors font-medium"
+              >
+                <LogOut size={18} />
+                <span>Logout</span>
+              </button>
+            </div>
+          )}
 
           {/* Navigation */}
           <nav className="flex-1 p-6 overflow-y-auto">
@@ -181,9 +176,16 @@ const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose, loading, 
                   {label}
                 </Link>
               ))}
+              <Link
+                to="/account"
+                onClick={onClose}
+                className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg 
+                 transition-all duration-200 font-medium"
+              >
+                My Orders
+              </Link>
             </div>
           </nav>
-
           {/* Footer */}
           <div className="p-6 border-t border-gray-100 bg-gray-50">
             <p className="text-xs text-gray-500 text-center">© {new Date().getFullYear()} Ayropath. All rights reserved.</p>
