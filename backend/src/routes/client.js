@@ -15,27 +15,51 @@ const THYROCARE_BASE_URL = process.env.THYROCARE_API_URL || 'https://thyrocare-a
  * @param {Function} apiCallFn - Async function that takes apiKey and returns response data
  */
 const makeThyrocareRequest = async (apiCallFn) => {
+  // Helper to check for auth errors in response data or error objects
+  const isAuthError = (dataOrError) => {
+    // Check error response properties
+    if (dataOrError?.response?.status === 401) return true;
+
+    // Check data properties (for 200 OK responses with error messages)
+    const response = dataOrError?.response?.data?.response || // Axios error structure
+      dataOrError?.response ||                 // Direct response property
+      dataOrError?.message ||                  // Common message property
+      dataOrError;                             // The object itself if it's a string
+
+    const responseStr = (response || '').toString().toLowerCase();
+    return responseStr.includes('invalid') || responseStr.includes('invalid api key');
+  };
+
   try {
     const apiKey = await ThyrocareRefreshService.getOrRefreshApiKey();
-    return await apiCallFn(apiKey);
+    const result = await apiCallFn(apiKey);
+
+    // Check if successful response actually contains an auth error
+    if (isAuthError(result)) {
+      console.log('🔄 ThyroCare API returned success but content indicates auth error. Forcing refresh...');
+      // Throw to trigger catch block
+      throw new Error('Invalid Api Key response in 200 OK');
+    }
+
+    return result;
   } catch (error) {
     // Check if error is due to invalid API key/token
-    // ThyroCare returns 401 or specific strings in response
-    const isAuthError = error.response?.status === 401 ||
-      (error.response?.data?.response || '').toString().toLowerCase().includes('invalid') ||
-      (error.response?.data?.message || '').toString().toLowerCase().includes('invalid') ||
-      (error.response?.data || '').toString().toLowerCase().includes('invalid api key');
-
-    if (isAuthError) {
+    if (isAuthError(error) || error.message === 'Invalid Api Key response in 200 OK') {
       console.log('🔄 ThyroCare API key rejected, forcing refresh and retry...');
       try {
         // Force refresh
         const session = await ThyrocareRefreshService.refreshApiKeys();
         // Retry with new key
-        return await apiCallFn(session.thyrocareApiKey);
+        const retryResult = await apiCallFn(session.thyrocareApiKey);
+
+        // Check retry result as well
+        if (isAuthError(retryResult)) {
+          // If it still fails, we might as well return it or throw, but let's throw to be safe
+          throw new Error('API key refresh failed to resolve the issue: ' + JSON.stringify(retryResult));
+        }
+        return retryResult;
+
       } catch (refreshError) {
-        // If refresh fails, throw original error or refresh error?
-        // Throwing refresh error helps debug why refresh failed
         console.error('❌ Failed to refresh API key during retry:', refreshError);
         throw refreshError;
       }
