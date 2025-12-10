@@ -10,7 +10,6 @@ import {
   getInitialFormData,
   saveContactInfo
 } from "../utils/localStorage";
-import BeneficiaryManager from "./BeneficiaryManager";
 
 const Form = ({ pkgName, priceInfo, pkgId }) => {
   const pkgNames = [].concat(pkgName || []);
@@ -23,7 +22,6 @@ const Form = ({ pkgName, priceInfo, pkgId }) => {
   const [appointmentDate, setAppointmentDate] = useState("");
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState("");
-  const [showBeneficiaryManager, setShowBeneficiaryManager] = useState(false);
   const [wantHardcopy, setWantHardcopy] = useState(false);
   const [contactInfo, setContactInfo] = useState({
     email: "",
@@ -39,10 +37,11 @@ const Form = ({ pkgName, priceInfo, pkgId }) => {
   const [saveContactForFuture, setSaveContactForFuture] = useState(false);
   const { cart, clearCart } = useCart();
   const { showSuccessCard } = useOrderSuccess();
+
   useEffect(() => {
     if (user) {
       const initialData = getInitialFormData();
-      setSelectedBeneficiaries(initialData.beneficiaries);
+      // Only load contact info, not beneficiaries
 
       // Auto-fill contact information from user profile
       const autoFilledContactInfo = {
@@ -65,36 +64,15 @@ const Form = ({ pkgName, priceInfo, pkgId }) => {
   const handlePersonsChange = (e) => {
     const count = parseInt(e.target.value);
     setNumPersons(count);
-    setSelectedBeneficiaries(Array.from({ length: count }, () => ({ name: "", age: "", gender: "" })));
-  };
-
-  const handleSelectBeneficiary = (beneficiary) => {
-    const isAlreadySelected = selectedBeneficiaries.some(b =>
-      b.name === beneficiary.name &&
-      b.age === beneficiary.age &&
-      b.gender === beneficiary.gender &&
-      b.relationship === beneficiary.relationship
+    // Preserve existing data when resizing
+    setSelectedBeneficiaries(prev =>
+      Array.from({ length: count }, (_, i) => prev[i] || { name: "", age: "", gender: "" })
     );
-    if (isAlreadySelected) {
-      alert('This beneficiary is already selected. Please choose a different beneficiary.');
-      return;
-    }
-
-    const updatedBeneficiaries = [...selectedBeneficiaries];
-    const emptyIndex = updatedBeneficiaries.findIndex(b => !b.name);
-
-    if (emptyIndex >= 0) {
-      updatedBeneficiaries[emptyIndex] = beneficiary;
-      setSelectedBeneficiaries(updatedBeneficiaries);
-    } else {
-      updatedBeneficiaries[0] = beneficiary;
-      setSelectedBeneficiaries(updatedBeneficiaries);
-    }
   };
 
-  const handleRemoveBeneficiary = (index) => {
+  const handleBeneficiaryChange = (index, field, value) => {
     const updatedBeneficiaries = [...selectedBeneficiaries];
-    updatedBeneficiaries[index] = { name: "", age: "", gender: "" };
+    updatedBeneficiaries[index] = { ...updatedBeneficiaries[index], [field]: value };
     setSelectedBeneficiaries(updatedBeneficiaries);
   };
 
@@ -366,51 +344,47 @@ const Form = ({ pkgName, priceInfo, pkgId }) => {
           </p>
         )}
 
-        {/* Beneficiary Selection Section */}
+        {/* Beneficiary Details Section */}
         <div className="mb-4">
-          <p className="font-medium text-gray-800 mb-2">Select Beneficiaries ({numPersons} required)</p>
+          <p className="font-medium text-gray-800 mb-2">Beneficiary Details</p>
 
-          {/* Show selected beneficiaries */}
-          {selectedBeneficiaries.map((beneficiary, index) => (
-            beneficiary.name ? (
-              <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-gray-800">Beneficiary {index + 1}: {beneficiary.name}</p>
-                    <p className="text-sm text-gray-600">
-                      {beneficiary.age} years • {beneficiary.gender}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveBeneficiary(index)}
-                    className="text-sm text-red-600 hover:text-red-700"
+          <div className="space-y-3">
+            {selectedBeneficiaries.map((beneficiary, index) => (
+              <div key={index} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                <p className="text-sm font-medium text-gray-700 mb-2">Person {index + 1}</p>
+                {/* Row 1: Name */}
+                <div className="mb-2">
+                  <input
+                    type="text"
+                    placeholder="Full Name"
+                    value={beneficiary.name}
+                    onChange={(e) => handleBeneficiaryChange(index, "name", e.target.value)}
+                    className="w-full border border-gray-400 rounded px-3 py-2 text-sm"
+                  />
+                </div>
+                {/* Row 2: Age and Gender */}
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    placeholder="Age"
+                    value={beneficiary.age}
+                    onChange={(e) => handleBeneficiaryChange(index, "age", e.target.value)}
+                    className="w-1/2 border border-gray-400 rounded px-3 py-2 text-sm"
+                  />
+                  <select
+                    value={beneficiary.gender}
+                    onChange={(e) => handleBeneficiaryChange(index, "gender", e.target.value)}
+                    className="w-1/2 border border-gray-400 rounded px-3 py-2 text-sm"
                   >
-                    Remove
-                  </button>
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
               </div>
-            ) : (
-              <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-gray-600 text-sm">Beneficiary {index + 1} not selected</p>
-                  <button
-                    type="button"
-                    onClick={() => setShowBeneficiaryManager(true)}
-                    className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                  >
-                    Add Beneficiary
-                  </button>
-                </div>
-              </div>
-            )
-          ))}
-
-          {selectedBeneficiaries.filter(b => !b.name).length > 0 && (
-            <p className="text-sm text-gray-600 mt-2">
-              {selectedBeneficiaries.filter(b => !b.name).length} more beneficiary(ies) required
-            </p>
-          )}
+            ))}
+          </div>
         </div>
 
         <div className="mb-4">
@@ -575,12 +549,6 @@ const Form = ({ pkgName, priceInfo, pkgId }) => {
           {loading ? 'Creating Order...' : 'BOOK NOW'}
         </button>
       </form>
-
-      <BeneficiaryManager
-        isOpen={showBeneficiaryManager}
-        onClose={() => setShowBeneficiaryManager(false)}
-        onSelectBeneficiary={handleSelectBeneficiary}
-      />
     </>
   );
 };

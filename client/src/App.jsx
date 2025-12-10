@@ -3,7 +3,7 @@ import { UserProvider } from './context/UserProvider';
 import { ProductProvider } from './context/ProductContext';
 import { ToastProvider } from './context/ToastContext';
 import { CartProvider } from './context/CartContext';
-import { BeneficiaryProvider } from './context/BeneficiaryContext';
+
 import { SiteSettingsProvider } from './context/SiteSettingsContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -26,38 +26,36 @@ function App() {
       <UserProvider>
         <ProductProvider>
           <CartProvider>
-            <BeneficiaryProvider>
-              <SiteSettingsProvider>
-                <Router>
-                  <OrderSuccessProvider>
-                    <ScrollToTopProvider>
-                      <div className="min-h-screen flex flex-col">
-                        <Header />
-                        <main className="grow">
-                          <Routes>
-                            <Route path="/" element={<LandingPage />} />
-                            <Route path="/packages" element={<PackagePage />} />
-                            <Route path="/packages/:code" element={<PackageDetailedPage />} />
-                            <Route path="/tests" element={<TestPage />} />
-                            <Route path="/offers" element={<OfferPage />} />
-                            <Route path="/account" element={<AccountPage />} />
-                            <Route path="/cart" element={<CartPage />} />
-                            <Route path="/orders" element={<OrderPage />} />
-                            <Route path="/about" element={<AboutPage />} />
-                            <Route path="/order-history" element={<OrderHistory />} />
-                            <Route path="/popular-packages" element={<Navigate to="/packages" replace />} />
-                            <Route path="/all-tests" element={<Navigate to="/tests" replace />} />
-                            <Route path="*" element={<Navigate to="/" replace />} />
-                          </Routes>
-                        </main>
-                        <Footer />
-                        <ToastContainer />
-                      </div>
-                    </ScrollToTopProvider>
-                  </OrderSuccessProvider>
-                </Router>
-              </SiteSettingsProvider>
-            </BeneficiaryProvider>
+            <SiteSettingsProvider>
+              <Router>
+                <OrderSuccessProvider>
+                  <ScrollToTopProvider>
+                    <div className="min-h-screen flex flex-col">
+                      <Header />
+                      <main className="grow">
+                        <Routes>
+                          <Route path="/" element={<LandingPage />} />
+                          <Route path="/packages" element={<PackagePage />} />
+                          <Route path="/packages/:code" element={<PackageDetailedPage />} />
+                          <Route path="/tests" element={<TestPage />} />
+                          <Route path="/offers" element={<OfferPage />} />
+                          <Route path="/account" element={<AccountPage />} />
+                          <Route path="/cart" element={<CartPage />} />
+                          <Route path="/orders" element={<OrderPage />} />
+                          <Route path="/about" element={<AboutPage />} />
+                          <Route path="/order-history" element={<OrderHistory />} />
+                          <Route path="/popular-packages" element={<Navigate to="/packages" replace />} />
+                          <Route path="/all-tests" element={<Navigate to="/tests" replace />} />
+                          <Route path="*" element={<Navigate to="/" replace />} />
+                        </Routes>
+                      </main>
+                      <Footer />
+                      <ToastContainer />
+                    </div>
+                  </ScrollToTopProvider>
+                </OrderSuccessProvider>
+              </Router>
+            </SiteSettingsProvider>
           </CartProvider>
         </ProductProvider>
       </UserProvider>

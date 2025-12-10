@@ -12,7 +12,6 @@ import adminRouter from "./src/routes/admin.js";
 import clientRouter from "./src/routes/client.js";
 import cartRouter from "./src/routes/cart.js";
 import SiteSettingsRouter from "./src/routes/siteSettings.js";
-import beneficiaryRouter from "./src/routes/beneficiary.js";
 import orderRouter from "./src/routes/order.js";
 import notificationRouter from "./src/routes/notification.js";
 import ThyrocareRefreshService from "./src/services/thyrocareRefreshService.js";
@@ -34,16 +33,16 @@ console.log("Allowed origins:", allowedOrigins);
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    
+
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    
+
     if (process.env.NODE_ENV === 'development') {
       console.log(`⚠️  CORS: Origin ${origin} not in allowed list, but allowing in development`);
       return callback(null, true);
     }
-    
+
     console.log(`❌ CORS: Origin ${origin} not allowed`);
     return callback(new Error('Not allowed by CORS'), false);
   },
@@ -63,7 +62,6 @@ app.use("/api/user", userRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/client", clientRouter);
 app.use("/api/cart", cartRouter);
-app.use("/api/beneficiaries", beneficiaryRouter);
 app.use("/api/settings", SiteSettingsRouter);
 app.use("/api/orders", orderRouter);
 app.use("/api/admin/notifications", notificationRouter);
@@ -87,10 +85,10 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(async () => {
     console.log("✅ MongoDB Connected");
     await ThyrocareRefreshService.checkAndRefreshOnStartup();
-    
+
     // Daily order status sync scheduler removed
     // Status is refreshed on-demand when users/admins view orders
-    
+
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
   })
