@@ -122,7 +122,20 @@ const orderSchema = new mongoose.Schema({
     },
     status: {
       type: String,
-      enum: ['YET TO ASSIGN', 'ASSIGNED', 'ACCEPTED', 'SERVICED', 'DONE', 'FAILED'],
+      enum: [
+        'YET TO ASSIGN',
+        'ASSIGNED',
+        'ACCEPTED',
+        'STARTED',
+        'ARRIVED',
+        'CONFIRMED',
+        'SERVICED',
+        'PARTIAL SERVICED',
+        'RESCHEDULED',
+        'CANCELLED',
+        'DONE',
+        'FAILED'
+      ],
       default: 'YET TO ASSIGN'
     },
     statusHistory: [{
@@ -338,17 +351,17 @@ orderSchema.statics.findByAdmin = async function (adminId) {
 orderSchema.methods.getCategorizedStatus = function () {
   const systemStatus = this.status;
   const thyrocareStatus = this.thyrocare?.status;
-  
+
   // Completed category
   if (systemStatus === 'COMPLETED' || thyrocareStatus === 'DONE') {
     return 'COMPLETED';
   }
-  
+
   // Failed category
   if (systemStatus === 'FAILED' || thyrocareStatus === 'FAILED') {
     return 'FAILED';
   }
-  
+
   // Pending category (everything else)
   return 'PENDING';
 };
@@ -356,7 +369,7 @@ orderSchema.methods.getCategorizedStatus = function () {
 // Static method to get order counts by categorized status
 orderSchema.statics.getCategorizedStats = async function (adminId = null) {
   const matchStage = adminId ? { adminId } : {};
-  
+
   const result = await this.aggregate([
     { $match: matchStage },
     {
@@ -365,17 +378,21 @@ orderSchema.statics.getCategorizedStats = async function (adminId = null) {
           $switch: {
             branches: [
               {
-                case: { $or: [
-                  { $eq: ['$status', 'COMPLETED'] },
-                  { $eq: ['$thyrocare.status', 'DONE'] }
-                ]},
+                case: {
+                  $or: [
+                    { $eq: ['$status', 'COMPLETED'] },
+                    { $eq: ['$thyrocare.status', 'DONE'] }
+                  ]
+                },
                 then: 'COMPLETED'
               },
               {
-                case: { $or: [
-                  { $eq: ['$status', 'FAILED'] },
-                  { $eq: ['$thyrocare.status', 'FAILED'] }
-                ]},
+                case: {
+                  $or: [
+                    { $eq: ['$status', 'FAILED'] },
+                    { $eq: ['$thyrocare.status', 'FAILED'] }
+                  ]
+                },
                 then: 'FAILED'
               }
             ],
@@ -391,18 +408,18 @@ orderSchema.statics.getCategorizedStats = async function (adminId = null) {
       }
     }
   ]);
-  
+
   // Format the result
   const stats = {
     COMPLETED: 0,
     FAILED: 0,
     PENDING: 0
   };
-  
+
   result.forEach(item => {
     stats[item._id] = item.count;
   });
-  
+
   return stats;
 };
 
