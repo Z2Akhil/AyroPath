@@ -1,5 +1,5 @@
-import { 
-  X, Package, User, Mail, Phone, MapPin, Calendar, 
+import {
+  X, Package, User, Mail, Phone, MapPin, Calendar,
   DollarSign, CheckCircle, XCircle, Clock, AlertCircle,
   FileText, Users, CreditCard, Truck, Download, Copy
 } from 'lucide-react';
@@ -63,8 +63,8 @@ const OrderDetailsModal = ({ order, isOpen, onClose, loading, error }) => {
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         {/* Background overlay */}
-        <div 
-          className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" 
+        <div
+          className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
           onClick={onClose}
         />
 
@@ -156,7 +156,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, loading, error }) => {
                         <span className="text-gray-600">Email:</span>
                         <span className="font-medium flex items-center gap-1">
                           {order.contactInfo?.email || 'N/A'}
-                          <button 
+                          <button
                             onClick={() => copyToClipboard(order.contactInfo?.email)}
                             className="p-1 hover:bg-gray-200 rounded"
                           >
@@ -168,7 +168,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, loading, error }) => {
                         <span className="text-gray-600">Phone:</span>
                         <span className="font-medium flex items-center gap-1">
                           {order.contactInfo?.mobile || 'N/A'}
-                          <button 
+                          <button
                             onClick={() => copyToClipboard(order.contactInfo?.mobile)}
                             className="p-1 hover:bg-gray-200 rounded"
                           >
@@ -277,9 +277,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, loading, error }) => {
                             <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Gender
                             </th>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Relationship
-                            </th>
+
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
@@ -294,9 +292,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, loading, error }) => {
                               <td className="px-3 py-2 whitespace-nowrap text-sm">
                                 {beneficiary.gender}
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-sm">
-                                {beneficiary.relationship}
-                              </td>
+
                             </tr>
                           ))}
                         </tbody>
@@ -324,10 +320,9 @@ const OrderDetailsModal = ({ order, isOpen, onClose, loading, error }) => {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Status:</span>
-                          <span className={`font-medium ${
-                            order.payment.status === 'SUCCESS' ? 'text-green-600' : 
-                            order.payment.status === 'PENDING' ? 'text-yellow-600' : 'text-red-600'
-                          }`}>
+                          <span className={`font-medium ${order.payment.status === 'SUCCESS' ? 'text-green-600' :
+                              order.payment.status === 'PENDING' ? 'text-yellow-600' : 'text-red-600'
+                            }`}>
                             {order.payment.status || 'N/A'}
                           </span>
                         </div>

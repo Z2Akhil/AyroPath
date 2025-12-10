@@ -1,5 +1,5 @@
-import { 
-  ChevronDown, ChevronUp, Package, User, CheckCircle, Truck, Users, CreditCard, 
+import {
+  ChevronDown, ChevronUp, Package, User, CheckCircle, Truck, Users, CreditCard,
   FileText, Copy, Download, RefreshCw
 } from 'lucide-react';
 import { useState } from 'react';
@@ -9,35 +9,35 @@ const OrderAccordion = ({ order, loading, error, onRetry, isExpanded, onToggle, 
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState('');
   const [refreshSuccess, setRefreshSuccess] = useState(false);
-  
+
   const handleRefreshStatus = async () => {
     if (!order?._id) return;
-    
+
     try {
       setRefreshing(true);
       setRefreshError('');
       setRefreshSuccess(false);
-      
+
       console.log('Refreshing Thyrocare status for order:', order.orderId);
       const response = await orderAdminApi.syncOrderStatus(order._id);
-      
+
       setRefreshSuccess(true);
       console.log('Refresh successful:', response.data);
-      
+
       // Call parent refresh callback if provided
       if (onRefresh) {
         onRefresh();
       }
-      
+
       // Auto-clear success message after 3 seconds
       setTimeout(() => {
         setRefreshSuccess(false);
       }, 3000);
-      
+
     } catch (err) {
       console.error('Error refreshing order status:', err);
       setRefreshError(err.response?.data?.error || 'Failed to refresh status');
-      
+
       // Auto-clear error after 5 seconds
       setTimeout(() => {
         setRefreshError('');
@@ -201,7 +201,7 @@ const OrderAccordion = ({ order, loading, error, onRetry, isExpanded, onToggle, 
                 </>
               )}
             </button>
-            
+
             {/* Refresh button for Thyrocare status */}
             {order.thyrocare?.orderNo && (
               <button
@@ -255,12 +255,12 @@ const OrderAccordion = ({ order, loading, error, onRetry, isExpanded, onToggle, 
                           const price = order.package?.price || 0;
                           const discount = order.package?.discount || 0;
                           const sellingPrice = order.package?.sellingPrice;
-                          
+
                           // If sellingPrice exists and is not 0, use it
                           if (sellingPrice && sellingPrice > 0) {
                             return sellingPrice;
                           }
-                          
+
                           // Otherwise calculate price - discount
                           const calculatedPrice = price - discount;
                           return calculatedPrice > 0 ? calculatedPrice : price;
@@ -286,7 +286,7 @@ const OrderAccordion = ({ order, loading, error, onRetry, isExpanded, onToggle, 
                       <span className="text-gray-600">Email:</span>
                       <span className="font-medium flex items-center gap-1">
                         {order.contactInfo?.email || 'N/A'}
-                        <button 
+                        <button
                           onClick={() => copyToClipboard(order.contactInfo?.email)}
                           className="p-1 hover:bg-gray-100 rounded"
                         >
@@ -298,7 +298,7 @@ const OrderAccordion = ({ order, loading, error, onRetry, isExpanded, onToggle, 
                       <span className="text-gray-600">Phone:</span>
                       <span className="font-medium flex items-center gap-1">
                         {order.contactInfo?.mobile || 'N/A'}
-                        <button 
+                        <button
                           onClick={() => copyToClipboard(order.contactInfo?.mobile)}
                           className="p-1 hover:bg-gray-100 rounded"
                         >
@@ -377,7 +377,7 @@ const OrderAccordion = ({ order, loading, error, onRetry, isExpanded, onToggle, 
                               <span>Thyrocare Order No:</span>
                               <span className="font-medium flex items-center gap-1">
                                 {order.thyrocare.orderNo}
-                                <button 
+                                <button
                                   onClick={() => copyToClipboard(order.thyrocare.orderNo)}
                                   className="p-1 hover:bg-gray-100 rounded"
                                   title="Copy to clipboard"
@@ -422,9 +422,7 @@ const OrderAccordion = ({ order, loading, error, onRetry, isExpanded, onToggle, 
                           <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Gender
                           </th>
-                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Relationship
-                          </th>
+
                           <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Report
                           </th>
@@ -433,11 +431,11 @@ const OrderAccordion = ({ order, loading, error, onRetry, isExpanded, onToggle, 
                       <tbody className="divide-y divide-gray-200">
                         {order.beneficiaries.map((beneficiary, index) => {
                           // Find report for this beneficiary
-                          const beneficiaryReport = order.reports?.find(report => 
-                            report.beneficiaryName === beneficiary.name || 
+                          const beneficiaryReport = order.reports?.find(report =>
+                            report.beneficiaryName === beneficiary.name ||
                             report.leadId === beneficiary.leadId
                           );
-                          
+
                           return (
                             <tr key={index}>
                               <td className="px-3 py-2 whitespace-nowrap text-sm">
@@ -449,14 +447,12 @@ const OrderAccordion = ({ order, loading, error, onRetry, isExpanded, onToggle, 
                               <td className="px-3 py-2 whitespace-nowrap text-sm">
                                 {beneficiary.gender || 'N/A'}
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-sm">
-                                {beneficiary.relationship || beneficiary.relation || beneficiary.relationshipType || 'N/A'}
-                              </td>
+
                               <td className="px-3 py-2 whitespace-nowrap text-sm">
                                 {beneficiaryReport?.reportUrl ? (
-                                  <a 
-                                    href={beneficiaryReport.reportUrl} 
-                                    target="_blank" 
+                                  <a
+                                    href={beneficiaryReport.reportUrl}
+                                    target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-blue-600 hover:text-blue-800 underline"
                                   >
