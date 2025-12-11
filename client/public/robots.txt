@@ -1,0 +1,15 @@
+# Robots.txt for AyroPath Client
+
+User-agent: *
+
+# Allow all client pages
+Allow: /
+
+# Disallow backend API routes (if served from same domain)
+Disallow: /api/
+
+# Disallow admin panel
+Disallow: /admin/
+
+# Sitemap location
+Sitemap: https://ayropath.com/sitemap.xml
