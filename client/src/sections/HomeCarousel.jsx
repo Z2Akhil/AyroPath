@@ -37,9 +37,15 @@ const HomeCarousel = () => {
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Why Choose Us?</h2>
       <Slider {...settings}>
         {carouselItems.map(item => (
-          <div key={item.id} className="px-2"> 
+          <div key={item.id} className="px-2">
             <div className="rounded-lg shadow-lg overflow-hidden">
-              <img src={item.img} alt={item.title} className="w-full h-60 object-cover" />
+              <img
+                src={item.img}
+                alt={item.title}
+                className="w-full h-60 object-cover"
+                loading="lazy"
+                decoding="async"
+              />
               <div className="p-4 bg-white">
                 <h3 className="font-semibold text-gray-900 truncate">{item.title}</h3>
               </div>

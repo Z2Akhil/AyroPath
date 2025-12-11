@@ -5,6 +5,7 @@ import Form from "../components/Form.jsx";
 import { getProductDisplayPrice } from "../api/backendProductApi";
 import SkeletonPackageDetailed from "../components/cards/SkeletonPackageDetailed";
 import { useProducts } from "../context/ProductContext";
+import SEO from "../components/SEO.jsx";
 
 const PackageDetailedPage = () => {
   const { code } = useParams();
@@ -29,7 +30,7 @@ const PackageDetailedPage = () => {
         acc[test.groupName].push(test.name);
         return acc;
       }, {});
-      
+
       if (Object.keys(groupedTests).length > 0) {
         // Only open all categories by default on large screens (desktop)
         // On mobile/tablet (stacked layout), keep them closed to reduce scrolling to the form
@@ -98,8 +99,43 @@ const PackageDetailedPage = () => {
   // Get enhanced pricing information using the same logic as PackageCard
   const priceInfo = getProductDisplayPrice(pkg);
 
+  // Generate SEO data for this package
+  const seoTitle = `${pkg.name} - Book Online | Ayropath`;
+  const seoDescription = pkg.childs && pkg.childs.length > 0
+    ? `Book ${pkg.name} online with Ayropath. Includes ${pkg.childs.length} tests. Powered by Thyrocare. Fast results, affordable pricing starting at ₹${priceInfo.displayPrice}.`
+    : `Book ${pkg.name} online with Ayropath. Powered by Thyrocare. Fast results, affordable pricing at ₹${priceInfo.displayPrice}.`;
+
+  const seoKeywords = `${pkg.name}, book ${pkg.name} online, ${pkg.name} test, medical test booking, Thyrocare, Ayropath, diagnostic test, health checkup`;
+
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "MedicalTest",
+    "name": pkg.name,
+    "description": seoDescription,
+    "provider": {
+      "@type": "MedicalBusiness",
+      "name": "Ayropath",
+      "url": "https://ayropath.com"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": priceInfo.displayPrice,
+      "priceCurrency": "INR",
+      "availability": "https://schema.org/InStock",
+      "url": `https://ayropath.com/packages/${pkg.code}`
+    }
+  };
+
   return (
     <div className="min-h-screen py-8">
+      <SEO
+        title={seoTitle}
+        description={seoDescription}
+        keywords={seoKeywords}
+        canonical={`/packages/${pkg.code}`}
+        structuredData={structuredData}
+        ogType="product"
+      />
       <div className="max-w-7xl mx-auto px-1 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="flex mb-8" aria-label="Breadcrumb">
@@ -243,7 +279,7 @@ const PackageDetailedPage = () => {
           {/* RIGHT: Booking Form */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-lg border border-gray-100 sticky top-8">
-                <Form pkgName={pkg.name} priceInfo={priceInfo} pkgId={code} />
+              <Form pkgName={pkg.name} priceInfo={priceInfo} pkgId={code} />
             </div>
           </div>
         </div>

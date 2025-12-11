@@ -4,10 +4,12 @@ import PackagePage from './PackagePage';
 import OfferPage from './OfferPage';
 import TestPage from './TestPage';
 import { Link } from 'react-router-dom';
+import SEO from '../components/SEO';
 
 const LandingPage = () => {
   return (
     <div className="max-w-7xl mx-auto sm:px-6 py-10">
+      <SEO />
       <Hero />
 
       {/* Packages Section */}

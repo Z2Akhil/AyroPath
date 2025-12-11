@@ -14,6 +14,7 @@ import cartRouter from "./src/routes/cart.js";
 import SiteSettingsRouter from "./src/routes/siteSettings.js";
 import orderRouter from "./src/routes/order.js";
 import notificationRouter from "./src/routes/notification.js";
+import seoRouter from "./src/routes/seo.js";
 import ThyrocareRefreshService from "./src/services/thyrocareRefreshService.js";
 import OrderStatusSyncService from "./src/services/OrderStatusSyncService.js";
 
@@ -54,7 +55,20 @@ app.use(compression());
 app.use(express.json());
 if (process.env.NODE_ENV !== "production")
   app.use(morgan("dev"));
+
+// Add cache headers for static assets
+app.use((req, res, next) => {
+  // Cache static assets for 1 year
+  if (req.url.match(/\.(jpg|jpeg|png|gif|ico|css|js|webp|svg|woff|woff2|ttf|eot)$/)) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  }
+  next();
+});
+
 app.use("/api", rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
+
+// --- SEO Routes (before API routes to handle /robots.txt and /sitemap.xml) ---
+app.use("/", seoRouter);
 
 // --- Routes ---
 app.use("/api/auth", authRouter);

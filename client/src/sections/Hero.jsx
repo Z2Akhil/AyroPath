@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSiteSettings } from "../context/SiteSettingsContext";
-import {Link} from "react-router-dom";
+import { Link } from "react-router-dom";
 const Hero = () => {
   const { settings, loading, error } = useSiteSettings();
   const [imgError, setImgError] = useState(false);
@@ -62,6 +62,8 @@ const Hero = () => {
           alt="Lab technician"
           onError={() => setImgError(true)} // fallback trigger
           className="w-full h-full object-cover"
+          fetchpriority="high"
+          decoding="async"
         />
       </div>
     </div>

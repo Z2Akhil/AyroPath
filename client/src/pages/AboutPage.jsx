@@ -40,6 +40,8 @@ const AboutPage = () => {
           src="/labNetwork.png"
           alt="Lab Network Map"
           className="rounded-lg w-full max-w-5xl object-cover shadow-md"
+          loading="lazy"
+          decoding="async"
         />
       </section>
 
@@ -86,6 +88,7 @@ const AboutPage = () => {
                 title="Thyrocare - India's Largest Lab"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
+                loading="lazy"
               ></iframe>
             </div>
 
@@ -97,6 +100,7 @@ const AboutPage = () => {
                 title="Jaanch - A Brand by Thyrocare"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
+                loading="lazy"
               ></iframe>
             </div>
           </div>
