@@ -1,8 +1,8 @@
-import { Helmet } from 'react-helmet-async';
 import PropTypes from 'prop-types';
 
 /**
  * SEO Component for dynamic meta tags
+ * React 19 natively supports metadata tags - they are automatically hoisted to <head>
  * Use this component on pages to set page-specific SEO metadata
  */
 const SEO = ({
@@ -18,7 +18,7 @@ const SEO = ({
     const fullCanonical = canonical.startsWith('http') ? canonical : `${baseUrl}${canonical}`;
 
     return (
-        <Helmet>
+        <>
             {/* Basic Meta Tags */}
             <title>{title}</title>
             <meta name="description" content={description} />
@@ -45,7 +45,7 @@ const SEO = ({
                     {JSON.stringify(structuredData)}
                 </script>
             )}
-        </Helmet>
+        </>
     );
 };
 
