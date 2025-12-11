@@ -7,7 +7,7 @@ import PropTypes from 'prop-types';
  */
 const SEO = ({
     title = 'Ayropath | Book Medical Tests Online in India | Thyrocare Partner',
-    description = 'Ayropath is a trusted medical diagnostic booking platform in India. Book blood tests, full body checkups, and pathology tests powered by Thyrocare. Fast booking, affordable pricing, and secure online reports.',
+    description = 'Ayropath helps you book blood tests, full body checkups, and pathology tests across India with ease. Powered by Thyrocare, we offer affordable test packages, quick home sample collection, secure online reports, and reliable diagnostic services you can trust.',
     keywords = 'Ayropath, medical tests online,thyrocare lab test,online blood test,book blood tests, Thyrocare partner, diagnostic services India, full body checkup, pathology tests, health packages, lab test booking,complete health checkup,full body checkup,comprehensive health checkup,comprehensive checkup health care package',
     canonical = 'https://ayropath.com/',
     ogImage = 'https://ayropath.com/og-image.png',
