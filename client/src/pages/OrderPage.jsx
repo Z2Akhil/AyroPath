@@ -265,8 +265,8 @@ const OrderPage = () => {
                 Our customer support team is here to help you with any questions.
               </p>
               <div className="text-sm text-blue-600">
-                <p>📞 Call: +91-XXXXXXXXXX</p>
-                <p>✉️ Email: support@Ayropath.com</p>
+                <p>📞 Call: +91-9973956949</p>
+                <p>✉️ Email: admin@ayropath.com</p>
               </div>
             </div>
           </div>

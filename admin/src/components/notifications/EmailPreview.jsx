@@ -59,7 +59,7 @@ const EmailPreview = ({ subject, content, emailType, recipientCount, onClose }) 
                 <span className="text-sm text-gray-500">Mobile</span>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-gray-500" />
@@ -123,16 +123,16 @@ const EmailPreview = ({ subject, content, emailType, recipientCount, onClose }) 
                     <p className="text-sm text-gray-600">Your trusted health diagnostics partner</p>
                   </div>
                 </div>
-                
+
                 <div className="text-sm text-gray-500 space-y-1">
                   <p>AyroPath Health Diagnostics</p>
                   <p>123 Health Street, Medical City, MC 12345</p>
-                  <p>Contact: support@ayropath.com | Phone: (123) 456-7890</p>
+                  <p>Contact: admin@ayropath.com | Phone:+91 9973956949</p>
                 </div>
-                
+
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <p className="text-xs text-gray-400">
-                    This email was sent to you as a registered user of AyroPath. 
+                    This email was sent to you as a registered user of AyroPath.
                     If you no longer wish to receive these emails, you can update your preferences in your account settings.
                   </p>
                 </div>
@@ -182,7 +182,7 @@ const EmailPreview = ({ subject, content, emailType, recipientCount, onClose }) 
             <div className="text-sm text-gray-600">
               <p>This is a preview. No email will be sent until you confirm.</p>
             </div>
-            
+
             <div className="flex gap-3">
               <button
                 onClick={onClose}
@@ -190,7 +190,7 @@ const EmailPreview = ({ subject, content, emailType, recipientCount, onClose }) 
               >
                 Close Preview
               </button>
-              
+
               <button
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled
@@ -201,7 +201,7 @@ const EmailPreview = ({ subject, content, emailType, recipientCount, onClose }) 
               </button>
             </div>
           </div>
-          
+
           <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
             <p className="text-sm text-yellow-700 text-center">
               ⚠️ This is a UI prototype. The "Send Now" button is disabled until backend integration is implemented.
