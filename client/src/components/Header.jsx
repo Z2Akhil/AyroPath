@@ -176,14 +176,16 @@ const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose, loading, 
                   {label}
                 </Link>
               ))}
-              <Link
-                to="/account"
-                onClick={onClose}
-                className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg 
-                 transition-all duration-200 font-medium"
-              >
-                My Orders
-              </Link>
+              {user && (
+                <Link
+                  to="/account"
+                  onClick={onClose}
+                  className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg 
+                   transition-all duration-200 font-medium"
+                >
+                  My Orders
+                </Link>
+              )}
             </div>
           </nav>
           {/* Footer */}

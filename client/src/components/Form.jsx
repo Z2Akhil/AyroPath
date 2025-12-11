@@ -94,6 +94,12 @@ const Form = ({ pkgName, priceInfo, pkgId }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Check if user is logged in
+    if (!user) {
+      alert("Please login to place an order");
+      return;
+    }
+
     // Validate all required fields
     if (!pincode || pincode.length !== 6 || !pincodeStatus?.includes("✅")) {
       alert("Please check pincode availability first");
