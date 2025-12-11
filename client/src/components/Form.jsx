@@ -10,6 +10,8 @@ import {
   getInitialFormData,
   saveContactInfo
 } from "../utils/localStorage";
+import ConfirmationDialog from "./ConfirmationDialog";
+import AuthModal from "./AuthModal";
 
 const Form = ({ pkgName, priceInfo, pkgId }) => {
   const pkgNames = [].concat(pkgName || []);
@@ -37,6 +39,8 @@ const Form = ({ pkgName, priceInfo, pkgId }) => {
   const [saveContactForFuture, setSaveContactForFuture] = useState(false);
   const { cart, clearCart } = useCart();
   const { showSuccessCard } = useOrderSuccess();
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -96,7 +100,7 @@ const Form = ({ pkgName, priceInfo, pkgId }) => {
 
     // Check if user is logged in
     if (!user) {
-      alert("Please login to place an order");
+      setShowLoginPrompt(true);
       return;
     }
 
@@ -555,6 +559,18 @@ const Form = ({ pkgName, priceInfo, pkgId }) => {
           {loading ? 'Creating Order...' : 'BOOK NOW'}
         </button>
       </form>
+      <ConfirmationDialog
+        isOpen={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+        onConfirm={() => {
+          setShowLoginPrompt(false);
+          setAuthOpen(true);
+        }}
+        title="Login Required"
+        message="Please log in to your account to proceed with your order."
+        confirmText="Login"
+      />
+      {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
     </>
   );
 };

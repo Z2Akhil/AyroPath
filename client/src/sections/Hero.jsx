@@ -62,7 +62,7 @@ const Hero = () => {
           alt="Lab technician"
           onError={() => setImgError(true)} // fallback trigger
           className="w-full h-full object-cover"
-          fetchpriority="high"
+          fetchPriority="high"
           decoding="async"
         />
       </div>
