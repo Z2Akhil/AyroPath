@@ -216,6 +216,18 @@ export default function Header() {
     navigate('/');
   };
 
+  // Check for session expiry on mount
+  useState(() => {
+    const isExpired = localStorage.getItem("sessionExpired");
+    if (isExpired === "true") {
+      localStorage.removeItem("sessionExpired");
+      setTimeout(() => {
+        success("Session expired, please log in again.");
+        setAuthOpen(true);
+      }, 500); // Small delay to ensure toast system is ready
+    }
+  });
+
   return (
     <>
       <style jsx="true">{`

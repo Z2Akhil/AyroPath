@@ -12,9 +12,24 @@ export const UserProvider = ({ children }) => {
       const savedUser = localStorage.getItem("user");
 
       if (token && savedUser) {
+        // Check if token is expired
         try {
+          // Simple JWT decode (payload is the 2nd part)
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const now = Date.now() / 1000;
+
+          if (payload.exp && payload.exp < now) {
+            console.log('Token expired, clearing session');
+            authService.logout();
+            setUser(null);
+            localStorage.setItem("sessionExpired", "true");
+            window.location.reload();
+            return;
+          }
+
           setUser(JSON.parse(savedUser));
-        } catch {
+        } catch (e) {
+          // If token is invalid/cant be decoded, log out
           authService.logout();
           setUser(null);
         }
@@ -24,7 +39,7 @@ export const UserProvider = ({ children }) => {
 
     checkAuth();
   }, []);
- 
+
   // Phone-based registration (deprecated - kept for backward compatibility)
   const register = async (name, phone, password, otp) => {
     try {

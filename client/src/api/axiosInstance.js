@@ -27,3 +27,28 @@ axiosInstance.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
+// Add response interceptor to handle 401 (Unauthorized) errors
+axiosInstance.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Clear exact items used in UserProvider/authService
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("user");
+
+      // Set flag so we can show a message/open login modal after reload
+      localStorage.setItem("sessionExpired", "true");
+
+      // Reloading ensures all contexts (User, Cart, etc.) are reset cleanly
+      window.location.reload();
+
+      // Return a pending promise to halt the error chain
+      // This prevents the calling code (like Form.jsx) from catching the error calls alert()
+      return new Promise(() => { });
+    }
+    return Promise.reject(error);
+  }
+);
