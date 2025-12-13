@@ -78,6 +78,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://ayropath.com/packages/P1853</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://ayropath.com/packages/P178</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -94,6 +99,16 @@
   </url>
   <url>
     <loc>https://ayropath.com/packages/P145</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ayropath.com/packages/P1854</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ayropath.com/packages/P1593</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -323,6 +338,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://ayropath.com/packages/P1911</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://ayropath.com/packages/P681</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -353,7 +373,17 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://ayropath.com/packages/P2157</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://ayropath.com/packages/P1263</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ayropath.com/packages/P1894</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -378,6 +408,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://ayropath.com/packages/P1825</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://ayropath.com/packages/P1027</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -388,12 +423,22 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://ayropath.com/packages/P2003</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://ayropath.com/packages/P855</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://ayropath.com/packages/P781</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ayropath.com/packages/P1912</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -438,6 +483,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://ayropath.com/packages/P2002</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://ayropath.com/packages/P1054</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -459,11 +509,6 @@
   </url>
   <url>
     <loc>https://ayropath.com/packages/P1026</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://ayropath.com/packages/P1906</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -514,6 +559,11 @@
   </url>
   <url>
     <loc>https://ayropath.com/packages/P2008</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ayropath.com/packages/P859</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -583,6 +633,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://ayropath.com/packages/P1906</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://ayropath.com/packages/P3351</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -603,32 +658,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://ayropath.com/packages/P859</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://ayropath.com/packages/P1593</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://ayropath.com/packages/P2157</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://ayropath.com/packages/P1856</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://ayropath.com/packages/P1911</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://ayropath.com/packages/P2003</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -638,37 +668,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://ayropath.com/packages/P1825</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://ayropath.com/packages/P2212</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://ayropath.com/packages/P1853</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://ayropath.com/packages/P1912</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://ayropath.com/packages/P1894</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://ayropath.com/packages/P1854</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://ayropath.com/packages/P2002</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
