@@ -1,5 +1,4 @@
 import express from 'express';
-import Test from '../models/Test.js';
 import Profile from '../models/Profile.js';
 import Offer from '../models/Offer.js';
 
@@ -49,16 +48,15 @@ router.get('/sitemap.xml', async (req, res) => {
     ];
 
     // Fetch all active products from database
-    const [tests, profiles, offers] = await Promise.all([
-      Test.find({ isActive: true }).select('code updatedAt').lean(),
+    const [profiles, offers] = await Promise.all([
       Profile.find({ isActive: true }).select('code updatedAt').lean(),
       Offer.find({ isActive: true }).select('code updatedAt').lean()
     ]);
 
-    const allProducts = [...profiles, ...offers, ...tests];
+    const allProducts = [...profiles, ...offers];
 
     // Log product counts for monitoring
-    console.log(`📄 Generating sitemap: ${allProducts.length} products (${profiles.length} profiles, ${offers.length} offers, ${tests.length} tests)`);
+    console.log(`📄 Generating sitemap: ${allProducts.length} products (${profiles.length} profiles, ${offers.length} offers)`);
 
     // Build XML sitemap
     let sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n';
