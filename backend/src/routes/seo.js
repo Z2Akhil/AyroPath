@@ -32,27 +32,33 @@ Sitemap: ${process.env.CLIENT_URL || 'https://ayropath.com'}/sitemap.xml
 
 /**
  * Generate and serve sitemap.xml
- * Includes static pages and dynamic product pages
+ * Dynamically generates sitemap at runtime from database
+ * Includes caching for performance optimization
  */
 router.get('/sitemap.xml', async (req, res) => {
   try {
     const baseUrl = process.env.CLIENT_URL || 'https://ayropath.com';
-    
+
     // Static pages with priority and change frequency
     const staticPages = [
-      { url: '/', priority: '1.0', changefreq: 'weekly' },
-      { url: '/packages', priority: '0.9', changefreq: 'daily' },
-      { url: '/tests', priority: '0.9', changefreq: 'daily' },
-      { url: '/offers', priority: '0.8', changefreq: 'daily' },
-      { url: '/about', priority: '0.7', changefreq: 'monthly' },
+      { url: '/', priority: '1.0', changefreq: 'daily' },
+      { url: '/packages', priority: '0.8', changefreq: 'weekly' },
+      { url: '/tests', priority: '0.8', changefreq: 'weekly' },
+      { url: '/offers', priority: '0.8', changefreq: 'weekly' },
+      { url: '/about', priority: '0.5', changefreq: 'monthly' },
     ];
 
     // Fetch all active products from database
     const [tests, profiles, offers] = await Promise.all([
-      Test.find({ isActive: true }).select('code updatedAt'),
-      Profile.find({ isActive: true }).select('code updatedAt'),
-      Offer.find({ isActive: true }).select('code updatedAt')
+      Test.find({ isActive: true }).select('code updatedAt').lean(),
+      Profile.find({ isActive: true }).select('code updatedAt').lean(),
+      Offer.find({ isActive: true }).select('code updatedAt').lean()
     ]);
+
+    const allProducts = [...profiles, ...offers, ...tests];
+
+    // Log product counts for monitoring
+    console.log(`📄 Generating sitemap: ${allProducts.length} products (${profiles.length} profiles, ${offers.length} offers, ${tests.length} tests)`);
 
     // Build XML sitemap
     let sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n';
@@ -67,14 +73,13 @@ router.get('/sitemap.xml', async (req, res) => {
       sitemap += '  </url>\n';
     });
 
-    // Add dynamic product pages (packages)
-    const allProducts = [...profiles, ...offers, ...tests];
+    // Add dynamic product pages
     allProducts.forEach(product => {
       const lastmod = product.updatedAt ? new Date(product.updatedAt).toISOString().split('T')[0] : '';
       sitemap += '  <url>\n';
       sitemap += `    <loc>${baseUrl}/packages/${product.code}</loc>\n`;
-      sitemap += `    <priority>0.8</priority>\n`;
-      sitemap += `    <changefreq>daily</changefreq>\n`;
+      sitemap += `    <priority>0.7</priority>\n`;
+      sitemap += `    <changefreq>weekly</changefreq>\n`;
       if (lastmod) {
         sitemap += `    <lastmod>${lastmod}</lastmod>\n`;
       }
@@ -83,11 +88,14 @@ router.get('/sitemap.xml', async (req, res) => {
 
     sitemap += '</urlset>';
 
-    res.type('application/xml');
+    // Set caching headers (cache for 1 hour)
+    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600');
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+
     res.send(sitemap);
 
   } catch (error) {
-    console.error('Error generating sitemap:', error);
+    console.error('❌ Error generating sitemap:', error);
     res.status(500).type('text/plain').send('Error generating sitemap');
   }
 });
