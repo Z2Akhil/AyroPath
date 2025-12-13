@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 // Configuration
 const SITE_URL = 'https://ayropath.com';
 const rawApiUrl = process.env.VITE_TARGET_URL || 'http://localhost:3000/api';
-const API_URL = rawApiUrl.startsWith('http') ? rawApiUrl : `http://localhost:3000${rawApiUrl.startsWith('/') ? '' : '/'}${rawApiUrl}`;
+const API_URL = rawApiUrl.startsWith('http') ? rawApiUrl : `${SITE_URL}${rawApiUrl.startsWith('/') ? '' : '/'}${rawApiUrl}`;
 const SITEMAP_PATH = path.resolve(__dirname, '../public/sitemap.xml');
 
 async function generateSitemap() {
