@@ -3,6 +3,7 @@ import { Search, Loader2, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getProducts } from "../api/productApi";
 import { useCart } from "../context/CartContext";
+import { slugify } from "../utils/slugify";
 
 const SearchBar = () => {
     const [query, setQuery] = useState("");
@@ -68,7 +69,7 @@ const SearchBar = () => {
 
     const handleSelect = (item) => {
         setShowDropdown(false);
-        navigate(`/packages/${item.code}`, { state: { product: item } });
+        navigate(`/packages/${slugify(item.name)}`, { state: { product: item } });
     };
 
     const handleKeyDown = (e) => {
@@ -94,7 +95,7 @@ const SearchBar = () => {
 
     return (
         <div ref={wrapperRef} className="relative w-full max-w-xl mx-auto">
-            
+
             {/* Input box */}
             <div className="flex items-center bg-white border border-gray-300 rounded-full px-4 py-2 shadow-none focus-within:border-blue-500 transition">
                 <Search className="h-5 w-5 text-gray-400 mr-2" />
@@ -141,7 +142,7 @@ const SearchBar = () => {
                                                         : "bg-blue-100 text-blue-700"}
                                                     `}
                                                 >
-                                                    {item.type === "TEST" ? "Test" :item.type === "OFFER" ? "Offer" : "Package"}
+                                                    {item.type === "TEST" ? "Test" : item.type === "OFFER" ? "Offer" : "Package"}
                                                 </span>
                                             </div>
 

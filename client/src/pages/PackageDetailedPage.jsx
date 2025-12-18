@@ -6,9 +6,10 @@ import { getProductDisplayPrice } from "../api/backendProductApi";
 import SkeletonPackageDetailed from "../components/cards/SkeletonPackageDetailed";
 import { useProducts } from "../context/ProductContext";
 import SEO from "../components/SEO.jsx";
+import { slugify } from "../utils/slugify";
 
 const PackageDetailedPage = () => {
-  const { code } = useParams();
+  const { slug } = useParams();
   const location = useLocation();
   const from = location.state?.from;
   const { allProducts, loading, error } = useProducts();
@@ -16,11 +17,11 @@ const PackageDetailedPage = () => {
   const [pkg, setPkg] = useState(null);
 
   useEffect(() => {
-    if (allProducts.length > 0 && code) {
-      const foundPkg = allProducts.find((p) => p.code === code);
+    if (allProducts.length > 0 && slug) {
+      const foundPkg = allProducts.find((p) => slugify(p.name) === slug);
       setPkg(foundPkg || null);
     }
-  }, [allProducts, code]);
+  }, [allProducts, slug]);
 
   // Initialize categories when packages are loaded
   useEffect(() => {
@@ -43,7 +44,7 @@ const PackageDetailedPage = () => {
   }, [pkg]);
 
   const handleShare = async (pkg) => {
-    const shareUrl = `${window.location.origin}/packages/${pkg.code}`;
+    const shareUrl = `${window.location.origin}/packages/${slugify(pkg.name)}`;
     const shareData = {
       title: pkg.name,
       text: `Check out this test package: ${pkg.name}`,
@@ -122,7 +123,7 @@ const PackageDetailedPage = () => {
       "price": priceInfo.displayPrice,
       "priceCurrency": "INR",
       "availability": "https://schema.org/InStock",
-      "url": `https://ayropath.com/packages/${pkg.code}`
+      "url": `https://ayropath.com/packages/${slugify(pkg.name)}`
     }
   };
 
@@ -132,7 +133,7 @@ const PackageDetailedPage = () => {
         title={seoTitle}
         description={seoDescription}
         keywords={seoKeywords}
-        canonical={`/packages/${pkg.code}`}
+        canonical={`/packages/${slugify(pkg.name)}`}
         structuredData={structuredData}
         ogType="product"
       />
@@ -278,9 +279,7 @@ const PackageDetailedPage = () => {
 
           {/* RIGHT: Booking Form */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-lg border border-gray-100 sticky top-8">
-              <Form pkgName={pkg.name} priceInfo={priceInfo} pkgId={code} />
-            </div>
+            <Form pkgName={pkg.name} priceInfo={priceInfo} pkgId={pkg.code} />
           </div>
         </div>
       </div>
