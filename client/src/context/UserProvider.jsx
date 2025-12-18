@@ -339,7 +339,20 @@ export const UserProvider = ({ children }) => {
     hasCompleteContactInfo,
   };
 
-  if (loading) return <div>Loading Application...</div>;
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+        <div className="relative flex items-center justify-center">
+          {/* Outer Ring */}
+          <div className="absolute w-16 h-16 border-4 border-blue-100 rounded-full"></div>
+          {/* Spinning Ring */}
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          {/* Icon/Logo in center (optional, or just keep spinner) */}
+        </div>
+        <p className="mt-4 text-gray-500 font-medium animate-pulse">Initializing Ayropath...</p>
+      </div>
+    );
+  }
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };

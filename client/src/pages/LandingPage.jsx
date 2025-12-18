@@ -7,9 +7,24 @@ import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 
 const LandingPage = () => {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "MedicalBusiness",
+    "name": "Ayropath",
+    "url": "https://ayropath.com",
+    "description": "Ayropath is a trusted platform to book medical tests, blood tests and health packages powered by Thyrocare across India.",
+    "logo": "https://ayropath.com/logo.jpg",
+    "image": "https://ayropath.com/og-image.png",
+    "areaServed": "India",
+    "brand": {
+      "@type": "Brand",
+      "name": "Ayropath"
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto sm:px-6 py-10">
-      <SEO />
+      <SEO structuredData={structuredData} />
       <Hero />
 
       {/* Packages Section */}
