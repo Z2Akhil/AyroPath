@@ -3,6 +3,16 @@ import Profile from '../models/Profile.js';
 import Offer from '../models/Offer.js';
 
 const router = express.Router();
+const slugify = (text) => {
+  if (!text) return "";
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w-]+/g, "")
+    .replace(/--+/g, "-");
+};
 
 /* ---------- helpers ---------- */
 const CANONICAL =
@@ -39,8 +49,8 @@ router.get('/sitemap.xml', async (req, res) => {
     ];
 
     const [profiles, offers] = await Promise.all([
-      Profile.find({ isActive: true }).select('code updatedAt').lean(),
-      Offer .find({ isActive: true }).select('code updatedAt').lean(),
+      Profile.find({ isActive: true }).select('name code updatedAt').lean(),
+      Offer .find({ isActive: true }).select('name code updatedAt').lean(),
     ]);
 
     const products = [...profiles, ...offers];
@@ -56,7 +66,7 @@ router.get('/sitemap.xml', async (req, res) => {
 
     products.forEach(p => {
       const lastmod = p.updatedAt ? new Date(p.updatedAt).toISOString().split('T')[0] : '';
-      xml += `  <url>\n    <loc>${CANONICAL}/packages/${p.code}</loc>\n`;
+      xml += `  <url>\n    <loc>${CANONICAL}/packages/${slugify(p.name)}</loc>\n`;
       xml += `    <priority>0.7</priority>\n`;
       xml += `    <changefreq>weekly</changefreq>\n`;
       if (lastmod) xml += `    <lastmod>${lastmod}</lastmod>\n`;
