@@ -13,7 +13,8 @@ const UserEditModal = ({ user, onClose, onSave, loading = false }) => {
     state: '',
     isActive: true,
     isVerified: false,
-    emailVerified: false
+    emailVerified: false,
+    mobileVerified: false
   });
 
   const [errors, setErrors] = useState({});
@@ -36,7 +37,8 @@ const UserEditModal = ({ user, onClose, onSave, loading = false }) => {
         state: user.state || '',
         isActive: user.isActive !== undefined ? user.isActive : true,
         isVerified: user.isVerified !== undefined ? user.isVerified : false,
-        emailVerified: user.emailVerified !== undefined ? user.emailVerified : false
+        emailVerified: user.emailVerified !== undefined ? user.emailVerified : false,
+        mobileVerified: user.mobileVerified !== undefined ? user.mobileVerified : false
       });
     }
   }, [user]);
@@ -274,7 +276,7 @@ const UserEditModal = ({ user, onClose, onSave, loading = false }) => {
             <div>
               <h4 className="text-lg font-semibold text-gray-900 mb-4">Account Status</h4>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="flex items-center">
                   <input
                     type="checkbox"
@@ -290,7 +292,7 @@ const UserEditModal = ({ user, onClose, onSave, loading = false }) => {
                   </label>
                 </div>
 
-                <div className="flex items-center">
+                <div className="flex items-center" title="Overall account verification status">
                   <input
                     type="checkbox"
                     id="isVerified"
@@ -305,7 +307,7 @@ const UserEditModal = ({ user, onClose, onSave, loading = false }) => {
                   </label>
                 </div>
 
-                <div className="flex items-center">
+                <div className="flex items-center" title="Email verification status">
                   <input
                     type="checkbox"
                     id="emailVerified"
@@ -317,6 +319,21 @@ const UserEditModal = ({ user, onClose, onSave, loading = false }) => {
                   />
                   <label htmlFor="emailVerified" className="ml-2 text-sm text-gray-700">
                     Email Verified
+                  </label>
+                </div>
+
+                <div className="flex items-center" title="Mobile number verification status">
+                  <input
+                    type="checkbox"
+                    id="mobileVerified"
+                    name="mobileVerified"
+                    checked={formData.mobileVerified || false}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                    disabled={loading}
+                  />
+                  <label htmlFor="mobileVerified" className="ml-2 text-sm text-gray-700">
+                    Mobile Verified
                   </label>
                 </div>
               </div>

@@ -202,9 +202,9 @@ const UsersPage = () => {
                 <p className="text-sm font-medium text-gray-600">Active Users</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {users.filter(u => u.isActive).length}
-                  <span className="text-sm text-gray-500 ml-2">
-                    (on this page)
-                  </span>
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Showing current page only
                 </p>
               </div>
               <Users className="h-8 w-8 text-green-500" />
@@ -216,10 +216,10 @@ const UsersPage = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Verified Users</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {users.filter(u => u.emailVerified).length}
-                  <span className="text-sm text-gray-500 ml-2">
-                    (on this page)
-                  </span>
+                  {users.filter(u => u.emailVerified === true).length}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Showing current page only
                 </p>
               </div>
               <Mail className="h-8 w-8 text-purple-500" />
@@ -237,9 +237,9 @@ const UsersPage = () => {
                     return userDate.getMonth() === now.getMonth() &&
                       userDate.getFullYear() === now.getFullYear();
                   }).length}
-                  <span className="text-sm text-gray-500 ml-2">
-                    (on this page)
-                  </span>
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Showing current page only
                 </p>
               </div>
               <Calendar className="h-8 w-8 text-orange-500" />

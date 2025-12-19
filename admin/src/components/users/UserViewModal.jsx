@@ -80,7 +80,7 @@ const UserViewModal = ({ user, onClose }) => {
                     </>
                   )}
                 </span>
-                {user.isVerified && (
+                {user.emailVerified && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                     <CheckCircle className="h-3 w-3 mr-1" />
                     Verified
@@ -207,9 +207,9 @@ const UserViewModal = ({ user, onClose }) => {
                 </div>
                 
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600">Verification</p>
+                  <p className="text-sm font-medium text-gray-600">Mobile Verified</p>
                   <p className="text-gray-900 font-medium">
-                    {user.isVerified ? 'Verified' : 'Not Verified'}
+                    {user.mobileVerified ? 'Yes' : 'No'}
                   </p>
                 </div>
               </div>
