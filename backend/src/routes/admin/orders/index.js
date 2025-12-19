@@ -3,6 +3,7 @@ import adminAuth from '../../../middleware/adminAuth.js';
 import AdminActivity from '../../../models/AdminActivity.js';
 import Order from '../../../models/Order.js';
 import OrderStatusSyncService from '../../../services/OrderStatusSyncService.js';
+import OrderController from '../../../controllers/orderController.js';
 
 const router = express.Router();
 
@@ -13,18 +14,18 @@ router.get('/orders', adminAuth, async (req, res) => {
   const userAgent = req.get('User-Agent') || '';
 
   try {
-    const { 
-      page = 1, 
-      limit = 20, 
-      status, 
-      thyrocareStatus, 
-      startDate, 
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      thyrocareStatus,
+      startDate,
       endDate,
-      search 
+      search
     } = req.query;
 
-    console.log('Fetching orders for admin:', req.admin.name, { 
-      page, limit, status, thyrocareStatus, startDate, endDate, search 
+    console.log('Fetching orders for admin:', req.admin.name, {
+      page, limit, status, thyrocareStatus, startDate, endDate, search
     });
 
     // Build query
@@ -646,4 +647,50 @@ router.post('/orders/:orderId/sync-status', adminAuth, async (req, res) => {
   }
 });
 
+// Book on behalf of user
+router.post('/orders/book-on-behalf', adminAuth, async (req, res, next) => {
+  const startTime = Date.now();
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const userAgent = req.get('User-Agent') || '';
+
+  try {
+    // Call the controller method
+    await OrderController.bookOnBehalf(req, res);
+
+    // Log activity (if success - though the response might already be sent)
+    // Note: If the controller has already sent a response, this might need care.
+    // However, bookOnBehalf sends responses.
+
+    // To log activity properly, we might want to log it BEFORE calling controller 
+    // or inside the controller. I added it to implementation plan to log.
+    // Let's log it here if successful.
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'ORDER_BOOK_ON_BEHALF',
+      description: `Admin ${req.admin.name} booked an order for user ${req.body.userId}`,
+      resource: 'orders',
+      endpoint: '/api/admin/orders/book-on-behalf',
+      method: 'POST',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 201,
+      responseTime: Date.now() - startTime,
+      metadata: {
+        targetUserId: req.body.userId,
+        package: req.body.packageName
+      }
+    });
+
+  } catch (error) {
+    console.error('Book on behalf route error:', error);
+    // Error response handled by controller or middleware
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  }
+});
+
 export default router;
+

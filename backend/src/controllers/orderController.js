@@ -54,7 +54,7 @@ class OrderController {
           price: packagePrice,
           originalPrice: originalPrice,
           discountPercentage: discountPercentage,
-          discountAmount:discountAmount
+          discountAmount: discountAmount
         },
         beneficiaries: beneficiaries.map(b => ({
           name: b.name,
@@ -77,7 +77,7 @@ class OrderController {
           slot: selectedSlot,
           slotId: appointment.slotId
         },
-        reportsHardcopy:reports,
+        reportsHardcopy: reports,
         payment: {
           amount: packagePrice,
           type: 'POSTPAID'
@@ -155,7 +155,7 @@ class OrderController {
         address: `${order.contactInfo.address.street}, ${order.contactInfo.address.city}, ${order.contactInfo.address.state}`,
         appt_date: `${order.appointment.date} ${order.appointment.slot.split(' - ')[0]}`,
         order_by: order.beneficiaries[0]?.name || 'Customer',
-        passon: order.package.discountAmount*order.beneficiaries.length,
+        passon: order.package.discountAmount * order.beneficiaries.length,
         pay_type: 'POSTPAID',
         pincode: order.contactInfo.address.pincode,
         products: Array.isArray(order.package.code) ? order.package.code.join(',') : order.package.code,
@@ -215,21 +215,21 @@ class OrderController {
   static async getUserOrders(req, res) {
     try {
       const orders = await Order.findByUser(req.user._id);
-      
+
       // Auto-refresh Thyrocare status for orders that need it
       // Only refresh orders that haven't been synced in the last 1 hour
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-      const ordersToRefresh = orders.filter(order => 
-        order.thyrocare?.orderNo && 
+      const ordersToRefresh = orders.filter(order =>
+        order.thyrocare?.orderNo &&
         (!order.thyrocare.lastSyncedAt || order.thyrocare.lastSyncedAt < oneHourAgo)
       );
-      
+
       if (ordersToRefresh.length > 0) {
         console.log(`🔄 Auto-refreshing Thyrocare status for ${ordersToRefresh.length} user orders`);
-        
+
         // Import OrderStatusSyncService
         const OrderStatusSyncService = (await import('../services/OrderStatusSyncService.js')).default;
-        
+
         // Refresh each order (but don't wait for all to complete before responding)
         // We'll refresh in background to avoid delaying the response
         ordersToRefresh.forEach(async (order) => {
@@ -241,11 +241,11 @@ class OrderController {
           }
         });
       }
-      
+
       // Return orders immediately (they'll be updated in background)
       // Note: The returned orders will have old status, but they'll be fresh on next load
       // Alternatively, we could wait for refreshes, but that would slow down the response
-      
+
       return res.json({
         success: true,
         data: orders,
@@ -460,6 +460,150 @@ class OrderController {
       return res.status(500).json({
         success: false,
         message: 'Failed to download report',
+        error: error.message
+      });
+    }
+  }
+
+  // Book on behalf of user (Admin initiated)
+  static async bookOnBehalf(req, res) {
+    try {
+      const {
+        userId,
+        packageIds, // Changed from packageId
+        packageNames, // Array of names
+        packagePrices, // Array of prices
+        beneficiaries,
+        contactInfo,
+        appointment,
+        selectedSlot,
+        reports
+      } = req.body;
+
+      // Validate required fields
+      if (!userId || !packageIds || !packageNames || !packagePrices || !beneficiaries || !contactInfo || !appointment) {
+        return res.status(400).json({
+          success: false,
+          message: 'Missing required fields'
+        });
+      }
+
+      // Get active admin session for API key
+      const AdminSession = (await import('../models/AdminSession.js')).default;
+      const activeSession = await AdminSession.findOne({ isActive: true })
+        .populate('adminId');
+
+      if (!activeSession) {
+        return res.status(500).json({
+          success: false,
+          message: 'No active admin session found'
+        });
+      }
+
+      // Calculate totals
+      const totalOriginalPrice = packagePrices.reduce((sum, p) => sum + (p.originalPrice || p.price || 0), 0);
+      const totalSellingPrice = packagePrices.reduce((sum, p) => sum + (p.sellingPrice || p.price || 0), 0);
+      const totalDiscountAmount = totalOriginalPrice - totalSellingPrice;
+      const totalDiscountPercentage = totalOriginalPrice > 0 ? Math.round((totalDiscountAmount / totalOriginalPrice) * 100) : 0;
+      const combinedName = packageNames.join(' + ');
+
+      // Generate order ID
+      const orderId = Order.generateOrderId();
+
+      // Create order in our database
+      const order = new Order({
+        orderId,
+        userId: userId,
+        adminId: req.admin._id, // Use the current admin's ID
+        package: {
+          code: packageIds, // Now an array
+          name: combinedName,
+          price: totalSellingPrice,
+          originalPrice: totalOriginalPrice,
+          discountPercentage: totalDiscountPercentage,
+          discountAmount: totalDiscountAmount
+        },
+        beneficiaries: beneficiaries.map(b => ({
+          name: b.name,
+          age: parseInt(b.age),
+          gender: b.gender
+        })),
+        contactInfo: {
+          email: contactInfo.email,
+          mobile: contactInfo.mobile,
+          address: {
+            street: contactInfo.address.street,
+            city: contactInfo.address.city,
+            state: contactInfo.address.state,
+            pincode: contactInfo.address.pincode,
+            landmark: contactInfo.address.landmark || ''
+          }
+        },
+        appointment: {
+          date: appointment.date,
+          slot: selectedSlot,
+          slotId: appointment.slotId
+        },
+        reportsHardcopy: reports || 'N',
+        payment: {
+          amount: totalSellingPrice,
+          type: 'POSTPAID'
+        },
+        source: 'Ayropath (Admin)'
+      });
+
+      await order.save();
+
+      // Create order in Thyrocare system
+      try {
+        const thyrocareResponse = await OrderController.createThyrocareOrder(order, activeSession);
+
+        // Update order with Thyrocare response
+        order.thyrocare.orderNo = thyrocareResponse.order_no;
+        order.thyrocare.response = thyrocareResponse;
+
+        // Update beneficiary lead IDs
+        if (thyrocareResponse.ben_data && thyrocareResponse.ben_data.length > 0) {
+          thyrocareResponse.ben_data.forEach((benData, index) => {
+            if (order.beneficiaries[index]) {
+              order.beneficiaries[index].leadId = benData.lead_id;
+            }
+          });
+        }
+
+        order.status = 'CREATED';
+        await order.save();
+
+        return res.status(201).json({
+          success: true,
+          message: 'Order created successfully on behalf of user',
+          data: {
+            orderId: order.orderId,
+            thyrocareOrderNo: order.thyrocare.orderNo,
+            order: order
+          }
+        });
+
+      } catch (thyrocareError) {
+        order.thyrocare.error = thyrocareError.message;
+        order.status = 'FAILED';
+        await order.save();
+
+        return res.status(500).json({
+          success: false,
+          message: 'Order created in our system but failed in Thyrocare',
+          data: {
+            orderId: order.orderId,
+            error: thyrocareError.message
+          }
+        });
+      }
+
+    } catch (error) {
+      console.error('Error booking on behalf:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to book on behalf',
         error: error.message
       });
     }

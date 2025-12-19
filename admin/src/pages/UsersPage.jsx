@@ -3,8 +3,9 @@ import { useAuth } from '../context/AuthContext';
 import { axiosInstance } from '../api/axiosInstance';
 import userAdminApi from '../api/userAdminApi';
 import { UserViewModal, UserEditModal } from '../components/users';
+import { BookOrderModal } from '../components/orders';
 import Pagination from '../components/Pagination';
-import { Search, Users, Mail, Phone, Calendar, Eye, Edit, RefreshCw, AlertCircle } from 'lucide-react';
+import { Search, Users, Mail, Phone, Calendar, Eye, Edit, RefreshCw, AlertCircle, ShoppingBag } from 'lucide-react';
 
 const UsersPage = () => {
   const { user } = useAuth();
@@ -12,20 +13,21 @@ const UsersPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [totalUsers, setTotalUsers] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  
+
   // Modal states
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [bookModalOpen, setBookModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState('');
-  
+
   // Success message
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -37,24 +39,24 @@ const UsersPage = () => {
     try {
       setLoading(true);
       setError('');
-      
+
       // Use the paginated search endpoint
       const params = {
         page: currentPage,
         limit: itemsPerPage
       };
-      
+
       // Add search term if provided
       if (searchTerm.trim()) {
         params.search = searchTerm.trim();
       }
-      
+
       const response = await axiosInstance.get('/admin/users/search', { params });
-      
+
       setUsers(response.data.users || []);
       setTotalUsers(response.data.pagination?.totalCount || 0);
       setTotalPages(response.data.pagination?.totalPages || 1);
-      
+
     } catch (err) {
       console.error('Error fetching users:', err);
       setError('Failed to fetch users. Please try again.');
@@ -65,7 +67,7 @@ const UsersPage = () => {
       setLoading(false);
     }
   };
-  
+
   const handleViewUser = async (userId) => {
     try {
       setModalLoading(true);
@@ -80,7 +82,7 @@ const UsersPage = () => {
       setModalLoading(false);
     }
   };
-  
+
   const handleEditUser = async (userId) => {
     try {
       setModalLoading(true);
@@ -95,27 +97,27 @@ const UsersPage = () => {
       setModalLoading(false);
     }
   };
-  
+
   const handleSaveUser = async (updatedData) => {
     try {
       setModalLoading(true);
       setModalError('');
-      
+
       const response = await userAdminApi.updateUser(selectedUser._id, updatedData);
-      
+
       // Update the user in the local state
-      setUsers(prevUsers => 
-        prevUsers.map(user => 
+      setUsers(prevUsers =>
+        prevUsers.map(user =>
           user._id === selectedUser._id ? response.data.user : user
         )
       );
-      
+
       setSuccessMessage('User updated successfully!');
       setEditModalOpen(false);
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(''), 3000);
-      
+
     } catch (err) {
       console.error('Error updating user:', err);
       setModalError(err.response?.data?.error || 'Failed to update user. Please try again.');
@@ -123,11 +125,17 @@ const UsersPage = () => {
       setModalLoading(false);
     }
   };
-  
-  
+
+
+  const handleBookOrder = (user) => {
+    setSelectedUser(user);
+    setBookModalOpen(true);
+  };
+
   const closeModals = () => {
     setViewModalOpen(false);
     setEditModalOpen(false);
+    setBookModalOpen(false);
     setSelectedUser(null);
     setModalError('');
   };
@@ -135,12 +143,12 @@ const UsersPage = () => {
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
   };
-  
+
   const handleItemsPerPageChange = (newItemsPerPage) => {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1); // Reset to first page when changing items per page
   };
-  
+
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
@@ -187,7 +195,7 @@ const UsersPage = () => {
               <Users className="h-8 w-8 text-blue-500" />
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg p-6 shadow-sm border-l-4 border-green-500">
             <div className="flex items-center justify-between">
               <div>
@@ -202,13 +210,13 @@ const UsersPage = () => {
               <Users className="h-8 w-8 text-green-500" />
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg p-6 shadow-sm border-l-4 border-purple-500">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Verified Users</p>
                 <p className="text-2xl font-bold text-gray-900">
-                          {users.filter(u => u.emailVerified).length}
+                  {users.filter(u => u.emailVerified).length}
                   <span className="text-sm text-gray-500 ml-2">
                     (on this page)
                   </span>
@@ -217,7 +225,7 @@ const UsersPage = () => {
               <Mail className="h-8 w-8 text-purple-500" />
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg p-6 shadow-sm border-l-4 border-orange-500">
             <div className="flex items-center justify-between">
               <div>
@@ -226,8 +234,8 @@ const UsersPage = () => {
                   {users.filter(u => {
                     const userDate = new Date(u.createdAt);
                     const now = new Date();
-                    return userDate.getMonth() === now.getMonth() && 
-                           userDate.getFullYear() === now.getFullYear();
+                    return userDate.getMonth() === now.getMonth() &&
+                      userDate.getFullYear() === now.getFullYear();
                   }).length}
                   <span className="text-sm text-gray-500 ml-2">
                     (on this page)
@@ -245,7 +253,7 @@ const UsersPage = () => {
             <p className="text-green-700 font-medium">{successMessage}</p>
           </div>
         )}
-        
+
         {/* Search and Filters */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
@@ -327,11 +335,10 @@ const UsersPage = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          user.isActive 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.isActive
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                          }`}>
                           {user.isActive ? 'Active' : 'Inactive'}
                         </span>
                         {user.emailVerified && (
@@ -361,6 +368,14 @@ const UsersPage = () => {
                             <Edit className="h-4 w-4" />
                             Edit
                           </button>
+                          <button
+                            onClick={() => handleBookOrder(user)}
+                            disabled={modalLoading}
+                            className="text-green-600 hover:text-green-900 flex items-center gap-1 disabled:opacity-50"
+                          >
+                            <ShoppingBag className="h-4 w-4" />
+                            Book Test
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -370,7 +385,7 @@ const UsersPage = () => {
             </table>
           </div>
         </div>
-        
+
         {/* Pagination */}
         {users.length > 0 && (
           <Pagination
@@ -392,7 +407,7 @@ const UsersPage = () => {
             </p>
           </div>
         )}
-        
+
         {/* Modals */}
         {viewModalOpen && selectedUser && (
           <UserViewModal
@@ -400,7 +415,7 @@ const UsersPage = () => {
             onClose={closeModals}
           />
         )}
-        
+
         {editModalOpen && selectedUser && (
           <UserEditModal
             user={selectedUser}
@@ -409,7 +424,18 @@ const UsersPage = () => {
             loading={modalLoading}
           />
         )}
-        
+
+        {bookModalOpen && selectedUser && (
+          <BookOrderModal
+            user={selectedUser}
+            onClose={closeModals}
+            onSuccess={(msg) => {
+              setSuccessMessage(msg);
+              setTimeout(() => setSuccessMessage(''), 5000);
+            }}
+          />
+        )}
+
         {/* Modal Error */}
         {modalError && (
           <div className="fixed bottom-4 right-4 p-4 bg-red-50 border border-red-200 rounded-lg shadow-lg max-w-md">
