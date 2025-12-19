@@ -28,6 +28,12 @@ export default function AdminPanel() {
   const toggleDesktopSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
   const toggleProduct = () => setProductOpen(!productOpen);
 
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to logout?')) {
+      logout();
+    }
+  };
+
   const getCurrentPageTitle = () => {
     const path = location.pathname;
     
@@ -184,7 +190,7 @@ export default function AdminPanel() {
               </div>
             )}
             <button
-              onClick={logout}
+              onClick={handleLogout}
               className="flex items-center space-x-1 px-3 py-1 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-200"
               title="Logout"
             >
