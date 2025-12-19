@@ -233,8 +233,8 @@ const BookOrderModal = ({ user, onClose, onSuccess }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/40">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col overflow-hidden">
                 {/* Header */}
                 <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-indigo-600 text-white rounded-t-2xl">
                     <div>
@@ -301,23 +301,38 @@ const BookOrderModal = ({ user, onClose, onSuccess }) => {
                                             <div
                                                 key={pkg.code || pkg.Id}
                                                 onClick={() => togglePackage(pkg)}
-                                                className={`group relative p-4 border-2 rounded-2xl cursor-pointer transition-all duration-200 hover:shadow-lg ${isSelected
-                                                    ? 'border-indigo-500 bg-indigo-50 ring-4 ring-indigo-100'
-                                                    : 'border-gray-100 hover:border-indigo-300'
+                                                className={`group relative p-3 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected
+                                                        ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-100'
+                                                        : 'border-gray-200 hover:border-indigo-300'
                                                     }`}
                                             >
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border ${getProductTypeColor(pkg.type)}`}>
-                                                        {pkg.type || 'TEST'}
-                                                    </span>
-                                                    <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300'}`}>
+                                                {/* Header Row: Name + Selection Checkbox */}
+                                                <div className="flex items-start justify-between gap-2 mb-2">
+                                                    <h4 className="font-bold text-gray-800 text-sm leading-tight group-hover:text-indigo-700 transition-colors uppercase">
+                                                        {pkg.name}
+                                                    </h4>
+                                                    <div
+                                                        className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0 ${isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300'
+                                                            }`}
+                                                    >
                                                         {isSelected && <CheckCircle className="h-4 w-4 text-white" />}
                                                     </div>
                                                 </div>
-                                                <h4 className="font-bold text-gray-900 leading-snug mb-1 group-hover:text-indigo-700 transition-colors uppercase">{pkg.name}</h4>
-                                                <p className="text-xs text-indigo-500 font-semibold mb-3">Code: {pkg.code || pkg.Id}</p>
-                                                <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-50">
-                                                    <span className="text-lg font-black text-indigo-700">₹{pkg.sellingPrice || pkg.price}</span>
+
+                                                {/* Details Row: Type + Code + Price */}
+                                                <div className="flex items-center justify-between text-xs">
+                                                    <div className="flex items-center gap-2">
+                                                        <span
+                                                            className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase border ${getProductTypeColor(pkg.type)}`}
+                                                        >
+                                                            {pkg.type || 'TEST'}
+                                                        </span>
+                                                        <span className="text-gray-500 font-medium">Code: {pkg.code || pkg.Id}</span>
+                                                    </div>
+
+                                                    <span className="text-base font-black text-indigo-700">
+                                                        ₹{pkg.sellingPrice || pkg.price}
+                                                    </span>
                                                 </div>
                                             </div>
                                         );
