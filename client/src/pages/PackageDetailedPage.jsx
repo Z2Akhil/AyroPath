@@ -1,4 +1,4 @@
-import { AlertCircle, Home, Percent, Share2, ChevronDown, Calendar, CreditCard, CheckCircle } from "lucide-react";
+import { AlertCircle, Home, Percent, Share2, ChevronDown, Calendar, CreditCard, CheckCircle, ShoppingCart } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import Form from "../components/Form.jsx";
@@ -7,6 +7,7 @@ import SkeletonPackageDetailed from "../components/cards/SkeletonPackageDetailed
 import { useProducts } from "../context/ProductContext";
 import SEO from "../components/SEO.jsx";
 import { slugify } from "../utils/slugify";
+import { useCart } from "../context/CartContext";
 
 const PackageDetailedPage = () => {
   const { slug } = useParams();
@@ -15,6 +16,22 @@ const PackageDetailedPage = () => {
   const { allProducts, loading, error } = useProducts();
   const [openCategory, setOpenCategory] = useState(new Set());
   const [pkg, setPkg] = useState(null);
+  const { addToCart, cart } = useCart();
+
+  const isInCart = cart?.items?.some(item => item.productCode === pkg?.code);
+
+  const handleAddToCart = async (packageData) => {
+    if (!packageData) return;
+    const priceInfo = getProductDisplayPrice(packageData);
+    const item = {
+      code: packageData.code,
+      name: packageData.name,
+      type: packageData.type,
+      originalPrice: priceInfo.originalPrice,
+      sellingPrice: priceInfo.displayPrice
+    };
+    await addToCart(item);
+  };
 
   useEffect(() => {
     if (allProducts.length > 0 && slug) {
@@ -178,14 +195,33 @@ const PackageDetailedPage = () => {
                     )}
                   </div>
                 </div>
-                <button
-                  onClick={() => handleShare(pkg)}
-                  className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all mt-4 sm:mt-0"
-                  title="Share this test"
-                >
-                  <Share2 className="w-5 h-5" />
-                  <span className="font-medium">Share</span>
-                </button>
+                <div className="flex items-center gap-3 mt-4 sm:mt-0">
+                  <button
+                    onClick={() => handleShare(pkg)}
+                    className="flex bg-emerald-100  items-center gap-2 px-4 py-2.5 text-emerald-700 hover:text-emerald-700 hover:bg-emerald-200 rounded-xl transition-all"
+                    title="Share this test"
+                  >
+                    <Share2 className="w-5 h-5" />
+                    <span className="font-semibold text-sm">Share</span>
+                  </button>
+                  {isInCart ? (
+                    <Link
+                      to="/cart"
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 shadow-xs active:scale-95 bg-emerald-100 text-emerald-700 border border-emerald-200"
+                    >
+                      <ShoppingCart className="w-5 h-5" />
+                      <span className="font-semibold text-sm">Go to Cart</span>
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => handleAddToCart(pkg)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 shadow-xs active:scale-95 bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md"
+                    >
+                      <ShoppingCart className="w-5 h-5" />
+                      <span className="font-semibold text-sm">Add to Cart</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Price Section */}
