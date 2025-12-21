@@ -35,10 +35,22 @@ const PackageDetailedPage = () => {
 
   useEffect(() => {
     if (allProducts.length > 0 && slug) {
-      const foundPkg = allProducts.find((p) => slugify(p.name) === slug);
-      setPkg(foundPkg || null);
+      // Find all products matching the name slug
+      const matchingProducts = allProducts.filter((p) => slugify(p.name) === slug);
+
+      if (matchingProducts.length > 1 && from === 'offer') {
+        // If multiple versions exist and we came from an offer link, pick the OFFER type
+        const offerPkg = matchingProducts.find(p => p.type === 'OFFER');
+        setPkg(offerPkg || matchingProducts[0]);
+      } else if (matchingProducts.length > 1) {
+        // Otherwise, prioritize PROFILE/POP type
+        const profilePkg = matchingProducts.find(p => p.type === 'PROFILE' || p.type === 'POP');
+        setPkg(profilePkg || matchingProducts[0]);
+      } else {
+        setPkg(matchingProducts[0] || null);
+      }
     }
-  }, [allProducts, slug]);
+  }, [allProducts, slug, from]);
 
   // Initialize categories when packages are loaded
   useEffect(() => {

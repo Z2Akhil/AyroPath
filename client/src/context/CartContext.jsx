@@ -104,7 +104,7 @@ export const CartProvider = ({ children }) => {
     try {
       const updatedCart = { ...cart };
       const existingItemIndex = updatedCart.items.findIndex(
-        cartItem => cartItem.productCode === item.code
+        cartItem => cartItem.productCode === item.code && cartItem.productType === (item.type?.toUpperCase() || "TEST")
       );
 
       // ALWAYS use price shown in UI
@@ -147,12 +147,12 @@ export const CartProvider = ({ children }) => {
       // Sync with backend
       if (user) {
         const itemToAdd = updatedCart.items.find(
-          cartItem => cartItem.productCode === item.code
+          cartItem => cartItem.productCode === item.code && cartItem.productType === productType
         );
 
         await CartApi.addToCart(
           item.code,
-          item.type?.toUpperCase() || "TEST",
+          productType,
           itemToAdd.quantity
         );
       }
@@ -169,13 +169,23 @@ export const CartProvider = ({ children }) => {
 
 
   // Remove item from cart
-  const removeFromCart = async (productCode) => {
+  const removeFromCart = async (productCode, productType) => {
     setLoading(true);
 
     try {
       const updatedCart = { ...cart };
-      const itemToRemove = updatedCart.items.find(item => item.productCode === productCode);
-      updatedCart.items = updatedCart.items.filter(item => item.productCode !== productCode);
+      const itemToRemove = updatedCart.items.find(
+        item => item.productCode === productCode && (!productType || item.productType === productType)
+      );
+
+      if (!itemToRemove) {
+        setLoading(false);
+        return { success: false, message: "Item not found in cart" };
+      }
+
+      updatedCart.items = updatedCart.items.filter(
+        item => !(item.productCode === productCode && item.productType === itemToRemove.productType)
+      );
 
       // Recalculate totals
       const finalCart = recalculateTotals(updatedCart);
@@ -202,12 +212,14 @@ export const CartProvider = ({ children }) => {
   };
 
   // Update item quantity
-  const updateQuantity = async (productCode, quantity) => {
+  const updateQuantity = async (productCode, productType, quantity) => {
     setLoading(true);
 
     try {
       const updatedCart = { ...cart };
-      const item = updatedCart.items.find(item => item.productCode === productCode);
+      const item = updatedCart.items.find(
+        item => item.productCode === productCode && (!productType || item.productType === productType)
+      );
 
       if (item && quantity > 0 && quantity <= 10) {
         item.quantity = quantity;
