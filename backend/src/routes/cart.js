@@ -10,11 +10,11 @@ import User from '../models/User.js';
 const optionalAuth = async (req, res, next) => {
   try {
     const token = req.header("Authorization")?.replace("Bearer", "").trim();
-    
+
     if (token) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const user = await User.findById(decoded.id).select("-password");
-      
+
       if (user && user.isActive && user.isVerified) {
         req.user = user;
       }
@@ -93,7 +93,7 @@ const generateGuestSessionId = () => {
 // Helper function to get product details
 const getProductDetails = async (productCode, productType) => {
   let product;
-  
+
   switch (productType) {
     case 'TEST':
       product = await Test.findOne({ code: productCode, isActive: true });
@@ -107,18 +107,18 @@ const getProductDetails = async (productCode, productType) => {
     default:
       throw new Error(`Unknown product type: ${productType}`);
   }
-  
+
   if (!product) {
     throw new Error(`Product not found: ${productCode} (${productType})`);
   }
-  
+
   const combinedData = product.getCombinedData();
-  
+
   // Calculate proper prices based on the actual data structure
   const originalPrice = combinedData.rate?.b2C || 0;
   const sellingPrice = combinedData.sellingPrice || combinedData.rate?.offerRate || 0;
   const discount = originalPrice > sellingPrice ? originalPrice - sellingPrice : 0;
-  
+
   return {
     productCode: product.code,
     productType: productType,
@@ -134,22 +134,22 @@ router.get('/', optionalAuth, async (req, res) => {
   try {
     const userId = req.user?._id;
     const guestSessionId = req.headers['x-guest-session-id'] || req.cookies?.guestSessionId;
-    
+
     console.log('🔍 Fetching cart:', {
       userId: userId || 'guest',
       guestSessionId: guestSessionId ? 'provided' : 'not provided'
     });
-    
+
     let cart = await Cart.findByUserOrGuest(userId, guestSessionId);
-    
+
     if (!cart) {
       // Create empty cart if none exists
       cart = await Cart.createOrUpdateCart(
-        userId, 
-        guestSessionId || generateGuestSessionId(), 
+        userId,
+        guestSessionId || generateGuestSessionId(),
         []
       );
-      
+
       console.log('🆕 Created new cart:', {
         cartId: cart._id,
         userId: userId || 'guest',
@@ -157,15 +157,15 @@ router.get('/', optionalAuth, async (req, res) => {
       });
     }
     await refreshCartPrices(cart);          // ← new
-    await cart.save(); 
+    await cart.save();
     const summary = cart.getSummary();
-    
+
     res.json({
       success: true,
       cart: summary,
       guestSessionId: cart.guestSessionId
     });
-    
+
   } catch (error) {
     console.error('❌ Error fetching cart:', error);
     res.status(500).json({
@@ -196,6 +196,17 @@ router.post('/items', optionalAuth, async (req, res) => {
     let cart = await Cart.findByUserOrGuest(userId, guestSessionId);
     if (!cart) {
       cart = await Cart.createOrUpdateCart(userId, guestSessionId || generateGuestSessionId(), []);
+    }
+
+    // Validation: Only one product of type 'OFFER' allowed
+    if (productType === 'OFFER') {
+      const existingOffer = cart.items.find(i => i.productType === 'OFFER' && i.productCode !== productCode);
+      if (existingOffer) {
+        return res.status(400).json({
+          success: false,
+          message: 'Only one offer product can be added per order.'
+        });
+      }
     }
 
     // 3. insert / update row
@@ -242,48 +253,48 @@ router.put('/items/:productCode', optionalAuth, async (req, res) => {
     const { productType, quantity } = req.body;
     const userId = req.user?._id;
     const guestSessionId = req.headers['x-guest-session-id'] || req.cookies?.guestSessionId;
-    
+
     console.log('🔄 Updating cart item:', {
       productCode,
       productType,
       quantity,
       userId: userId || 'guest'
     });
-    
+
     if (!productType || !quantity) {
       return res.status(400).json({
         success: false,
         message: 'Product type and quantity are required'
       });
     }
-    
+
     const cart = await Cart.findByUserOrGuest(userId, guestSessionId);
-    
+
     if (!cart) {
       return res.status(404).json({
         success: false,
         message: 'Cart not found'
       });
     }
-    
+
     await cart.updateQuantity(productCode, productType, parseInt(quantity));
     await refreshCartPrices(cart);
     await cart.save();
     const summary = cart.getSummary();
-    
+
     console.log('✅ Cart item updated:', {
       cartId: cart._id,
       totalItems: summary.totalItems,
       totalAmount: summary.totalAmount
     });
-    
+
     res.json({
       success: true,
       message: 'Cart item updated successfully',
       cart: summary,
       guestSessionId: cart.guestSessionId
     });
-    
+
   } catch (error) {
     console.error('❌ Error updating cart item:', error);
     res.status(500).json({
@@ -301,47 +312,47 @@ router.delete('/items/:productCode', optionalAuth, async (req, res) => {
     const { productType } = req.body;
     const userId = req.user?._id;
     const guestSessionId = req.headers['x-guest-session-id'] || req.cookies?.guestSessionId;
-    
+
     console.log('🗑️ Removing item from cart:', {
       productCode,
       productType,
       userId: userId || 'guest'
     });
-    
+
     if (!productType) {
       return res.status(400).json({
         success: false,
         message: 'Product type is required'
       });
     }
-    
+
     const cart = await Cart.findByUserOrGuest(userId, guestSessionId);
-    
+
     if (!cart) {
       return res.status(404).json({
         success: false,
         message: 'Cart not found'
       });
     }
-    
+
     await cart.removeItem(productCode, productType);
     await refreshCartPrices(cart); // ← new
-    await cart.save(); 
+    await cart.save();
     const summary = cart.getSummary();
-    
+
     console.log('✅ Item removed from cart:', {
       cartId: cart._id,
       totalItems: summary.totalItems,
       totalAmount: summary.totalAmount
     });
-    
+
     res.json({
       success: true,
       message: 'Item removed from cart successfully',
       cart: summary,
       guestSessionId: cart.guestSessionId
     });
-    
+
   } catch (error) {
     console.error('❌ Error removing item from cart:', error);
     res.status(500).json({
@@ -357,26 +368,26 @@ router.delete('/', optionalAuth, async (req, res) => {
   try {
     const userId = req.user?._id;
     const guestSessionId = req.headers['x-guest-session-id'] || req.cookies?.guestSessionId;
-    
+
     console.log('🧹 Clearing cart:', {
       userId: userId || 'guest'
     });
-    
+
     const cart = await Cart.findByUserOrGuest(userId, guestSessionId);
-    
+
     if (!cart) {
       return res.status(404).json({
         success: false,
         message: 'Cart not found'
       });
     }
-    
+
     await cart.clearCart();
-    
+
     console.log('✅ Cart cleared:', {
       cartId: cart._id
     });
-    
+
     res.json({
       success: true,
       message: 'Cart cleared successfully',
@@ -389,7 +400,7 @@ router.delete('/', optionalAuth, async (req, res) => {
       },
       guestSessionId: cart.guestSessionId
     });
-    
+
   } catch (error) {
     console.error('❌ Error clearing cart:', error);
     res.status(500).json({
@@ -405,32 +416,32 @@ router.post('/merge', requiredAuth, async (req, res) => {
   try {
     const { guestSessionId } = req.body;
     const userId = req.user._id;
-    
+
     console.log('🔄 Merging carts:', {
       userId,
       guestSessionId
     });
-    
+
     if (!guestSessionId) {
       return res.status(400).json({
         success: false,
         message: 'Guest session ID is required'
       });
     }
-    
+
     // Find guest cart
     const guestCart = await Cart.findOne({ guestSessionId, isActive: true });
-    
+
     if (!guestCart) {
       return res.status(404).json({
         success: false,
         message: 'Guest cart not found'
       });
     }
-    
+
     // Find or create user cart
     let userCart = await Cart.findOne({ userId, isActive: true });
-    
+
     if (!userCart) {
       userCart = new Cart({
         userId,
@@ -442,28 +453,28 @@ router.post('/merge', requiredAuth, async (req, res) => {
         await userCart.addItem(guestItem);
       }
     }
-    
+
     await userCart.save();
     await refreshCartPrices(cart); // ← new
-    await cart.save(); 
+    await cart.save();
     // Deactivate guest cart
     guestCart.isActive = false;
     await guestCart.save();
-    
+
     const summary = userCart.getSummary();
-    
+
     console.log('✅ Carts merged successfully:', {
       userId,
       totalItems: summary.totalItems,
       totalAmount: summary.totalAmount
     });
-    
+
     res.json({
       success: true,
       message: 'Cart merged successfully',
       cart: summary
     });
-    
+
   } catch (error) {
     console.error('❌ Error merging carts:', error);
     res.status(500).json({

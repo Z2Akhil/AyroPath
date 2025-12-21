@@ -111,6 +111,17 @@ export const CartProvider = ({ children }) => {
       const originalPrice = item.originalPrice || item.rate?.b2C || 0;
       const sellingPrice = item.sellingPrice || originalPrice;
       const discount = originalPrice > sellingPrice ? (originalPrice - sellingPrice) : 0;
+      const productType = item.type?.toUpperCase() || "TEST";
+
+      // Validation: Only one product of type 'OFFER' allowed
+      if (productType === 'OFFER') {
+        const existingOffer = updatedCart.items.find(i => i.productType === 'OFFER' && i.productCode !== item.code);
+        if (existingOffer) {
+          const msg = 'Only one offer product can be added per order.';
+          window.alert(msg);
+          return { success: false, message: msg };
+        }
+      }
 
       if (existingItemIndex > -1) {
         // Item already exists, increase quantity
@@ -119,7 +130,7 @@ export const CartProvider = ({ children }) => {
         // Add new item
         updatedCart.items.push({
           productCode: item.code,
-          productType: item.type?.toUpperCase() || "TEST",
+          productType: productType,
           name: item.name,
           quantity: 1,
           originalPrice,
