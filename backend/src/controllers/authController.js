@@ -29,25 +29,42 @@ class AuthController {
       const otp = OTPGenerator.generateOTP();
       const expiresAt = OTPGenerator.getExpiryTime();
 
-      await OTP.create({
+      // Send OTP via Message Central
+      const smsResult = await SMSService.sendOTP(mobileNumber, otp, { purpose });
+      
+      if (!smsResult.success) {
+        return res.status(500).json({
+          success: false,
+          message: smsResult.message || "Failed to send OTP",
+        });
+      }
+
+      // Create OTP record with verificationId if available
+      const otpData = {
         mobileNumber,
         otp,
         purpose,
         expiresAt,
-      });
+        provider: smsResult.provider || "MessageCentral",
+        metadata: {
+          transactionId: smsResult.transactionId,
+          timeout: smsResult.timeout,
+        }
+      };
 
-      const smsResult = await SMSService.sendOTP(mobileNumber, otp);
-      if (!smsResult.success) {
-        return res.status(500).json({
-          success: false,
-          message: "Failed to send OTP",
-        });
+      // Store verificationId if provided by Message Central
+      if (smsResult.verificationId) {
+        otpData.verificationId = smsResult.verificationId;
       }
+
+      await OTP.create(otpData);
 
       return res.json({
         success: true,
         message: "OTP sent successfully",
         purpose,
+        provider: smsResult.provider,
+        verificationId: smsResult.verificationId, // Include for client if needed
       });
     } catch (err) {
       console.error("OTP request error: ", err);
@@ -60,15 +77,16 @@ class AuthController {
 
   static async verifyOTP(req, res) {
     try {
-      const { mobileNumber, otp, purpose = "verification" } = req.body;
+      const { mobileNumber, otp, purpose = "verification", verificationId } = req.body;
 
       if (!mobileNumber || !otp) {
         return res.status(400).json({
           success: false,
-          message: "Mobile number and OTP is required",
+          message: "Mobile number and OTP are required",
         });
       }
 
+      // Find the OTP record
       const otpRecord = await OTP.findOne({
         mobileNumber,
         purpose,
@@ -90,16 +108,31 @@ class AuthController {
         });
       }
 
-      if (otpRecord.otp != otp) {
+      // Check if we have a verificationId (Message Central flow)
+      const actualVerificationId = verificationId || otpRecord.verificationId;
+      
+      if (!actualVerificationId) {
+        return res.status(400).json({
+          success: false,
+          message: "Verification ID is required for OTP validation",
+        });
+      }
+
+      // Use Message Central validation
+      const validationResult = await SMSService.validateOTP(actualVerificationId, otp);
+      
+      if (!validationResult.success) {
         otpRecord.attempts += 1;
         await otpRecord.save();
 
         return res.status(400).json({
           success: false,
-          message: "Invalid OTP",
+          message: validationResult.message,
+          errorCode: validationResult.errorCode,
         });
       }
 
+      // OTP validated successfully via Message Central
       otpRecord.isUsed = true;
       await otpRecord.save();
 
@@ -125,6 +158,7 @@ class AuthController {
               }
             : undefined,
         purpose,
+        provider: otpRecord.provider,
       });
     } catch (err) {
       console.error("OTP verification error: ", err);
@@ -269,30 +303,46 @@ class AuthController {
           message: "User not found",
         });
       }
+      
       // Generate OTP for password reset
       const otp = OTPGenerator.generateOTP();
       const expiresAt = OTPGenerator.getExpiryTime();
 
-      await OTP.create({
-        mobileNumber,
-        otp,
-        purpose: "forgot_password",
-        expiresAt,
-      });
-
-      // Send OTP via SMS
-      const smsResult = await SMSService.sendOTP(mobileNumber, otp);
+      // Send OTP via Message Central
+      const smsResult = await SMSService.sendOTP(mobileNumber, otp, { purpose: "forgot_password" });
 
       if (!smsResult.success) {
         return res.status(500).json({
           success: false,
-          message: "Failed to send OTP",
+          message: smsResult.message || "Failed to send OTP",
         });
       }
+
+      // Create OTP record with verificationId if available
+      const otpData = {
+        mobileNumber,
+        otp,
+        purpose: "forgot_password",
+        expiresAt,
+        provider: smsResult.provider || "MessageCentral",
+        metadata: {
+          transactionId: smsResult.transactionId,
+          timeout: smsResult.timeout,
+        }
+      };
+
+      // Store verificationId if provided by Message Central
+      if (smsResult.verificationId) {
+        otpData.verificationId = smsResult.verificationId;
+      }
+
+      await OTP.create(otpData);
 
       res.json({
         success: true,
         message: "OTP sent for password reset",
+        provider: smsResult.provider,
+        verificationId: smsResult.verificationId,
       });
     } catch (error) {
       console.error("Forgot password error:", error);
@@ -306,7 +356,7 @@ class AuthController {
   // Reset password with OTP
   static async resetPassword(req, res) {
     try {
-      const { mobileNumber, otp, newPassword } = req.body;
+      const { mobileNumber, otp, newPassword, verificationId } = req.body;
 
       if (!mobileNumber || !otp || !newPassword) {
         return res.status(400).json({
@@ -322,7 +372,7 @@ class AuthController {
         });
       }
 
-      // Verify OTP first
+      // Find the OTP record
       const otpRecord = await OTP.findOne({
         mobileNumber,
         purpose: "forgot_password",
@@ -330,12 +380,40 @@ class AuthController {
         expiresAt: { $gt: new Date() },
       }).sort({ createdAt: -1 });
 
-      if (!otpRecord || otpRecord.otp !== otp) {
+      if (!otpRecord) {
         return res.status(400).json({
           success: false,
           message: "Invalid or expired OTP",
         });
       }
+
+      if (otpRecord.attempts >= 3) {
+        return res.status(400).json({
+          success: false,
+          message: "Too many failed attempts. Please request new OTP",
+        });
+      }
+
+      // Check if we have a verificationId (Message Central flow)
+      const actualVerificationId = verificationId || otpRecord.verificationId;
+      
+      // Use Message Central validation
+      const validationResult = await SMSService.validateOTP(actualVerificationId, otp);
+      
+      if (!validationResult.success) {
+        otpRecord.attempts += 1;
+        await otpRecord.save();
+
+        return res.status(400).json({
+          success: false,
+          message: validationResult.message,
+          errorCode: validationResult.errorCode,
+        });
+      }
+
+      // OTP validated successfully via Message Central
+      otpRecord.isUsed = true;
+      await otpRecord.save();
 
       const user = await User.findOne({ mobileNumber, isVerified: true });
 
@@ -350,13 +428,10 @@ class AuthController {
       user.password = newPassword;
       await user.save();
 
-      // Mark OTP as used
-      otpRecord.isUsed = true;
-      await otpRecord.save();
-
       res.json({
         success: true,
         message: "Password reset successfully",
+        provider: otpRecord.provider,
       });
     } catch (error) {
       console.error("Reset password error:", error);
