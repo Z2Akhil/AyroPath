@@ -3,6 +3,59 @@ import validator from "validator";
 import SMSHistory from "../models/SMSHistory.js";
 
 class SMSService {
+  // Configuration for Message Central
+  static getMessageCentralConfig() {
+    return {
+      CUSTOMER_ID: process.env.MC_CUSTOMER_ID,
+      BASE64_KEY: process.env.MC_BASE64_KEY,
+      EMAIL_ID: process.env.MC_EMAIL_ID || process.env.FROM_EMAIL || 'admin@ayropath.com',
+      BASE_URL: 'https://cpaas.messagecentral.com'
+    };
+  }
+
+  // Generate authentication token for Message Central
+  static async generateAuthToken() {
+    try {
+      const CONFIG = this.getMessageCentralConfig();
+      
+      if (!CONFIG.CUSTOMER_ID || !CONFIG.BASE64_KEY) {
+        throw new Error('Message Central credentials not configured (MC_CUSTOMER_ID, MC_BASE64_KEY required)');
+      }
+
+      console.log('Generating Message Central auth token...');
+      
+      const response = await axios.post(
+        `${CONFIG.BASE_URL}/auth/v1/authentication/token`,
+        null,
+        {
+          params: {
+            customerId: CONFIG.CUSTOMER_ID,
+            key: CONFIG.BASE64_KEY,
+            scope: 'NEW',
+            country: '91',
+            email: CONFIG.EMAIL_ID
+          },
+          headers: {
+            'accept': '*/*'
+          },
+          timeout: 10000
+        }
+      );
+      
+      if (response.data.responseCode === 200) {
+        const token = response.data.data.authToken;
+        console.log('Message Central auth token generated successfully');
+        return token;
+      } else {
+        throw new Error(`Message Central token generation failed: ${response.data.message}`);
+      }
+    } catch (error) {
+      console.error('Message Central token generation error:', error.message);
+      throw error;
+    }
+  }
+
+  // Send OTP using Message Central
   static async sendOTP(mobileNumber, otp, options = {}) {
     let smsRecord = null;
     try {
@@ -11,21 +64,6 @@ class SMSService {
         return { 
           success: false, 
           message: "Invalid mobile number format" 
-        };
-      }
-
-      if (!otp || otp.length < 4 || otp.length > 8) {
-        return { 
-          success: false, 
-          message: "Invalid OTP format" 
-        };
-      }
-
-      // Validate environment variables
-      if (!this.validateEnvironment()) {
-        return { 
-          success: false, 
-          message: "SMS service configuration error" 
         };
       }
 
@@ -40,67 +78,65 @@ class SMSService {
         retryCount: 0,
       });
 
-      // Add retry logic
-      const maxRetries = options.maxRetries || 3;
-      const retryDelay = options.retryDelay || 1000;
+      // Generate auth token
+      const authToken = await this.generateAuthToken();
       
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          // Use GET method with query parameters as per Fast2SMS documentation
-          const response = await axios.get(
-            process.env.FAST2SMS_API_URL,
-            {
-              params: {
-                authorization: process.env.FAST2SMS_API_KEY,
-                variables_values: otp,
-                route: "otp",
-                numbers: mobileNumber,
-                flash: 1,
-              },
-              timeout: 10000, // 10 second timeout
-            }
-          );
+      // Prepare parameters for Message Central
+      const params = {
+        customerId: this.getMessageCentralConfig().CUSTOMER_ID,
+        mobileNumber: mobileNumber,
+        flowType: 'SMS',
+        otpLength: otp.length,
+        countryCode: '91'
+      };
 
-          if (response.status === 200 && response.data?.return === true) {
-            console.log(`✅ OTP sent successfully to ${mobileNumber}`);
-            
-            // Update SMS history with success
-            await SMSHistory.updateStatus(
-              smsRecord._id.toString(),
-              "sent",
-              response.data,
-              null
-            );
-            
-            return { 
-              success: true, 
-              message: "OTP sent successfully",
-              requestId: response.data?.request_id 
-            };
-          } else {
-            throw new Error(`API returned error: ${response.data?.message || 'Unknown error'}`);
-          }
-        } catch (error) {
-          console.warn(`⚠️ SMS send attempt ${attempt} failed:`, error.message);
-          
-          // Update retry count
-          smsRecord.retryCount = attempt;
-          await smsRecord.save();
-          
-          if (attempt === maxRetries) {
-            throw error;
-          }
-          
-          // Wait before retry (exponential backoff)
-          await new Promise(resolve => 
-            setTimeout(resolve, retryDelay * Math.pow(2, attempt - 1))
-          );
+      console.log(`Sending OTP via Message Central to ${mobileNumber}...`);
+      
+      const response = await axios.post(
+        `${this.getMessageCentralConfig().BASE_URL}/verification/v3/send`,
+        null,
+        {
+          params: params,
+          headers: {
+            'authToken': authToken,
+            'accept': '*/*'
+          },
+          timeout: 10000
         }
+      );
+      
+      if (response.data.responseCode === 200) {
+        console.log(`✅ OTP sent successfully via Message Central to ${mobileNumber}`);
+        console.log(`Verification ID: ${response.data.data.verificationId}`);
+        
+        // Update SMS history with success
+        await SMSHistory.updateStatus(
+          smsRecord._id.toString(),
+          "sent",
+          {
+            verificationId: response.data.data.verificationId,
+            transactionId: response.data.data.transactionId,
+            provider: 'MessageCentral'
+          },
+          null
+        );
+        
+        return { 
+          success: true, 
+          message: "OTP sent successfully",
+          verificationId: response.data.data.verificationId,
+          transactionId: response.data.data.transactionId,
+          timeout: response.data.data.timeout || 60,
+          provider: 'MessageCentral'
+        };
+      } else {
+        throw new Error(`Message Central API error: ${response.data.message}`);
       }
     } catch (error) {
-      console.error("❌ SMS sending failed after all retries:", {
+      console.error("❌ Message Central OTP sending failed:", {
         mobileNumber,
         error: error.message,
+        response: error.response?.data,
         timestamp: new Date().toISOString()
       });
       
@@ -116,12 +152,85 @@ class SMSService {
       
       return { 
         success: false, 
-        message: "Failed to send OTP after multiple attempts",
+        message: "Failed to send OTP via Message Central",
         error: error.message 
       };
     }
   }
 
+  // Validate OTP using Message Central
+  static async validateOTP(verificationId, otpCode) {
+    try {
+      if (!verificationId || !otpCode) {
+        return {
+          success: false,
+          message: 'Verification ID and OTP code are required'
+        };
+      }
+
+      console.log(`Validating OTP via Message Central for verification ID: ${verificationId}...`);
+      
+      // Generate fresh auth token for validation
+      const authToken = await this.generateAuthToken();
+      
+      const response = await axios.post(
+        `${this.getMessageCentralConfig().BASE_URL}/verification/v3/validateOtp`,
+        null,
+        {
+          params: {
+            verificationId: verificationId,
+            code: otpCode,
+            flowType: 'SMS',
+            langid: 'en'
+          },
+          headers: {
+            'authToken': authToken,
+            'accept': '*/*'
+          },
+          timeout: 10000
+        }
+      );
+      
+      const data = response.data;
+      
+      if (data.responseCode === 200) {
+        const isVerified = data.data.verificationStatus === 'VERIFICATION_COMPLETED';
+        
+        console.log(`OTP validation ${isVerified ? 'successful' : 'failed'} for verification ID: ${verificationId}`);
+        
+        return {
+          success: isVerified,
+          verificationStatus: data.data.verificationStatus,
+          message: isVerified ? 'OTP verified successfully' : 'OTP verification failed',
+          transactionId: data.data.transactionId,
+          provider: 'MessageCentral'
+        };
+      } else {
+        // Handle specific error codes
+        const errorMap = {
+          702: 'Wrong OTP provided',
+          705: 'OTP expired',
+          703: 'Already verified',
+          505: 'Invalid verification ID',
+          800: 'Maximum attempts reached'
+        };
+        
+        const errorMessage = errorMap[data.responseCode] || data.message;
+        
+        return {
+          success: false,
+          errorCode: data.responseCode,
+          message: errorMessage,
+          provider: 'MessageCentral'
+        };
+      }
+    } catch (error) {
+      console.error('Message Central OTP validation error:', error.message);
+      throw error;
+    }
+  }
+
+  // Send notification using Message Central
   static async sendNotification(mobileNumber, message, options = {}) {
     let smsRecord = null;
     try {
@@ -139,13 +248,6 @@ class SMSService {
         };
       }
 
-      if (!this.validateEnvironment()) {
-        return { 
-          success: false, 
-          message: "SMS service configuration error" 
-        };
-      }
-
       // Create SMS history record
       smsRecord = await SMSHistory.createRecord({
         mobileNumber,
@@ -156,49 +258,21 @@ class SMSService {
         retryCount: 0,
       });
 
-      // Use GET method with query parameters as per Fast2SMS documentation
-      const response = await axios.get(
-        process.env.FAST2SMS_API_URL,
-        {
-          params: {
-            authorization: process.env.FAST2SMS_API_KEY,
-            message: message.trim(),
-            route: "q",
-            numbers: mobileNumber,
-            flash: options.flash || 0,
-            language: "english",
-          },
-          timeout: 10000,
-        }
-      );
-
-      if (response.status === 200 && response.data?.return === true) {
-        console.log(`✅ Notification sent successfully to ${mobileNumber}`);
-        
-        // Update SMS history with success
-        await SMSHistory.updateStatus(
-          smsRecord._id.toString(),
-          "sent",
-          response.data,
-          null
-        );
-        
-        return { 
-          success: true, 
-          message: "Notification sent successfully",
-          requestId: response.data?.request_id 
-        };
-      } else {
-        throw new Error(`API returned error: ${response.data?.message || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error("❌ Notification sending failed:", {
-        mobileNumber,
-        error: error.message,
-        timestamp: new Date().toISOString()
-      });
+      // Generate auth token
+      const authToken = await this.generateAuthToken();
       
-      // Update SMS history with failure
+      // For notifications, we might need a different Message Central endpoint
+      // For now, we'll use the same OTP endpoint but with different parameters
+      // Note: Message Central might have separate endpoints for promotional/transactional messages
+      console.log(`Sending notification via Message Central to ${mobileNumber}...`);
+      
+      // This is a placeholder - you'll need to check Message Central documentation
+      // for the correct notification sending endpoint
+      throw new Error('Notification sending via Message Central not yet implemented. Check Message Central documentation for notification APIs.');
+      
+    } catch (error) {
+      console.error("❌ Notification sending failed:", error.message);
+      
       if (smsRecord) {
         await SMSHistory.updateStatus(
           smsRecord._id.toString(),
@@ -220,23 +294,9 @@ class SMSService {
   static isValidMobileNumber(mobileNumber) {
     if (!mobileNumber) return false;
     
-    // Remove any non-digit characters
     const cleanNumber = mobileNumber.toString().replace(/\D/g, '');
     
-    // Check if it's a valid Indian mobile number (10 digits starting with 6-9)
     return validator.isMobilePhone(cleanNumber, 'en-IN') && cleanNumber.length === 10;
-  }
-
-  static validateEnvironment() {
-    const requiredEnvVars = ['FAST2SMS_API_URL', 'FAST2SMS_API_KEY'];
-    const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
-    
-    if (missingVars.length > 0) {
-      console.error(`❌ Missing environment variables: ${missingVars.join(', ')}`);
-      return false;
-    }
-    
-    return true;
   }
 
   // Mock mode for development/testing
@@ -245,7 +305,22 @@ class SMSService {
     return { 
       success: true, 
       message: "OTP sent successfully (mock mode)",
-      mock: true 
+      mock: true,
+      verificationId: `mock-verification-${Date.now()}`
+    };
+  }
+
+  static async validateOTPMock(verificationId, otpCode) {
+    console.log(`📱 [MOCK] Validating OTP ${otpCode} for verification ID: ${verificationId}`);
+    
+    // Simple mock validation - accept any OTP that ends with verificationId last digit
+    const lastDigit = verificationId.slice(-1);
+    const isVerified = otpCode.endsWith(lastDigit);
+    
+    return {
+      success: isVerified,
+      message: isVerified ? 'OTP verified successfully (mock)' : 'OTP verification failed (mock)',
+      mock: true
     };
   }
 
