@@ -26,6 +26,10 @@ const otpSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  verificationId: {
+    type: String,
+    sparse: true, // Can be null for legacy OTPs or email OTPs
+  },
   purpose: {
     type: String,
     enum: ["verification", "forgot_password", "email_verification", "forgot_password_email"],
@@ -42,6 +46,15 @@ const otpSchema = new mongoose.Schema({
   isUsed: {
     type: Boolean,
     default: false,
+  },
+  provider: {
+    type: String,
+    enum: ["Fast2SMS", "MessageCentral", "Mock"],
+    default: "Fast2SMS",
+  },
+  metadata: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {},
   },
   createdAt: {
     type: Date,
@@ -69,6 +82,10 @@ otpSchema.index({
   email: 1,
   purpose: 1,
   isUsed: 1,
+});
+
+otpSchema.index({
+  verificationId: 1,
 });
 
 export default mongoose.model("OTP", otpSchema);
