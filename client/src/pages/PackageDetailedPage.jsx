@@ -10,7 +10,7 @@ import { slugify } from "../utils/slugify";
 import { useCart } from "../context/CartContext";
 
 const PackageDetailedPage = () => {
-  const { slug } = useParams();
+  const { slug, type, code } = useParams();
   const location = useLocation();
   const from = location.state?.from;
   const { allProducts, loading, error } = useProducts();
@@ -34,23 +34,29 @@ const PackageDetailedPage = () => {
   };
 
   useEffect(() => {
-    if (allProducts.length > 0 && slug) {
-      // Find all products matching the name slug
-      const matchingProducts = allProducts.filter((p) => slugify(p.name) === slug);
+    if (allProducts.length > 0 && code && type) {
+      // Find exact product by code and type
+      const exactProduct = allProducts.find(
+        (p) => p.code === code && (p.type?.toUpperCase() === type.toUpperCase())
+      );
 
-      if (matchingProducts.length > 1 && from === 'offer') {
-        // If multiple versions exist and we came from an offer link, pick the OFFER type
-        const offerPkg = matchingProducts.find(p => p.type === 'OFFER');
-        setPkg(offerPkg || matchingProducts[0]);
-      } else if (matchingProducts.length > 1) {
-        // Otherwise, prioritize PROFILE/POP type
-        const profilePkg = matchingProducts.find(p => p.type === 'PROFILE' || p.type === 'POP');
-        setPkg(profilePkg || matchingProducts[0]);
+      if (exactProduct) {
+        setPkg(exactProduct);
       } else {
-        setPkg(matchingProducts[0] || null);
+        // Fallback to name slug if code/type lookup fails
+        const matchingProducts = allProducts.filter((p) => slugify(p.name) === slug);
+        if (matchingProducts.length > 1 && type === 'OFFER') {
+          const offerPkg = matchingProducts.find(p => p.type === 'OFFER');
+          setPkg(offerPkg || matchingProducts[0]);
+        } else if (matchingProducts.length > 1) {
+          const profilePkg = matchingProducts.find(p => p.type === 'PROFILE' || p.type === 'POP');
+          setPkg(profilePkg || matchingProducts[0]);
+        } else {
+          setPkg(matchingProducts[0] || null);
+        }
       }
     }
-  }, [allProducts, slug, from]);
+  }, [allProducts, slug, type, code]);
 
   // Initialize categories when packages are loaded
   useEffect(() => {
@@ -73,7 +79,7 @@ const PackageDetailedPage = () => {
   }, [pkg]);
 
   const handleShare = async (pkg) => {
-    const shareUrl = `${window.location.origin}/packages/${slugify(pkg.name)}`;
+    const shareUrl = `${window.location.origin}/packages/${slugify(pkg.name)}/${pkg.type || 'PROFILE'}/${pkg.code}`;
     const shareData = {
       title: pkg.name,
       text: `Check out this test package: ${pkg.name}`,
@@ -152,7 +158,7 @@ const PackageDetailedPage = () => {
       "price": priceInfo.displayPrice,
       "priceCurrency": "INR",
       "availability": "https://schema.org/InStock",
-      "url": `https://ayropath.com/packages/${slugify(pkg.name)}`
+      "url": `https://ayropath.com/packages/${slugify(pkg.name)}/${pkg.type || 'PROFILE'}/${pkg.code}`
     }
   };
 
@@ -162,7 +168,7 @@ const PackageDetailedPage = () => {
         title={seoTitle}
         description={seoDescription}
         keywords={seoKeywords}
-        canonical={`/packages/${slugify(pkg.name)}`}
+        canonical={`/packages/${slugify(pkg.name)}/${pkg.type || 'PROFILE'}/${pkg.code}`}
         structuredData={structuredData}
         ogType="product"
       />
