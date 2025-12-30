@@ -333,7 +333,12 @@ const PackageDetailedPage = () => {
 
           {/* RIGHT: Booking Form */}
           <div className="lg:col-span-1">
-            <Form pkgName={pkg.name} priceInfo={priceInfo} pkgId={pkg.code} />
+            <Form
+              pkgName={pkg.name}
+              priceInfo={priceInfo}
+              pkgId={pkg.code}
+              items={[{ productCode: pkg.code, productType: pkg.type, name: pkg.name }]}
+            />
           </div>
         </div>
       </div>

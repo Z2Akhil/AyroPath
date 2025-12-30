@@ -167,7 +167,10 @@ const BookOrderModal = ({ user, onClose, onSuccess }) => {
         try {
             const payload = {
                 userId: user._id,
-                packageIds: selectedPackages.map(p => p.code || p.Id),
+                packageIds: selectedPackages.map(p => {
+                    const type = p.type?.toUpperCase();
+                    return (type === 'TEST' || type === 'OFFER') ? (p.code || p.Id) : p.name;
+                }),
                 packageNames: selectedPackages.map(p => p.name),
                 packagePrices: selectedPackages.map(p => ({
                     price: p.sellingPrice || p.price || 0,
@@ -302,8 +305,8 @@ const BookOrderModal = ({ user, onClose, onSuccess }) => {
                                                 key={pkg.code || pkg.Id}
                                                 onClick={() => togglePackage(pkg)}
                                                 className={`group relative p-3 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected
-                                                        ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-100'
-                                                        : 'border-gray-200 hover:border-indigo-300'
+                                                    ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-100'
+                                                    : 'border-gray-200 hover:border-indigo-300'
                                                     }`}
                                             >
                                                 {/* Header Row: Name + Selection Checkbox */}
