@@ -63,12 +63,13 @@ const CartIcon = ({ count }) => (
     <div className="p-2 rounded-full bg-gray-100 group-hover:bg-blue-100 transition-colors duration-300">
       <ShoppingCart className="w-6 h-6 text-gray-700 group-hover:text-blue-600 transition-colors duration-300" />
     </div>
-    {count > 0 && (
-      <span className="absolute -top-1 -right-1 bg-linear-to-r from-red-500 to-red-600 text-white text-xs font-bold 
-                       rounded-full w-5 h-5 flex items-center justify-center shadow-lg animate-pulse">
-        {count}
-      </span>
-    )}
+      {count > 0 && (
+        <span className="absolute -top-1 -right-1 bg-linear-to-r from-red-500 to-red-600 
+               text-white text-xs font-bold rounded-full w-5 h-5 flex items-center 
+               justify-center shadow-lg animate-pulse">
+          {count}
+        </span>
+      )}
   </Link>
 );
 
@@ -93,13 +94,14 @@ const DesktopNav = ({ user, onLogin, onLogoutConfirm }) => (
         </button>
       </div>
     ) : (
-      <button
-        onClick={onLogin}
-        className="px-6 py-2.5 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-full hover:from-blue-700 
-                   hover:to-blue-800 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-      >
-        Login
-      </button>
+        <button
+          onClick={onLogin}
+          className="px-6 py-2.5 bg-linear-to-r from-blue-600 to-blue-700 text-white 
+                     rounded-full hover:from-blue-700 hover:to-blue-800 transition-all 
+                     duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+        >
+          Login
+        </button>
     )}
   </div>
 );
@@ -135,8 +137,9 @@ const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose, loading, 
             ) : (
               <button
                 onClick={() => { onLogin(); onClose(); }}
-                className="px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-lg 
-                 hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium shadow-lg"
+                className="px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 text-white 
+                           rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all 
+                           duration-300 font-medium shadow-lg"
               >
                 Login to Your Account
               </button>
@@ -152,8 +155,9 @@ const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose, loading, 
             <div className="px-6 pb-4 border-b border-gray-100">
               <button
                 onClick={() => { onLogoutConfirm(); onClose(); }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 rounded-lg 
-                 hover:bg-red-100 transition-colors font-medium"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 
+                           bg-red-50 text-red-600 rounded-lg hover:bg-red-100 
+                           transition-colors font-medium"
               >
                 <LogOut size={18} />
                 <span>Logout</span>
@@ -170,8 +174,8 @@ const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose, loading, 
                   key={label}
                   to={href}
                   onClick={onClose}
-                  className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg 
-                             transition-all duration-200 font-medium"
+                  className="block px-4 py-3 text-gray-700 hover:text-blue-600 
+                             hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
                 >
                   {label}
                 </Link>
@@ -180,8 +184,8 @@ const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose, loading, 
                 <Link
                   to="/account"
                   onClick={onClose}
-                  className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg 
-                   transition-all duration-200 font-medium"
+                  className="block px-4 py-3 text-gray-700 hover:text-blue-600 
+                             hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
                 >
                   My Orders
                 </Link>

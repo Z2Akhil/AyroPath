@@ -75,4 +75,9 @@ router.get('/users/:userId', adminAuth, UserAdminController.getUserDetails);
 router.put('/users/:userId', adminAuth, UserAdminController.updateUser);
 router.patch('/users/:userId/status', adminAuth, UserAdminController.toggleUserStatus);
 
+// User Migration Routes
+router.get('/users/migration/needed', adminAuth, UserAdminController.getUsersNeedingMigration);
+router.post('/users/:userId/migrate', adminAuth, UserAdminController.initiateUserMigration);
+router.post('/users/migration/bulk', adminAuth, UserAdminController.bulkInitiateMigration);
+
 export default router;

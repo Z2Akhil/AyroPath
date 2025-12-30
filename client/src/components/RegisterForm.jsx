@@ -1,46 +1,58 @@
 import { useState } from 'react';
 import { useUser } from '../context/userContext';
 import { useToast } from '../context/ToastContext';
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight, RefreshCw } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import MobileNumberStep from './auth/MobileNumberStep';
+import OTPVerificationStep from './auth/OTPVerificationStep';
+import ProfileCompletionStep from './auth/ProfileCompletionStep';
 
 const RegisterForm = ({ onClose, onSwitchToLogin }) => {
-  const { emailRegisterWithOTP, requestEmailOTP, verifyEmailOTP } = useUser();
-  const { info, success, error: toastError } = useToast();
+  const { register, requestOTP, verifyOTP } = useUser();
+  const { success, error: toastError } = useToast();
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    mobileNumber: '',
     email: '',
     password: '',
     confirmPassword: '',
     otp: '',
   });
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(1); // 1: Registration form, 2: OTP verification
-  const [otpSent, setOtpSent] = useState(false);
+  const [step, setStep] = useState(1); // 1: Mobile OTP, 2: OTP Verification, 3: Profile Completion
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpTimer, setOtpTimer] = useState(0);
+  const [showEmailField, setShowEmailField] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const handleFormDataChange = (name, value) => {
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+    setError('');
   };
 
-  const validateForm = () => {
+  const validateMobileNumber = () => {
+    const mobile = formData.mobileNumber.trim();
+    if (!mobile) {
+      toastError('Mobile number is required');
+      return false;
+    }
+    if (!/^\d{10}$/.test(mobile)) {
+      toastError('Please enter a valid 10-digit mobile number');
+      return false;
+    }
+    return true;
+  };
+
+  const validateRegistrationForm = () => {
     if (!formData.firstName.trim()) {
       toastError('First name is required');
-      return false;
-    }
-    if (!formData.email.trim()) {
-      toastError('Email is required');
-      return false;
-    }
-    if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      toastError('Please enter a valid email address');
       return false;
     }
     if (!formData.password) {
@@ -59,19 +71,38 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
   };
 
   const handleRequestOTP = async () => {
-    if (!validateForm()) return;
+    if (!validateMobileNumber()) return;
 
     setOtpLoading(true);
+    setError('');
     try {
-      await requestEmailOTP(formData.email);
-      setOtpSent(true);
+      await requestOTP(formData.mobileNumber, 'verification');
       setStep(2);
       startOtpTimer();
-      success('OTP sent to your email address');
+      success('OTP sent to your mobile number');
     } catch (err) {
-      toastError(err.message);
+      setError(err.message);
     } finally {
       setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    if (!formData.otp.trim()) {
+      toastError('Please enter the OTP');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      await verifyOTP(formData.mobileNumber, formData.otp, 'verification');
+      setStep(3);
+      success('Mobile number verified successfully!');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -79,12 +110,13 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
     if (otpTimer > 0) return;
 
     setOtpLoading(true);
+    setError('');
     try {
-      await requestEmailOTP(formData.email);
+      await requestOTP(formData.mobileNumber, 'verification');
       startOtpTimer();
-      success('OTP resent to your email address');
+      success('OTP resent to your mobile number');
     } catch (err) {
-      toastError(err.message);
+      setError(err.message);
     } finally {
       setOtpLoading(false);
     }
@@ -103,34 +135,87 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
     }, 1000);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleCompleteRegistration = async () => {
+    if (!validateRegistrationForm()) return;
 
-    if (step === 1) {
-      handleRequestOTP();
-      return;
-    }
-
-    // Step 2: Verify OTP and register
-    if (!formData.otp.trim()) {
-      toastError('Please enter the OTP');
-      return;
-    }
     setLoading(true);
+    setError('');
     try {
-      await emailRegisterWithOTP(
+      await register(
         formData.firstName,
         formData.lastName,
-        formData.email,
+        formData.mobileNumber,
         formData.password,
-        formData.otp
+        formData.email // Pass email if provided
       );
       success('Account created successfully!');
       onClose();
     } catch (err) {
-      toastError(err.message);
+      setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (step === 1) {
+      handleRequestOTP();
+    } else if (step === 2) {
+      handleVerifyOTP();
+    } else if (step === 3) {
+      handleCompleteRegistration();
+    }
+  };
+
+  const renderStep = () => {
+    switch (step) {
+      case 1:
+        return (
+          <MobileNumberStep
+            mobileNumber={formData.mobileNumber}
+            onMobileNumberChange={(value) => handleFormDataChange('mobileNumber', value)}
+            onRequestOTP={handleRequestOTP}
+            loading={otpLoading}
+            error={error}
+          />
+        );
+
+      case 2:
+        return (
+          <OTPVerificationStep
+            mobileNumber={formData.mobileNumber}
+            otp={formData.otp}
+            onOtpChange={(value) => handleFormDataChange('otp', value)}
+            onVerifyOTP={handleVerifyOTP}
+            onResendOTP={handleResendOTP}
+            loading={loading}
+            otpLoading={otpLoading}
+            otpTimer={otpTimer}
+            error={error}
+          />
+        );
+
+      case 3:
+        return (
+          <ProfileCompletionStep
+            formData={formData}
+            onFormDataChange={handleFormDataChange}
+            showPassword={showPassword}
+            setShowPassword={setShowPassword}
+            showConfirmPassword={showConfirmPassword}
+            setShowConfirmPassword={setShowConfirmPassword}
+            showEmailField={showEmailField}
+            setShowEmailField={setShowEmailField}
+            mobileNumber={formData.mobileNumber}
+            loading={loading}
+            error={error}
+          />
+        );
+
+      default:
+        return null;
     }
   };
 
@@ -144,261 +229,73 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
         <p className="text-gray-600">
           Join Ayropath for comprehensive health services
         </p>
-      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Name Fields */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              First Name *
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <User className="h-5 w-5 text-gray-400" />
+        {/* Step Indicator */}
+        <div className="flex items-center justify-center mt-4">
+          {[1, 2, 3].map((stepNum) => (
+            <div key={stepNum} className="flex items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step === stepNum
+                  ? 'bg-blue-600 text-white'
+                  : step > stepNum
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-200 text-gray-600'
+                }`}>
+                {stepNum}
               </div>
-              <input
-                type="text"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                placeholder="First name"
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg 
-                           placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                           focus:border-blue-500 transition-all duration-200 bg-white"
-                required
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Last Name
-            </label>
-            <input
-              type="text"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleChange}
-              placeholder="Last name"
-              className="block w-full px-3 py-3 border border-gray-300 rounded-lg 
-                         placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                         focus:border-blue-500 transition-all duration-200 bg-white"
-            />
-          </div>
-        </div>
-
-        {/* Email */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email Address *
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Mail className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter your email address"
-              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg 
-                         placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                         focus:border-blue-500 transition-all duration-200 bg-white"
-              required
-            />
-          </div>
-        </div>
-
-        {/* Password */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Password *
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Lock className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type={showPassword ? 'text' : 'password'}
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Create a strong password"
-              className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg 
-                         placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                         focus:border-blue-500 transition-all duration-200 bg-white"
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center"
-            >
-              {showPassword ? (
-                <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-              ) : (
-                <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+              {stepNum < 3 && (
+                <div className={`w-12 h-1 mx-2 ${step > stepNum ? 'bg-green-600' : 'bg-gray-200'
+                  }`} />
               )}
-            </button>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">Must be at least 6 characters</p>
+            </div>
+          ))}
         </div>
-
-        {/* Confirm Password */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Confirm Password *
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Lock className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type={showConfirmPassword ? 'text' : 'password'}
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              placeholder="Confirm your password"
-              className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg 
-                         placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                         focus:border-blue-500 transition-all duration-200 bg-white"
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center"
-            >
-              {showConfirmPassword ? (
-                <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-              ) : (
-                <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* OTP Verification Step */}
-        {step === 2 && (
-          <div className="space-y-4 border-t border-gray-200 pt-6">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Verify Your Email
-              </h3>
-              <p className="text-gray-600 text-sm">
-                We've sent a 6-digit verification code to{' '}
-                <span className="font-medium text-blue-600">{formData.email}</span>
-              </p>
-            </div>
-
-            {/* OTP Input */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Enter Verification Code *
-              </label>
-              <input
-                type="text"
-                name="otp"
-                value={formData.otp}
-                onChange={handleChange}
-                placeholder="Enter 6-digit code"
-                maxLength={6}
-                className="block w-full px-3 py-3 border border-gray-300 rounded-lg 
-                           placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                           focus:border-blue-500 transition-all duration-200 bg-white text-center text-lg font-semibold"
-                required
-              />
-            </div>
-
-            {/* Resend OTP */}
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={handleResendOTP}
-                disabled={otpTimer > 0 || otpLoading}
-                className="text-blue-600 hover:text-blue-700 font-medium text-sm disabled:text-gray-400 disabled:cursor-not-allowed"
-              >
-                {otpLoading ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    Sending...
-                  </div>
-                ) : otpTimer > 0 ? (
-                  `Resend OTP in ${otpTimer}s`
-                ) : (
-                  'Resend OTP'
-                )}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={loading || (step === 1 && otpLoading)}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 
-                     text-white rounded-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none 
-                     focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 
-                     font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          ) : step === 1 ? (
-            otpLoading ? (
-              <div className="flex items-center gap-2">
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                Sending OTP...
-              </div>
-            ) : (
-              <>
-                Send Verification Code
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )
-          ) : (
-            'Create Account'
-          )}
-        </button>
-
-        {/* Divider */}
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">
-              Already have an account?
-            </span>
-          </div>
-        </div>
-
-        {/* Login Link */}
-        <button
-          type="button"
-          onClick={onSwitchToLogin}
-          className="w-full px-4 py-3 border-2 border-blue-600 text-blue-600 rounded-lg 
-                     hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                     focus:ring-offset-2 transition-all duration-200 font-medium"
-        >
-          Sign In to Existing Account
-        </button>
-      </form>
-
-      {/* Footer */}
-      <div className="mt-6 text-center">
-        <p className="text-xs text-gray-500">
-          By creating an account, you agree to our{' '}
-          <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
-            Terms of Service
-          </a>{' '}
-          and{' '}
-          <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
-            Privacy Policy
-          </a>
+        <p className="text-sm text-gray-500 mt-2">
+          {step === 1 && 'Enter Mobile Number'}
+          {step === 2 && 'Verify OTP'}
+          {step === 3 && 'Complete Profile'}
         </p>
       </div>
+
+      <form onSubmit={handleSubmit}>
+        {renderStep()}
+
+        {/* Submit Button for Step 3 */}
+        {step === 3 && (
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full mt-6 flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 
+                       text-white rounded-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none 
+                       focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 
+                       font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>
+                Create Account
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        )}
+
+        {/* Divider and Login Link */}
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <div className="text-center">
+            <p className="text-gray-600 text-sm">
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={onSwitchToLogin}
+                className="text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Sign In
+              </button>
+            </p>
+          </div>
+        </div>
+      </form>
     </div>
   );
 };
