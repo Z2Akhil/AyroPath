@@ -21,6 +21,9 @@ router.post("/email-register", AuthController.emailRegister);
 router.post("/email-login", AuthController.emailLogin);
 router.post("/forgot-password-email", AuthController.forgotPasswordEmail);
 router.post("/reset-password-email", AuthController.resetPasswordEmail);
+router.get("/verify-email/:token", AuthController.verifyEmail);
+router.post("/resend-verification", auth, AuthController.resendVerification);
+router.post("/resend-verification-public", AuthController.resendVerificationPublic);
 
 // Email OTP verification
 router.post("/request-email-otp", otpRateLimit, AuthController.requestEmailOTP);
