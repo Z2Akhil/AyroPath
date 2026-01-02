@@ -24,9 +24,8 @@ class SMSService {
 
       console.log('Generating Message Central auth token...');
       
-      const response = await axios.post(
+      const response = await axios.get(
         `${CONFIG.BASE_URL}/auth/v1/authentication/token`,
-        null,
         {
           params: {
             customerId: CONFIG.CUSTOMER_ID,
@@ -42,15 +41,16 @@ class SMSService {
         }
       );
       
-      if (response.data.responseCode === 200) {
-        const token = response.data.data.authToken;
-        console.log('Message Central auth token generated successfully');
+      // Actual response matches { status: 200, token: "..." }
+      if (response.data.status === 200 && response.data.token) {
+        const token = response.data.token;
+        console.log('Auth token generated successfully');
         return token;
       } else {
-        throw new Error(`Message Central token generation failed: ${response.data.message}`);
+        throw new Error(`Token generation failed. Status: ${response.data.status}`);
       }
     } catch (error) {
-      console.error('Message Central token generation error:', error.message);
+      console.error('Token generation error:', error.message);
       throw error;
     }
   }
@@ -173,9 +173,8 @@ class SMSService {
       // Generate fresh auth token for validation
       const authToken = await this.generateAuthToken();
       
-      const response = await axios.post(
+      const response = await axios.get(
         `${this.getMessageCentralConfig().BASE_URL}/verification/v3/validateOtp`,
-        null,
         {
           params: {
             verificationId: verificationId,
@@ -260,14 +259,8 @@ class SMSService {
 
       // Generate auth token
       const authToken = await this.generateAuthToken();
+     console.log(`Sending notification via Message Central to ${mobileNumber}...`);
       
-      // For notifications, we might need a different Message Central endpoint
-      // For now, we'll use the same OTP endpoint but with different parameters
-      // Note: Message Central might have separate endpoints for promotional/transactional messages
-      console.log(`Sending notification via Message Central to ${mobileNumber}...`);
-      
-      // This is a placeholder - you'll need to check Message Central documentation
-      // for the correct notification sending endpoint
       throw new Error('Notification sending via Message Central not yet implemented. Check Message Central documentation for notification APIs.');
       
     } catch (error) {

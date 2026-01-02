@@ -17,11 +17,10 @@ const userSchema = new mongoose.Schema({
   },
   mobileNumber: {
     type: String,
+    required: [true, "Mobile number is required"],
     unique: true,
-    sparse: true,
     validate: {
       validator: function (v) {
-        if (!v) return true; // Allow empty/null values
         return validator.isMobilePhone(v, "any", { strictMode: false });
       },
       message: "Invalid mobile number",
@@ -29,10 +28,16 @@ const userSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: [true, "Email is required"],
     unique: true,
+    sparse: true, // Allow null for users who haven't provided email yet
     lowercase: true,
-    validate: [validator.isEmail, "Invalid email address"],
+    validate: {
+      validator: function (v) {
+        if (!v) return true; // Allow empty/null values
+        return validator.isEmail(v);
+      },
+      message: "Invalid email address",
+    },
   },
   googleId: {
     type: String,
@@ -48,6 +53,8 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  emailVerificationToken: String,
+  emailVerificationExpires: Date,
   address: {
     type: String,
     trim: true,
@@ -75,6 +82,14 @@ const userSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true,
+  },
+  migrationStatus: {
+    type: String,
+    enum: ["pending", "in_progress", "completed", "not_required"],
+    default: "not_required",
+  },
+  lastMigrationReminder: {
+    type: Date,
   },
   createdAt: {
     type: Date,

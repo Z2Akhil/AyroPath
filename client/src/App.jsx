@@ -8,6 +8,7 @@ import { SiteSettingsProvider } from './context/SiteSettingsContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ToastContainer from './components/Toast';
+import VerificationAlert from './components/VerificationAlert';
 import LandingPage from './pages/LandingPage';
 import PackagePage from './pages/PackagePage';
 import OfferPage from './pages/OfferPage';
@@ -32,6 +33,7 @@ function App() {
                   <ScrollToTopProvider>
                     <div className="min-h-screen flex flex-col">
                       <Header />
+                      <VerificationAlert />
                       <main className="grow">
                         <Routes>
                           <Route path="/" element={<LandingPage />} />
