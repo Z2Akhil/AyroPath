@@ -1,4 +1,4 @@
-import { AlertCircle, Home, Percent, Share2, ChevronDown, Calendar, CreditCard, CheckCircle } from "lucide-react";
+import { AlertCircle, Home, Percent, Share2, ChevronDown, Calendar, CreditCard, CheckCircle, ShoppingCart } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import Form from "../components/Form.jsx";
@@ -7,21 +7,56 @@ import SkeletonPackageDetailed from "../components/cards/SkeletonPackageDetailed
 import { useProducts } from "../context/ProductContext";
 import SEO from "../components/SEO.jsx";
 import { slugify } from "../utils/slugify";
+import { useCart } from "../context/CartContext";
 
 const PackageDetailedPage = () => {
-  const { slug } = useParams();
+  const { slug, type, code } = useParams();
   const location = useLocation();
   const from = location.state?.from;
   const { allProducts, loading, error } = useProducts();
   const [openCategory, setOpenCategory] = useState(new Set());
   const [pkg, setPkg] = useState(null);
+  const { addToCart, cart } = useCart();
+
+  const isInCart = cart?.items?.some(item => item.productCode === pkg?.code);
+
+  const handleAddToCart = async (packageData) => {
+    if (!packageData) return;
+    const priceInfo = getProductDisplayPrice(packageData);
+    const item = {
+      code: packageData.code,
+      name: packageData.name,
+      type: packageData.type,
+      originalPrice: priceInfo.originalPrice,
+      sellingPrice: priceInfo.displayPrice
+    };
+    await addToCart(item);
+  };
 
   useEffect(() => {
-    if (allProducts.length > 0 && slug) {
-      const foundPkg = allProducts.find((p) => slugify(p.name) === slug);
-      setPkg(foundPkg || null);
+    if (allProducts.length > 0 && code && type) {
+      // Find exact product by code and type
+      const exactProduct = allProducts.find(
+        (p) => p.code === code && (p.type?.toUpperCase() === type.toUpperCase())
+      );
+
+      if (exactProduct) {
+        setPkg(exactProduct);
+      } else {
+        // Fallback to name slug if code/type lookup fails
+        const matchingProducts = allProducts.filter((p) => slugify(p.name) === slug);
+        if (matchingProducts.length > 1 && type === 'OFFER') {
+          const offerPkg = matchingProducts.find(p => p.type === 'OFFER');
+          setPkg(offerPkg || matchingProducts[0]);
+        } else if (matchingProducts.length > 1) {
+          const profilePkg = matchingProducts.find(p => p.type === 'PROFILE' || p.type === 'POP');
+          setPkg(profilePkg || matchingProducts[0]);
+        } else {
+          setPkg(matchingProducts[0] || null);
+        }
+      }
     }
-  }, [allProducts, slug]);
+  }, [allProducts, slug, type, code]);
 
   // Initialize categories when packages are loaded
   useEffect(() => {
@@ -44,7 +79,7 @@ const PackageDetailedPage = () => {
   }, [pkg]);
 
   const handleShare = async (pkg) => {
-    const shareUrl = `${window.location.origin}/packages/${slugify(pkg.name)}`;
+    const shareUrl = `${window.location.origin}/packages/${slugify(pkg.name)}/${pkg.type || 'PROFILE'}/${pkg.code}`;
     const shareData = {
       title: pkg.name,
       text: `Check out this test package: ${pkg.name}`,
@@ -123,7 +158,7 @@ const PackageDetailedPage = () => {
       "price": priceInfo.displayPrice,
       "priceCurrency": "INR",
       "availability": "https://schema.org/InStock",
-      "url": `https://ayropath.com/packages/${slugify(pkg.name)}`
+      "url": `https://ayropath.com/packages/${slugify(pkg.name)}/${pkg.type || 'PROFILE'}/${pkg.code}`
     }
   };
 
@@ -133,7 +168,7 @@ const PackageDetailedPage = () => {
         title={seoTitle}
         description={seoDescription}
         keywords={seoKeywords}
-        canonical={`/packages/${slugify(pkg.name)}`}
+        canonical={`/packages/${slugify(pkg.name)}/${pkg.type || 'PROFILE'}/${pkg.code}`}
         structuredData={structuredData}
         ogType="product"
       />
@@ -178,14 +213,33 @@ const PackageDetailedPage = () => {
                     )}
                   </div>
                 </div>
-                <button
-                  onClick={() => handleShare(pkg)}
-                  className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all mt-4 sm:mt-0"
-                  title="Share this test"
-                >
-                  <Share2 className="w-5 h-5" />
-                  <span className="font-medium">Share</span>
-                </button>
+                <div className="flex items-center gap-3 mt-4 sm:mt-0">
+                  <button
+                    onClick={() => handleShare(pkg)}
+                    className="flex bg-emerald-100  items-center gap-2 px-4 py-2.5 text-emerald-700 hover:text-emerald-700 hover:bg-emerald-200 rounded-xl transition-all"
+                    title="Share this test"
+                  >
+                    <Share2 className="w-5 h-5" />
+                    <span className="font-semibold text-sm">Share</span>
+                  </button>
+                  {isInCart ? (
+                    <Link
+                      to="/cart"
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 shadow-xs active:scale-95 bg-emerald-100 text-emerald-700 border border-emerald-200"
+                    >
+                      <ShoppingCart className="w-5 h-5" />
+                      <span className="font-semibold text-sm">Go to Cart</span>
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => handleAddToCart(pkg)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 shadow-xs active:scale-95 bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md"
+                    >
+                      <ShoppingCart className="w-5 h-5" />
+                      <span className="font-semibold text-sm">Add to Cart</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Price Section */}
@@ -279,7 +333,12 @@ const PackageDetailedPage = () => {
 
           {/* RIGHT: Booking Form */}
           <div className="lg:col-span-1">
-            <Form pkgName={pkg.name} priceInfo={priceInfo} pkgId={pkg.code} />
+            <Form
+              pkgName={pkg.name}
+              priceInfo={priceInfo}
+              pkgId={pkg.code}
+              items={[{ productCode: pkg.code, productType: pkg.type, name: pkg.name }]}
+            />
           </div>
         </div>
       </div>

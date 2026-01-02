@@ -13,7 +13,7 @@ import {
 import ConfirmationDialog from "./ConfirmationDialog";
 import AuthModal from "./AuthModal";
 
-const Form = ({ pkgName, priceInfo, pkgId }) => {
+const Form = ({ pkgName, priceInfo, pkgId, items }) => {
   const pkgNames = [].concat(pkgName || []);
   const { user } = useUser();
   const [numPersons, setNumPersons] = useState(1);
@@ -94,6 +94,22 @@ const Form = ({ pkgName, priceInfo, pkgId }) => {
       setContactInfo(prev => ({ ...prev, [field]: value }));
     }
   };
+  // Derive the packageId for order submission based on types
+  const getOrderPackageId = () => {
+    if (!items) return pkgId;
+
+    if (Array.isArray(pkgId)) {
+      return items.map(item => {
+        const type = (item.productType || item.type)?.toUpperCase();
+        return (type === 'TEST' || type === 'OFFER') ? (item.productCode || item.code) : item.name;
+      });
+    } else {
+      const item = items[0];
+      if (!item) return pkgId;
+      const type = (item.productType || item.type)?.toUpperCase();
+      return (type === 'TEST' || type === 'OFFER') ? (item.productCode || item.code) : item.name;
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -115,6 +131,20 @@ const Form = ({ pkgName, priceInfo, pkgId }) => {
       return;
     }
 
+    const invalidBeneficiary = selectedBeneficiaries.find(b => {
+      const age = parseInt(b.age);
+      return b.name.length > 50 || isNaN(age) || age < 1 || age > 100;
+    });
+
+    if (invalidBeneficiary) {
+      if (invalidBeneficiary.name.length > 50) {
+        alert("Beneficiary name must be less than 50 characters");
+      } else {
+        alert("Age must be between 1 and 100 (inclusive) for all beneficiaries");
+      }
+      return;
+    }
+
     if (
       !contactInfo.email ||
       !contactInfo.mobile ||
@@ -123,6 +153,12 @@ const Form = ({ pkgName, priceInfo, pkgId }) => {
       !contactInfo.address.state
     ) {
       alert("Please complete all contact information");
+      return;
+    }
+
+    const mobileRegex = /^[0-9]{10}$/;
+    if (!mobileRegex.test(contactInfo.mobile)) {
+      alert("Please enter a valid 10-digit mobile number");
       return;
     }
 
@@ -136,7 +172,7 @@ const Form = ({ pkgName, priceInfo, pkgId }) => {
 
       // Prepare order data
       const orderData = {
-        packageId: pkgId,
+        packageId: getOrderPackageId(),
         packageName: pkgNames.join(", "),
         packagePrice: priceInfo.displayPrice,
         originalPrice: priceInfo.originalPrice,
@@ -239,13 +275,18 @@ const Form = ({ pkgName, priceInfo, pkgId }) => {
       return;
     }
 
-    // Validate beneficiary ages are numbers
-    const invalidAges = selectedBeneficiaries.filter(b =>
-      isNaN(parseInt(b.age)) || parseInt(b.age) <= 0
-    );
+    // Validate beneficiary details
+    const invalidBenData = selectedBeneficiaries.find(b => {
+      const age = parseInt(b.age);
+      return b.name.length > 50 || isNaN(age) || age < 1 || age > 100;
+    });
 
-    if (invalidAges.length > 0) {
-      alert("Please enter valid ages for all beneficiaries");
+    if (invalidBenData) {
+      if (invalidBenData.name.length > 50) {
+        alert("Beneficiary name must be less than 50 characters before fetching slots");
+      } else {
+        alert("Age must be between 1 and 100 (inclusive) for all beneficiaries before fetching slots");
+      }
       return;
     }
 
@@ -490,11 +531,11 @@ const Form = ({ pkgName, priceInfo, pkgId }) => {
             <li className={`flex items-center gap-2 ${pincode && pincode.length === 6 && pincodeStatus?.includes("✅") ? "text-green-600" : ""}`}>
               {pincode && pincode.length === 6 && pincodeStatus?.includes("✅") ? "✓" : "•"} Valid pincode checked
             </li>
-            <li className={`flex items-center gap-2 ${selectedBeneficiaries.every(b => b.name && b.age && b.gender) ? "text-green-600" : ""}`}>
-              {selectedBeneficiaries.every(b => b.name && b.age && b.gender) ? "✓" : "•"} All beneficiaries filled
+            <li className={`flex items-center gap-2 ${selectedBeneficiaries.every(b => b.name && b.name.length <= 50 && b.age && parseInt(b.age) >= 1 && parseInt(b.age) <= 100 && b.gender) ? "text-green-600" : ""}`}>
+              {selectedBeneficiaries.every(b => b.name && b.name.length <= 50 && b.age && parseInt(b.age) >= 1 && parseInt(b.age) <= 100 && b.gender) ? "✓" : "•"} All beneficiaries correctly filled (Age 1-100, Name &lt; 50)
             </li>
-            <li className={`flex items-center gap-2 ${contactInfo.email && contactInfo.mobile && contactInfo.address.street ? "text-green-600" : ""}`}>
-              {contactInfo.email && contactInfo.mobile && contactInfo.address.street ? "✓" : "•"} Contact information complete
+            <li className={`flex items-center gap-2 ${contactInfo.email && /^[0-9]{10}$/.test(contactInfo.mobile) && contactInfo.address.street ? "text-green-600" : ""}`}>
+              {contactInfo.email && /^[0-9]{10}$/.test(contactInfo.mobile) && contactInfo.address.street ? "✓" : "•"} Contact information complete (10-digit mobile)
             </li>
           </ul>
         </div>

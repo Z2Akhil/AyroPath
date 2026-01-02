@@ -2,7 +2,7 @@ import { useCart } from "../context/CartContext";
 import { Trash2, ShoppingCart, LogIn } from "lucide-react";
 import Form from "../components/Form";
 import { getCartPriceInfo } from "../utils/cartPriceInfo";
-import {Link} from "react-router-dom";
+import { Link } from "react-router-dom";
 const CartPage = () => {
   const { cart, removeFromCart } = useCart();
   const priceInfo = getCartPriceInfo(cart?.items);//displayPrice,originalPrice,discountAmount,discountPercentage,margin,payable
@@ -75,7 +75,7 @@ const CartPage = () => {
                     {/* Action - Full width on mobile, 2 cols on desktop */}
                     <div className="sm:col-span-2 py-2 sm:py-3 px-4 text-center">
                       <button
-                        onClick={() => removeFromCart(item.productCode)}
+                        onClick={() => removeFromCart(item.productCode, item.productType)}
                         className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-md shadow-sm transition-all duration-200"
                       >
                         Remove
@@ -88,7 +88,7 @@ const CartPage = () => {
               {/* Total Row */}
               <div className="flex flex-col sm:flex-row justify-end items-center gap-2 sm:gap-0 py-4 px-6 bg-gray-50 border-t border-gray-200">
                 <p className="text-lg sm:text-base font-semibold text-gray-800 mx-1">
-                  Total Payable Amount: 
+                  Total Payable Amount:
                 </p>
                 <p className="text-lg sm:text-xl font-bold text-blue-700">
                   ₹{cart.totalAmount.toFixed(2)}
@@ -108,7 +108,7 @@ const CartPage = () => {
           </div>
 
           {/* 🧩 Form Section */}
-            <Form pkgName={pkgNames} priceInfo={priceInfo} pkgId={pkgIds} />
+          <Form pkgName={pkgNames} priceInfo={priceInfo} pkgId={pkgIds} items={cart?.items} />
         </div>
       )}
     </div>

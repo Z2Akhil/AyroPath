@@ -36,7 +36,7 @@ function App() {
                         <Routes>
                           <Route path="/" element={<LandingPage />} />
                           <Route path="/packages" element={<PackagePage />} />
-                          <Route path="/packages/:slug" element={<PackageDetailedPage />} />
+                          <Route path="/packages/:slug/:type/:code" element={<PackageDetailedPage />} />
                           <Route path="/tests" element={<TestPage />} />
                           <Route path="/offers" element={<OfferPage />} />
                           <Route path="/account" element={<AccountPage />} />

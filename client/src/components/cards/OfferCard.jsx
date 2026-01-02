@@ -17,7 +17,7 @@ const OfferCard = ({ pkg }) => {
   return (
     <div className="bg-white shadow-lg rounded-xl p-5 max-w-sm w-full flex flex-col justify-between hover:shadow-xl transition">
       {/* Package Name */}
-      <h2 onClick={() => navigate(`/packages/${slugify(name)}`)} className="font-bold text-lg text-gray-900 mb-2 uppercase">{name}</h2>
+      <h2 onClick={() => navigate(`/packages/${slugify(name)}/${pkg.type || 'OFFER'}/${pkg.code}`)} className="font-bold text-lg text-gray-900 mb-2 uppercase">{name}</h2>
 
       {/* Test List */}
       <p className="text-gray-700 text-sm mb-6 lowercase">
@@ -50,7 +50,7 @@ const OfferCard = ({ pkg }) => {
 
         {/* Right side: Book button */}
         <Link
-          to={`/packages/${slugify(name)}`}
+          to={`/packages/${slugify(name)}/${pkg.type || 'OFFER'}/${pkg.code}`}
           state={{ from: 'offer' }}
           className="bg-green-600 text-white font-medium px-5 py-2 rounded hover:bg-green-700 transition text-sm"
         >
