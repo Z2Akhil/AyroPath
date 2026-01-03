@@ -86,7 +86,15 @@ router.post('/products', adminAuth, async (req, res) => {
 
     console.log(`Processing ${thyrocareProducts.length} products from ThyroCare`);
 
-    // Step 3: Sync ThyroCare products with our database and get combined data
+    // Step 3: Get all product codes from ThyroCare response
+    const thyrocareProductCodes = new Set();
+    for (const product of thyrocareProducts) {
+      if (product.code) {
+        thyrocareProductCodes.add(product.code);
+      }
+    }
+
+    // Step 4: Sync ThyroCare products with our database and get combined data
     const combinedProducts = [];
     let processedCount = 0;
     let errorCount = 0;
@@ -120,8 +128,15 @@ router.post('/products', adminAuth, async (req, res) => {
             product = await Test.findOrCreateFromThyroCare(thyrocareProduct);
         }
         
+        // Ensure product is marked as active since it's in ThyroCare
+        if (!product.isActive) {
+          product.isActive = true;
+          await product.save();
+        }
+        
         // Get combined data for frontend
         const combinedData = product.getCombinedData();
+        combinedData.isInThyrocare = true; // Flag to indicate product is in ThyroCare
         combinedProducts.push(combinedData);
         processedCount++;
         
@@ -136,6 +151,62 @@ router.post('/products', adminAuth, async (req, res) => {
 
     console.log(`Processing complete: ${processedCount} successful, ${errorCount} errors`);
 
+    // Step 5: Find orphaned products (in DB but not in ThyroCare)
+    let orphanedProducts = [];
+    let orphanedCount = 0;
+    
+    // Determine which models to check based on productType
+    const modelsToCheck = [];
+    const productTypeUpper = productType.toUpperCase();
+    
+    if (productTypeUpper === 'ALL') {
+      modelsToCheck.push({ model: Test, type: 'TEST' });
+      modelsToCheck.push({ model: Profile, type: 'PROFILE' });
+      modelsToCheck.push({ model: Offer, type: 'OFFER' });
+    } else if (productTypeUpper === 'TEST') {
+      modelsToCheck.push({ model: Test, type: 'TEST' });
+    } else if (productTypeUpper === 'PROFILE') {
+      modelsToCheck.push({ model: Profile, type: 'PROFILE' });
+    } else if (productTypeUpper === 'OFFER') {
+      modelsToCheck.push({ model: Offer, type: 'OFFER' });
+    }
+    
+    // Find orphaned products in each model
+    for (const { model, type } of modelsToCheck) {
+      try {
+        // Find products of this type that are not in ThyroCare response
+        const query = { type: type };
+        if (thyrocareProductCodes.size > 0) {
+          query.code = { $nin: Array.from(thyrocareProductCodes) };
+        }
+        
+        const orphaned = await model.find(query);
+        
+        for (const product of orphaned) {
+          // Mark as inactive if not already
+          if (product.isActive) {
+            product.isActive = false;
+            await product.save();
+          }
+          
+          // Get combined data for frontend
+          const combinedData = product.getCombinedData();
+          combinedData.isInThyrocare = false; // Flag to indicate product is NOT in ThyroCare
+          orphanedProducts.push(combinedData);
+          orphanedCount++;
+        }
+        
+        console.log(`Found ${orphaned.length} orphaned ${type} products`);
+      } catch (error) {
+        console.error(`Error finding orphaned ${type} products:`, error);
+      }
+    }
+    
+    console.log(`Total orphaned products: ${orphanedCount}`);
+
+    // Step 6: Combine both active and orphaned products
+    const allProducts = [...combinedProducts, ...orphanedProducts];
+    
     req.adminSession.lastProductFetch = new Date();
     await req.adminSession.save();
 
@@ -153,22 +224,24 @@ router.post('/products', adminAuth, async (req, res) => {
       responseTime: Date.now() - startTime,
       metadata: {
         productType: productType,
-        productCount: combinedProducts.length,
+        productCount: allProducts.length,
         thyrocareProductCount: thyrocareProducts.length,
         processedCount: processedCount,
-        errorCount: errorCount
+        errorCount: errorCount,
+        orphanedCount: orphanedCount
       }
     });
 
     res.json({
       success: true,
-      products: combinedProducts,
+      products: allProducts,
       response: 'Success',
       metadata: {
-        totalProducts: combinedProducts.length,
+        totalProducts: allProducts.length,
         productType: productType,
         processedCount: processedCount,
-        errorCount: errorCount
+        errorCount: errorCount,
+        orphanedCount: orphanedCount
       }
     });
 
@@ -326,6 +399,268 @@ router.put('/products/pricing', adminAuth, async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to update pricing'
+    });
+  }
+});
+
+// Endpoint to activate a product (mark as active)
+router.put('/products/:code/activate', adminAuth, async (req, res) => {
+  const startTime = Date.now();
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const userAgent = req.get('User-Agent') || '';
+
+  try {
+    const { code } = req.params;
+
+    if (!code) {
+      return res.status(400).json({
+        success: false,
+        error: 'Product code is required'
+      });
+    }
+
+    console.log('Activating product:', { 
+      code, 
+      admin: req.admin.name,
+      sessionId: req.adminSession._id 
+    });
+
+    // Try to find and activate product in each model
+    let activatedProduct;
+    let found = false;
+    
+    // Try Test model first
+    try {
+      const product = await Test.findOne({ code });
+      if (product) {
+        product.isActive = true;
+        await product.save();
+        activatedProduct = product.getCombinedData();
+        activatedProduct.isInThyrocare = false; // Still not in Thyrocare
+        found = true;
+      }
+    } catch (error) {
+      // Product not found in Test model, continue to next model
+    }
+    
+    // Try Profile model if not found
+    if (!found) {
+      try {
+        const product = await Profile.findOne({ code });
+        if (product) {
+          product.isActive = true;
+          await product.save();
+          activatedProduct = product.getCombinedData();
+          activatedProduct.isInThyrocare = false; // Still not in Thyrocare
+          found = true;
+        }
+      } catch (error) {
+        // Product not found in Profile model, continue to next model
+      }
+    }
+    
+    // Try Offer model if not found
+    if (!found) {
+      try {
+        const product = await Offer.findOne({ code });
+        if (product) {
+          product.isActive = true;
+          await product.save();
+          activatedProduct = product.getCombinedData();
+          activatedProduct.isInThyrocare = false; // Still not in Thyrocare
+          found = true;
+        }
+      } catch (error) {
+        // Product not found in any model
+      }
+    }
+
+    if (!found) {
+      return res.status(404).json({
+        success: false,
+        error: 'Product not found'
+      });
+    }
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'PRODUCT_ACTIVATE',
+      description: `Admin ${req.admin.name} activated product ${code}`,
+      resource: 'products',
+      endpoint: '/api/admin/products/:code/activate',
+      method: 'PUT',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 200,
+      responseTime: Date.now() - startTime,
+      metadata: {
+        productCode: code
+      }
+    });
+
+    res.json({
+      success: true,
+      product: activatedProduct,
+      message: 'Product activated successfully'
+    });
+
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    console.error('Product activation error:', error);
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'ERROR',
+      description: `Failed to activate product: ${error.message}`,
+      resource: 'products',
+      endpoint: '/api/admin/products/:code/activate',
+      method: 'PUT',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 500,
+      responseTime: responseTime,
+      errorMessage: error.message,
+      metadata: {
+        productCode: req.params.code
+      }
+    });
+
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to activate product'
+    });
+  }
+});
+
+// Endpoint to deactivate a product (mark as inactive)
+router.put('/products/:code/deactivate', adminAuth, async (req, res) => {
+  const startTime = Date.now();
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const userAgent = req.get('User-Agent') || '';
+
+  try {
+    const { code } = req.params;
+
+    if (!code) {
+      return res.status(400).json({
+        success: false,
+        error: 'Product code is required'
+      });
+    }
+
+    console.log('Deactivating product:', { 
+      code, 
+      admin: req.admin.name,
+      sessionId: req.adminSession._id 
+    });
+
+    // Try to find and deactivate product in each model
+    let deactivatedProduct;
+    let found = false;
+    
+    // Try Test model first
+    try {
+      const product = await Test.findOne({ code });
+      if (product) {
+        product.isActive = false;
+        await product.save();
+        deactivatedProduct = product.getCombinedData();
+        deactivatedProduct.isInThyrocare = false;
+        found = true;
+      }
+    } catch (error) {
+      // Product not found in Test model, continue to next model
+    }
+    
+    // Try Profile model if not found
+    if (!found) {
+      try {
+        const product = await Profile.findOne({ code });
+        if (product) {
+          product.isActive = false;
+          await product.save();
+          deactivatedProduct = product.getCombinedData();
+          deactivatedProduct.isInThyrocare = false;
+          found = true;
+        }
+      } catch (error) {
+        // Product not found in Profile model, continue to next model
+      }
+    }
+    
+    // Try Offer model if not found
+    if (!found) {
+      try {
+        const product = await Offer.findOne({ code });
+        if (product) {
+          product.isActive = false;
+          await product.save();
+          deactivatedProduct = product.getCombinedData();
+          deactivatedProduct.isInThyrocare = false;
+          found = true;
+        }
+      } catch (error) {
+        // Product not found in any model
+      }
+    }
+
+    if (!found) {
+      return res.status(404).json({
+        success: false,
+        error: 'Product not found'
+      });
+    }
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'PRODUCT_DEACTIVATE',
+      description: `Admin ${req.admin.name} deactivated product ${code}`,
+      resource: 'products',
+      endpoint: '/api/admin/products/:code/deactivate',
+      method: 'PUT',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 200,
+      responseTime: Date.now() - startTime,
+      metadata: {
+        productCode: code
+      }
+    });
+
+    res.json({
+      success: true,
+      product: deactivatedProduct,
+      message: 'Product deactivated successfully'
+    });
+
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    console.error('Product deactivation error:', error);
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'ERROR',
+      description: `Failed to deactivate product: ${error.message}`,
+      resource: 'products',
+      endpoint: '/api/admin/products/:code/deactivate',
+      method: 'PUT',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 500,
+      responseTime: responseTime,
+      errorMessage: error.message,
+      metadata: {
+        productCode: req.params.code
+      }
+    });
+
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to deactivate product'
     });
   }
 });
