@@ -33,6 +33,7 @@ const AdminTable = ({ data, onEdit }) => {
     "ID",
     "NAME",
     ...(hideCategory ? [] : ["CATEGORY"]),
+    "STATUS",
     "THYROCARE RATE",
     "THYROCARE MARGIN",
     "DISCOUNT",
@@ -43,6 +44,11 @@ const AdminTable = ({ data, onEdit }) => {
   const handleDiscountChange = (code, newDiscount) => {
     const product = localData.find(item => item.code === code);
     if (!product) return;
+
+    // Don't allow discount editing for orphaned products
+    if (product.isInThyrocare === false) {
+      return;
+    }
 
     const maxDiscount = product.thyrocareMargin || 0;
     const validatedDiscount = Math.max(0, Math.min(newDiscount, maxDiscount));
@@ -69,6 +75,58 @@ const AdminTable = ({ data, onEdit }) => {
       ...prev,
       [code]: hasChanges
     }));
+  };
+
+  const handleActivate = async (code) => {
+    setLoadingStates(prev => ({ ...prev, [code]: true }));
+
+    try {
+      const response = await axiosInstance.put(`/admin/products/${code}/activate`);
+
+      if (response.data.success) {
+        const updatedData = localData.map(item => 
+          item.code === code 
+            ? { ...item, ...response.data.product, isActive: true }
+            : item
+        );
+
+        setLocalData(updatedData);
+        
+        // Show success feedback
+        console.log(`Product ${code} activated`);
+      }
+    } catch (error) {
+      console.error('Failed to activate product:', error);
+      // You could add toast notification here
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [code]: false }));
+    }
+  };
+
+  const handleDeactivate = async (code) => {
+    setLoadingStates(prev => ({ ...prev, [code]: true }));
+
+    try {
+      const response = await axiosInstance.put(`/admin/products/${code}/deactivate`);
+
+      if (response.data.success) {
+        const updatedData = localData.map(item => 
+          item.code === code 
+            ? { ...item, ...response.data.product, isActive: false }
+            : item
+        );
+
+        setLocalData(updatedData);
+        
+        // Show success feedback
+        console.log(`Product ${code} deactivated`);
+      }
+    } catch (error) {
+      console.error('Failed to deactivate product:', error);
+      // You could add toast notification here
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [code]: false }));
+    }
   };
 
   const handleSync = async (code) => {
@@ -187,36 +245,66 @@ const AdminTable = ({ data, onEdit }) => {
                 const hasUnsavedChanges = unsavedChanges[item.code];
                 const isLoading = loadingStates[item.code];
 
+                // Determine product status
+                const isOrphaned = item.isInThyrocare === false;
+                const isActive = item.isActive !== false; // Default to true if not specified
+                const isDisabled = isOrphaned || !isActive;
+                
+                // Status badge
+                let statusText = "Active";
+                let statusColor = "bg-green-100 text-green-800";
+                
+                if (isOrphaned) {
+                  statusText = "Orphaned";
+                  statusColor = "bg-red-100 text-red-800";
+                } else if (!isActive) {
+                  statusText = "Inactive";
+                  statusColor = "bg-gray-100 text-gray-800";
+                }
+
                 return (
                   <tr
                     key={idx}
-                    className={`hover:bg-blue-50 transition-colors ${
+                    className={`transition-colors ${
+                      isDisabled ? 'bg-gray-50 text-gray-500' : 
                       idx % 2 === 0 ? "bg-white" : "bg-gray-50"
-                    } ${hasUnsavedChanges ? 'bg-yellow-50 border-l-4 border-l-yellow-400' : ''}`}
+                    } ${hasUnsavedChanges ? 'bg-yellow-50 border-l-4 border-l-yellow-400' : ''} ${
+                      isOrphaned ? 'border-l-4 border-l-red-400' : ''
+                    }`}
                   >
                     {/* ID */}
-                    <td className="px-4 py-3 border-b font-mono text-xs text-gray-500">
+                    <td className="px-4 py-3 border-b font-mono text-xs">
                       {item.code || "-"}
                     </td>
                     
                     {/* Name */}
-                    <td className="px-4 py-3 border-b">{item.name || "-"}</td>
+                    <td className={`px-4 py-3 border-b ${isDisabled ? 'line-through' : ''}`}>
+                      {item.name || "-"}
+                    </td>
                     
                     {/* Category */}
                     {!hideCategory && (
                       <td className="px-4 py-3 border-b">{item.category || "-"}</td>
                     )}
                     
+                    {/* STATUS */}
+                    <td className="px-4 py-3 border-b">
+                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${statusColor}`}>
+                        {statusText}
+                      </span>
+                    </td>
+                    
                     {/* ThyroCare Rate */}
-                    <td className="px-4 py-3 border-b text-blue-700 font-medium">
-                      ₹{thyrocareRate || "-"}
+                    <td className="px-4 py-3 border-b font-medium">
+                      {thyrocareRate > 0 ? `₹${thyrocareRate}` : "-"}
                     </td>
                     
                     {/* ThyroCare Margin */}
-                    <td className="px-4 py-3 border-b text-gray-800">
-                      ₹{thyrocareMargin.toFixed(2)}
+                    <td className="px-4 py-3 border-b">
+                      {thyrocareMargin > 0 ? `₹${thyrocareMargin.toFixed(2)}` : "-"}
                     </td>
                     
+                    {/* DISCOUNT */}
                     <td className="px-4 py-3 border-b">
                       <div className="flex items-center space-x-2">
                         <input
@@ -225,15 +313,22 @@ const AdminTable = ({ data, onEdit }) => {
                           max={thyrocareMargin}
                           value={discount}
                           onChange={(e) => handleDiscountChange(item.code, parseFloat(e.target.value) || 0)}
-                          className="w-20 border border-gray-300 rounded px-2 py-1 text-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 outline-none"
+                          className={`w-20 border rounded px-2 py-1 text-sm focus:ring-1 outline-none ${
+                            isDisabled 
+                              ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed' 
+                              : 'border-gray-300 focus:border-blue-400 focus:ring-blue-100'
+                          }`}
                           placeholder="0"
+                          disabled={isDisabled}
+                          title={isDisabled ? "Cannot edit discount for orphaned/inactive products" : ""}
                         />
                       </div>
                     </td>
                     
+                    {/* SELLING PRICE */}
                     <td className="px-4 py-3 border-b font-medium">
                       <div className="flex items-center space-x-1">
-                        <span className={`${hasUnsavedChanges ? 'text-orange-600' : 'text-green-600'}`}>
+                        <span className={`${hasUnsavedChanges ? 'text-orange-600' : isDisabled ? 'text-gray-600' : 'text-green-600'}`}>
                           ₹{sellingPrice.toFixed(2)}
                         </span>
                         {hasUnsavedChanges && (
@@ -242,20 +337,46 @@ const AdminTable = ({ data, onEdit }) => {
                       </div>
                     </td>
                     
+                    {/* ACTIONS */}
                     <td className="px-4 py-3 border-b text-center">
                       <div className="flex justify-center space-x-2">
-                        <button
-                          onClick={() => handleSync(item.code)}
-                          disabled={!hasUnsavedChanges || isLoading}
-                          className={`px-2 py-1 text-xs rounded transition ${
-                            hasUnsavedChanges 
-                              ? 'bg-green-600 text-white hover:bg-green-700' 
-                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          } ${isLoading ? 'animate-pulse' : ''}`}
-                          title={hasUnsavedChanges ? "Save changes to database" : "No changes to save"}
-                        >
-                          {isLoading ? 'Syncing...' : 'Sync'}
-                        </button>
+                        {isOrphaned || !isActive ? (
+                          // Activate button for orphaned/inactive products
+                          <button
+                            onClick={() => handleActivate(item.code)}
+                            disabled={isLoading}
+                            className={`px-2 py-1 text-xs rounded transition ${
+                              isLoading ? 'bg-blue-400 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'
+                            }`}
+                            title="Activate product"
+                          >
+                            {isLoading ? 'Activating...' : 'Activate'}
+                          </button>
+                        ) : (
+                          // Sync and Deactivate buttons for active products
+                          <>
+                            <button
+                              onClick={() => handleSync(item.code)}
+                              disabled={!hasUnsavedChanges || isLoading}
+                              className={`px-2 py-1 text-xs rounded transition ${
+                                hasUnsavedChanges 
+                                  ? 'bg-green-600 text-white hover:bg-green-700' 
+                                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              } ${isLoading ? 'animate-pulse' : ''}`}
+                              title={hasUnsavedChanges ? "Save changes to database" : "No changes to save"}
+                            >
+                              {isLoading ? 'Syncing...' : 'Sync'}
+                            </button>
+                            <button
+                              onClick={() => handleDeactivate(item.code)}
+                              disabled={isLoading}
+                              className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 transition"
+                              title="Deactivate product"
+                            >
+                              Deactivate
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
