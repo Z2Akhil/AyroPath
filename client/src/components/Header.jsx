@@ -37,20 +37,26 @@ const Logo = ({ logo, loading }) => {
   const logoSrc = !imgError && logo ? logo : "./logo.webp";
 
   return (
-    <Link to="/" className="flex items-center  group cursor-pointer">
+    <Link to="/" className="flex items-center  group cursor-pointer" aria-label="Ayropath Home">
       <div className="flex items-center gap-2">
         <img
           src={logoSrc}
+          srcSet={`${logoSrc} 1x, ${logoSrc} 2x`}
           alt="Company Logo"
           className="w-15 h-15 object-contain rounded-full"
           onError={() => setImgError(true)}
+          fetchPriority="high"
+          decoding="async"
         />
       </div>
       <div className="leading-tight ">
         <img
           src="/Thyrocare.png"
+          srcSet="/Thyrocare.png 1x, /Thyrocare.png 2x"
           alt="In association with ThyroCare"
           className="h-30 w-30 object-contain mt-1"
+          loading="eager"
+          decoding="async"
         />
       </div>
     </Link>
@@ -59,7 +65,7 @@ const Logo = ({ logo, loading }) => {
 
 
 const CartIcon = ({ count }) => (
-  <Link to="/cart" className="relative group cursor-pointer">
+  <Link to="/cart" aria-label={`Shopping cart with ${count} items`} className="relative group cursor-pointer">
     <div className="p-2 rounded-full bg-gray-100 group-hover:bg-blue-100 transition-colors duration-300">
       <ShoppingCart className="w-6 h-6 text-gray-700 group-hover:text-blue-600 transition-colors duration-300" />
     </div>
@@ -276,6 +282,7 @@ export default function Header() {
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMenuOpen(true)}
+                aria-label="Open navigation menu"
                 className="lg:hidden p-2 rounded-full hover:bg-gray-100 transition-colors"
               >
                 <Menu size={24} className="text-gray-700" />

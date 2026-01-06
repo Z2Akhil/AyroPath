@@ -63,10 +63,14 @@ export default function Footer() {
             <div className="flex items-center gap-3">
               <img
                 src={logoImage}
-                alt="Company Logo"
+                srcSet={`${logoImage} 1x, ${logoImage} 2x`}
+                alt="Ayropath Company Logo"
                 onError={() => setImgError(true)}
                 className="w-10 h-10 object-contain rounded-full"
+                loading="lazy"
+                decoding="async"
               />
+
               <div>
                 <h3 className="text-xl font-bold">Ayropath</h3>
                 <p className="text-xs text-gray-400">
