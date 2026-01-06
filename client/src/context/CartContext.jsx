@@ -281,13 +281,19 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  // Refresh cart from backend
+  const refreshCart = async () => {
+    await loadCart();
+  };
+
   const value = {
     cart,
     loading,
     addToCart,
     removeFromCart,
     updateQuantity,
-    clearCart
+    clearCart,
+    refreshCart
   };
 
   return (

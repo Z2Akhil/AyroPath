@@ -17,7 +17,7 @@ class CartApi {
     }
   }
 
-  // Add item to cart
+  // Add item to cart (with validation)
   static async addToCart(productCode, productType, quantity = 1, guestSessionId = null) {
     try {
       const headers = {};
@@ -33,6 +33,85 @@ class CartApi {
     } catch (error) {
       console.error('Error adding to cart:', error);
       throw new Error(error.response?.data?.message || 'Failed to add item to cart');
+    }
+  }
+
+  // Add item to cart with confirmation (removing duplicate tests)
+  static async addToCartWithConfirmation(productCode, productType, quantity = 1, removeDuplicateTests = [], guestSessionId = null) {
+    try {
+      const headers = {};
+      if (guestSessionId) {
+        headers['x-guest-session-id'] = guestSessionId;
+      }
+
+      const response = await axiosInstance.post('/cart/items/with-confirmation', 
+        { productCode, productType, quantity, removeDuplicateTests },
+        { headers }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error adding to cart with confirmation:', error);
+      throw new Error(error.response?.data?.message || 'Failed to add item to cart');
+    }
+  }
+
+  // Get product details with childs data
+  static async getProductWithChilds(productCode, productType) {
+    try {
+      // Use the client products endpoint which returns product with childs data
+      const response = await axiosInstance.get(`/client/products/${productCode}`);
+      
+      if (response.data.success && response.data.product) {
+        return response.data.product;
+      } else {
+        throw new Error(response.data.message || 'Product not found');
+      }
+    } catch (error) {
+      console.error('Error getting product with childs:', error);
+      throw new Error(error.response?.data?.message || 'Failed to get product details');
+    }
+  }
+
+  // Get cart with full product details (including childs)
+  static async getCartWithDetails(guestSessionId = null) {
+    try {
+      const headers = {};
+      if (guestSessionId) {
+        headers['x-guest-session-id'] = guestSessionId;
+      }
+
+      const response = await axiosInstance.get('/cart', { headers });
+      
+      // Enhance cart items with childs data
+      if (response.data.success && response.data.cart) {
+        const enhancedItems = await Promise.all(
+          response.data.cart.items.map(async (item) => {
+            try {
+              const productDetails = await this.getProductWithChilds(item.productCode, item.productType);
+              return {
+                ...item,
+                childs: productDetails.childs || []
+              };
+            } catch (err) {
+              console.error(`Error getting details for ${item.productCode}:`, err);
+              return { ...item, childs: [] };
+            }
+          })
+        );
+        
+        return {
+          ...response.data,
+          cart: {
+            ...response.data.cart,
+            items: enhancedItems
+          }
+        };
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error getting cart with details:', error);
+      throw new Error(error.response?.data?.message || 'Failed to get cart');
     }
   }
 

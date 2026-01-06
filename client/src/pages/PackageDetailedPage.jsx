@@ -8,49 +8,53 @@ import { useProducts } from "../context/ProductContext";
 import SEO from "../components/SEO.jsx";
 import { slugify } from "../utils/slugify";
 import { useCart } from "../context/CartContext";
+import AddToCartWithValidation from "../components/AddToCartWithValidation.jsx";
 
 const PackageDetailedPage = () => {
-  const { slug } = useParams();
+  const { slug, type, code } = useParams();
   const location = useLocation();
   const from = location.state?.from;
   const { allProducts, loading, error } = useProducts();
   const [openCategory, setOpenCategory] = useState(new Set());
   const [pkg, setPkg] = useState(null);
-  const { addToCart, cart } = useCart();
+  const { cart } = useCart();
 
   const isInCart = cart?.items?.some(item => item.productCode === pkg?.code);
 
-  const handleAddToCart = async (packageData) => {
-    if (!packageData) return;
-    const priceInfo = getProductDisplayPrice(packageData);
-    const item = {
-      code: packageData.code,
-      name: packageData.name,
-      type: packageData.type,
-      originalPrice: priceInfo.originalPrice,
-      sellingPrice: priceInfo.displayPrice
-    };
-    await addToCart(item);
+  const handleAddToCartSuccess = (result) => {
+    console.log('Item added to cart successfully:', result);
+    // You could show a toast or update UI here
+  };
+
+  const handleAddToCartError = (error) => {
+    console.error('Failed to add to cart:', error);
+    // You could show an error toast here
   };
 
   useEffect(() => {
-    if (allProducts.length > 0 && slug) {
-      // Find all products matching the name slug
-      const matchingProducts = allProducts.filter((p) => slugify(p.name) === slug);
+    if (allProducts.length > 0 && code && type) {
+      // Find exact product by code and type
+      const exactProduct = allProducts.find(
+        (p) => p.code === code && (p.type?.toUpperCase() === type.toUpperCase())
+      );
 
-      if (matchingProducts.length > 1 && from === 'offer') {
-        // If multiple versions exist and we came from an offer link, pick the OFFER type
-        const offerPkg = matchingProducts.find(p => p.type === 'OFFER');
-        setPkg(offerPkg || matchingProducts[0]);
-      } else if (matchingProducts.length > 1) {
-        // Otherwise, prioritize PROFILE/POP type
-        const profilePkg = matchingProducts.find(p => p.type === 'PROFILE' || p.type === 'POP');
-        setPkg(profilePkg || matchingProducts[0]);
+      if (exactProduct) {
+        setPkg(exactProduct);
       } else {
-        setPkg(matchingProducts[0] || null);
+        // Fallback to name slug if code/type lookup fails
+        const matchingProducts = allProducts.filter((p) => slugify(p.name) === slug);
+        if (matchingProducts.length > 1 && type === 'OFFER') {
+          const offerPkg = matchingProducts.find(p => p.type === 'OFFER');
+          setPkg(offerPkg || matchingProducts[0]);
+        } else if (matchingProducts.length > 1) {
+          const profilePkg = matchingProducts.find(p => p.type === 'PROFILE' || p.type === 'POP');
+          setPkg(profilePkg || matchingProducts[0]);
+        } else {
+          setPkg(matchingProducts[0] || null);
+        }
       }
     }
-  }, [allProducts, slug, from]);
+  }, [allProducts, slug, type, code]);
 
   // Initialize categories when packages are loaded
   useEffect(() => {
@@ -73,7 +77,7 @@ const PackageDetailedPage = () => {
   }, [pkg]);
 
   const handleShare = async (pkg) => {
-    const shareUrl = `${window.location.origin}/packages/${slugify(pkg.name)}`;
+    const shareUrl = `${window.location.origin}/packages/${slugify(pkg.name)}/${pkg.type || 'PROFILE'}/${pkg.code}`;
     const shareData = {
       title: pkg.name,
       text: `Check out this test package: ${pkg.name}`,
@@ -152,7 +156,7 @@ const PackageDetailedPage = () => {
       "price": priceInfo.displayPrice,
       "priceCurrency": "INR",
       "availability": "https://schema.org/InStock",
-      "url": `https://ayropath.com/packages/${slugify(pkg.name)}`
+      "url": `https://ayropath.com/packages/${slugify(pkg.name)}/${pkg.type || 'PROFILE'}/${pkg.code}`
     }
   };
 
@@ -162,7 +166,7 @@ const PackageDetailedPage = () => {
         title={seoTitle}
         description={seoDescription}
         keywords={seoKeywords}
-        canonical={`/packages/${slugify(pkg.name)}`}
+        canonical={`/packages/${slugify(pkg.name)}/${pkg.type || 'PROFILE'}/${pkg.code}`}
         structuredData={structuredData}
         ogType="product"
       />
@@ -225,13 +229,16 @@ const PackageDetailedPage = () => {
                       <span className="font-semibold text-sm">Go to Cart</span>
                     </Link>
                   ) : (
-                    <button
-                      onClick={() => handleAddToCart(pkg)}
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 shadow-xs active:scale-95 bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md"
-                    >
-                      <ShoppingCart className="w-5 h-5" />
-                      <span className="font-semibold text-sm">Add to Cart</span>
-                    </button>
+                    <AddToCartWithValidation
+                      productCode={pkg.code}
+                      productType={pkg.type}
+                      productName={pkg.name}
+                      quantity={1}
+                      buttonText="Add to Cart"
+                      showIcon={true}
+                      onSuccess={handleAddToCartSuccess}
+                      onError={handleAddToCartError}
+                    />
                   )}
                 </div>
               </div>
@@ -327,7 +334,12 @@ const PackageDetailedPage = () => {
 
           {/* RIGHT: Booking Form */}
           <div className="lg:col-span-1">
-            <Form pkgName={pkg.name} priceInfo={priceInfo} pkgId={pkg.code} />
+            <Form
+              pkgName={pkg.name}
+              priceInfo={priceInfo}
+              pkgId={pkg.code}
+              items={[{ productCode: pkg.code, productType: pkg.type, name: pkg.name }]}
+            />
           </div>
         </div>
       </div>

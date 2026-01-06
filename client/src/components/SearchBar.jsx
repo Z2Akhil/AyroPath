@@ -69,7 +69,8 @@ const SearchBar = () => {
 
     const handleSelect = (item) => {
         setShowDropdown(false);
-        navigate(`/packages/${slugify(item.name)}`, { state: { product: item } });
+        const type = item.type || "PROFILE";
+        navigate(`/packages/${slugify(item.name)}/${type}/${item.code}`, { state: { product: item } });
     };
 
     const handleKeyDown = (e) => {

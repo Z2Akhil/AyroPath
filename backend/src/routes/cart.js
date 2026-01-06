@@ -129,6 +129,100 @@ const getProductDetails = async (productCode, productType) => {
   };
 };
 
+// Helper function to check for duplicate tests
+const checkForDuplicateTests = async (cartItems, newItem) => {
+  // If new item is a TEST, check if it's included in any Profile/Offer in cart
+  if (newItem.productType === 'TEST') {
+    for (const cartItem of cartItems) {
+      if (cartItem.productType === 'PROFILE' || cartItem.productType === 'OFFER') {
+        // Get the profile/offer details to check its childs
+        let product;
+        if (cartItem.productType === 'PROFILE') {
+          product = await Profile.findOne({ code: cartItem.productCode, isActive: true });
+        } else {
+          product = await Offer.findOne({ code: cartItem.productCode, isActive: true });
+        }
+        
+        if (product && product.thyrocareData.childs) {
+          // Check if the test is included in this profile/offer
+          const isIncluded = product.thyrocareData.childs.some(
+            child => child.code === newItem.productCode
+          );
+          
+          if (isIncluded) {
+            return {
+              hasDuplicates: true,
+              action: 'prevent',
+              message: `Test ${newItem.productCode} is already included in ${cartItem.productType} ${cartItem.name}`,
+              details: {
+                testCode: newItem.productCode,
+                testName: newItem.name,
+                includedIn: cartItem.productCode,
+                includedInName: cartItem.name,
+                includedInType: cartItem.productType
+              }
+            };
+          }
+        }
+      }
+    }
+  }
+  
+  // If new item is a PROFILE or OFFER, check if it includes any Tests in cart
+  if (newItem.productType === 'PROFILE' || newItem.productType === 'OFFER') {
+    let product;
+    if (newItem.productType === 'PROFILE') {
+      product = await Profile.findOne({ code: newItem.productCode, isActive: true });
+    } else {
+      product = await Offer.findOne({ code: newItem.productCode, isActive: true });
+    }
+    
+    if (product && product.thyrocareData.childs) {
+      const duplicateTests = [];
+      
+      // Check each test in cart against the profile/offer's childs
+      for (const cartItem of cartItems) {
+        if (cartItem.productType === 'TEST') {
+          const isIncluded = product.thyrocareData.childs.some(
+            child => child.code === cartItem.productCode
+          );
+          
+          if (isIncluded) {
+            duplicateTests.push({
+              testCode: cartItem.productCode,
+              testName: cartItem.name,
+              profileOfferCode: newItem.productCode,
+              profileOfferName: newItem.name,
+              profileOfferType: newItem.productType
+            });
+          }
+        }
+      }
+      
+      if (duplicateTests.length > 0) {
+        return {
+          hasDuplicates: true,
+          action: 'remove',
+          message: `${newItem.productType} ${newItem.name} includes ${duplicateTests.length} test(s) already in your cart`,
+          details: {
+            duplicateTests: duplicateTests,
+            profileOfferCode: newItem.productCode,
+            profileOfferName: newItem.name,
+            profileOfferType: newItem.productType
+          }
+        };
+      }
+    }
+  }
+  
+  // No duplicates found
+  return {
+    hasDuplicates: false,
+    action: 'allow',
+    message: 'No duplicate tests found'
+  };
+};
+
 // Get user's cart
 router.get('/', optionalAuth, async (req, res) => {
   try {
@@ -176,29 +270,49 @@ router.get('/', optionalAuth, async (req, res) => {
   }
 });
 
-// Add item to cart
+// Add item to cart with duplicate test validation
 router.post('/items', optionalAuth, async (req, res) => {
   try {
-    const { productCode, productType, quantity = 1 } = req.body;
+    const { productCode, productType, quantity = 1, skipValidation = false } = req.body;
     const userId = req.user?._id;
     const guestSessionId = req.headers['x-guest-session-id'] || req.cookies?.guestSessionId;
 
-    console.log('➕ Adding item to cart:', { productCode, productType, quantity, userId: userId || 'guest' });
+    console.log('➕ Adding item to cart:', { productCode, productType, quantity, userId: userId || 'guest', skipValidation });
 
     if (!productCode || !productType) {
       return res.status(400).json({ success: false, message: 'Product code and type are required' });
     }
 
-    // 1. latest product data
+    // 1. Get latest product data
     const productDetails = await getProductDetails(productCode, productType);
 
-    // 2. find or create cart
+    // 2. Find or create cart
     let cart = await Cart.findByUserOrGuest(userId, guestSessionId);
     if (!cart) {
       cart = await Cart.createOrUpdateCart(userId, guestSessionId || generateGuestSessionId(), []);
     }
 
-    // Validation: Only one product of type 'OFFER' allowed
+    // 3. Check for duplicate tests (unless validation is skipped)
+    let duplicateCheckResult = null;
+    if (!skipValidation) {
+      duplicateCheckResult = await checkForDuplicateTests(cart.items, productDetails);
+      
+      if (duplicateCheckResult.hasDuplicates) {
+        // Return validation result without adding to cart
+        return res.status(200).json({
+          success: false,
+          validation: duplicateCheckResult,
+          message: duplicateCheckResult.message,
+          requiresConfirmation: true,
+          data: {
+            product: productDetails,
+            cart: cart.getSummary()
+          }
+        });
+      }
+    }
+
+    // 4. Validation: Only one product of type 'OFFER' allowed
     if (productType === 'OFFER') {
       const existingOffer = cart.items.find(i => i.productType === 'OFFER' && i.productCode !== productCode);
       if (existingOffer) {
@@ -209,24 +323,40 @@ router.post('/items', optionalAuth, async (req, res) => {
       }
     }
 
-    // 3. insert / update row
+    // 5. Check if product already exists in cart
     const existing = cart.items.find(
       i => i.productCode === productCode && i.productType === productType
     );
+    
     if (existing) {
-      existing.quantity += parseInt(quantity, 10);
-      Object.assign(existing, productDetails); // overwrite price fields
-    } else {
-      cart.items.push({ ...productDetails, quantity: parseInt(quantity, 10) });
+      // Product already in cart - don't increase quantity, just return success
+      await refreshCartPrices(cart);
+      await cart.save();
+      const summary = cart.getSummary();
+      
+      console.log('✅ Product already in cart, returning current cart:', {
+        productCode,
+        productType,
+        cartId: cart._id
+      });
+      
+      return res.json({
+        success: true,
+        message: 'Product already in cart',
+        cart: summary,
+        guestSessionId: cart.guestSessionId,
+        alreadyInCart: true
+      });
     }
+    
+    // 6. Add new item to cart (quantity always 1)
+    cart.items.push({ ...productDetails, quantity: 1 });
 
-    await cart.save(); // <-- rows now contain fresh prices
+    await cart.save();
 
-    /* ---------------------------------------------------------- */
-    await refreshCartPrices(cart); // ← new  re-sync EVERY row in case others are stale
-    await cart.save();             // ← new  persist the refreshed rows
-    /* ---------------------------------------------------------- */
-
+    // 6. Refresh prices and save
+    await refreshCartPrices(cart);
+    await cart.save();
     const summary = cart.getSummary();
 
     console.log('✅ Cart returned with refreshed prices:', summary);
@@ -235,10 +365,117 @@ router.post('/items', optionalAuth, async (req, res) => {
       success: true,
       message: 'Item added to cart successfully',
       cart: summary,
-      guestSessionId: cart.guestSessionId
+      guestSessionId: cart.guestSessionId,
+      validation: duplicateCheckResult || { hasDuplicates: false, action: 'allow' }
     });
   } catch (error) {
     console.error('❌ Error adding item to cart:', error);
+    if (error.message.includes('Product not found')) {
+      return res.status(404).json({ success: false, message: error.message });
+    }
+    res.status(500).json({ success: false, message: 'Failed to add item to cart', error: error.message });
+  }
+});
+
+// Add item to cart with confirmation (removing duplicate tests)
+router.post('/items/with-confirmation', optionalAuth, async (req, res) => {
+  try {
+    const { productCode, productType, quantity = 1, removeDuplicateTests = [] } = req.body;
+    const userId = req.user?._id;
+    const guestSessionId = req.headers['x-guest-session-id'] || req.cookies?.guestSessionId;
+
+    console.log('➕ Adding item to cart with confirmation:', { 
+      productCode, 
+      productType, 
+      quantity, 
+      removeDuplicateTests,
+      userId: userId || 'guest' 
+    });
+
+    if (!productCode || !productType) {
+      return res.status(400).json({ success: false, message: 'Product code and type are required' });
+    }
+
+    // 1. Get latest product data
+    const productDetails = await getProductDetails(productCode, productType);
+
+    // 2. Find or create cart
+    let cart = await Cart.findByUserOrGuest(userId, guestSessionId);
+    if (!cart) {
+      cart = await Cart.createOrUpdateCart(userId, guestSessionId || generateGuestSessionId(), []);
+    }
+
+    // 3. Remove duplicate tests if specified
+    if (removeDuplicateTests && removeDuplicateTests.length > 0) {
+      console.log(`🗑️ Removing duplicate tests: ${removeDuplicateTests.join(', ')}`);
+      cart.items = cart.items.filter(item => 
+        !(item.productType === 'TEST' && removeDuplicateTests.includes(item.productCode))
+      );
+    }
+
+    // 4. Validation: Only one product of type 'OFFER' allowed
+    if (productType === 'OFFER') {
+      const existingOffer = cart.items.find(i => i.productType === 'OFFER' && i.productCode !== productCode);
+      if (existingOffer) {
+        return res.status(400).json({
+          success: false,
+          message: 'Only one offer product can be added per order.'
+        });
+      }
+    }
+
+    // 5. Check if product already exists in cart
+    const existing = cart.items.find(
+      i => i.productCode === productCode && i.productType === productType
+    );
+    
+    if (existing) {
+      // Product already in cart - don't increase quantity, just return success
+      await refreshCartPrices(cart);
+      await cart.save();
+      const summary = cart.getSummary();
+      
+      console.log('✅ Product already in cart (with confirmation), returning current cart:', {
+        productCode,
+        productType,
+        cartId: cart._id
+      });
+      
+      return res.json({
+        success: true,
+        message: 'Product already in cart',
+        cart: summary,
+        guestSessionId: cart.guestSessionId,
+        alreadyInCart: true
+      });
+    }
+    
+    // 6. Add new item to cart (quantity always 1)
+    cart.items.push({ ...productDetails, quantity: 1 });
+
+    await cart.save();
+
+    // 6. Refresh prices and save
+    await refreshCartPrices(cart);
+    await cart.save();
+    const summary = cart.getSummary();
+
+    console.log('✅ Item added to cart with confirmation:', {
+      cartId: cart._id,
+      removedTests: removeDuplicateTests,
+      totalItems: summary.totalItems,
+      totalAmount: summary.totalAmount
+    });
+
+    res.json({
+      success: true,
+      message: 'Item added to cart successfully',
+      cart: summary,
+      guestSessionId: cart.guestSessionId,
+      removedTests: removeDuplicateTests
+    });
+  } catch (error) {
+    console.error('❌ Error adding item to cart with confirmation:', error);
     if (error.message.includes('Product not found')) {
       return res.status(404).json({ success: false, message: error.message });
     }
