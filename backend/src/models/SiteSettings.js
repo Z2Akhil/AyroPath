@@ -8,7 +8,7 @@ const siteSettingsSchema = new mongoose.Schema({
   },
   heroImage: {
     type: String, // URL or file path
-    default: "/assets/default-hero.jpg",
+    default: "/assets/default-hero.webp",
   },
 
   // --- Contact Info ---
