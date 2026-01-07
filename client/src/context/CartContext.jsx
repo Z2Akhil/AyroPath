@@ -12,7 +12,16 @@ export const CartProvider = ({ children }) => {
     totalItems: 0,
     subtotal: 0,
     totalDiscount: 0,
-    totalAmount: 0
+    productTotal: 0,
+    collectionCharge: 0,
+    totalAmount: 0,
+    hasCollectionCharge: false,
+    thyrocareValidation: false,
+    breakdown: {
+      productTotal: 0,
+      collectionCharge: 0,
+      grandTotal: 0
+    }
   });
   const [loading, setLoading] = useState(false);
 
@@ -26,7 +35,18 @@ export const CartProvider = ({ children }) => {
       if (user) {
         const response = await CartApi.getCart();
         if (response.success && response.cart) {
-          setCart(response.cart);
+          // Merge backend cart data with collection charge info
+          const enhancedCart = {
+            ...response.cart,
+            hasCollectionCharge: response.hasCollectionCharge || false,
+            thyrocareValidation: response.thyrocareValidation || false,
+            breakdown: response.breakdown || {
+              productTotal: response.cart.productTotal || response.cart.totalAmount,
+              collectionCharge: response.collectionCharge || 0,
+              grandTotal: response.cart.totalAmount
+            }
+          };
+          setCart(enhancedCart);
         }
       } else {
         loadCartFromLocalStorage();
@@ -44,7 +64,20 @@ export const CartProvider = ({ children }) => {
     if (saved) {
       try {
         const localCart = JSON.parse(saved);
-        setCart(localCart);
+        // Ensure all fields exist for backward compatibility
+        const enhancedCart = {
+          ...localCart,
+          productTotal: localCart.productTotal || localCart.totalAmount || 0,
+          collectionCharge: localCart.collectionCharge || 0,
+          hasCollectionCharge: localCart.hasCollectionCharge || false,
+          thyrocareValidation: localCart.thyrocareValidation || false,
+          breakdown: localCart.breakdown || {
+            productTotal: localCart.productTotal || localCart.totalAmount || 0,
+            collectionCharge: localCart.collectionCharge || 0,
+            grandTotal: localCart.totalAmount || 0
+          }
+        };
+        setCart(enhancedCart);
       } catch (err) {
         console.error("Error parsing cart from localStorage:", err);
         setCart({
@@ -52,7 +85,16 @@ export const CartProvider = ({ children }) => {
           totalItems: 0,
           subtotal: 0,
           totalDiscount: 0,
-          totalAmount: 0
+          productTotal: 0,
+          collectionCharge: 0,
+          totalAmount: 0,
+          hasCollectionCharge: false,
+          thyrocareValidation: false,
+          breakdown: {
+            productTotal: 0,
+            collectionCharge: 0,
+            grandTotal: 0
+          }
         });
       }
     }
@@ -86,14 +128,26 @@ export const CartProvider = ({ children }) => {
     const totalItems = cartData.items.reduce((sum, item) => sum + item.quantity, 0);
     const subtotal = cartData.items.reduce((sum, item) => sum + (item.originalPrice * item.quantity), 0);
     const totalDiscount = cartData.items.reduce((sum, item) => sum + ((item.originalPrice - item.sellingPrice) * item.quantity), 0);
-    const totalAmount = cartData.items.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
+    const productTotal = cartData.items.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
+    
+    // For local cart, we don't have collection charge info
+    // It will be added when synced with backend
+    const collectionCharge = cartData.collectionCharge || 0;
+    const totalAmount = productTotal + collectionCharge;
 
     return {
       ...cartData,
       totalItems,
       subtotal,
       totalDiscount,
-      totalAmount
+      productTotal,
+      collectionCharge,
+      totalAmount,
+      breakdown: {
+        productTotal,
+        collectionCharge,
+        grandTotal: totalAmount
+      }
     };
   };
 
@@ -260,7 +314,16 @@ export const CartProvider = ({ children }) => {
         totalItems: 0,
         subtotal: 0,
         totalDiscount: 0,
-        totalAmount: 0
+        productTotal: 0,
+        collectionCharge: 0,
+        totalAmount: 0,
+        hasCollectionCharge: false,
+        thyrocareValidation: false,
+        breakdown: {
+          productTotal: 0,
+          collectionCharge: 0,
+          grandTotal: 0
+        }
       };
 
       // Update state and localStorage
