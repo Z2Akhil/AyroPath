@@ -86,13 +86,87 @@ const CartPage = () => {
               </div>
 
               {/* Total Row */}
-              <div className="flex flex-col sm:flex-row justify-end items-center gap-2 sm:gap-0 py-4 px-6 bg-gray-50 border-t border-gray-200">
-                <p className="text-lg sm:text-base font-semibold text-gray-800 mx-1">
-                  Total Payable Amount:
-                </p>
-                <p className="text-lg sm:text-xl font-bold text-blue-700">
-                  ₹{cart.totalAmount.toFixed(2)}
-                </p>
+              <div className="py-4 px-6 bg-gray-50 border-t border-gray-200">
+                {/* Collection Charge Warning */}
+                {cart.hasCollectionCharge && cart.collectionCharge > 0 && (
+                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <div className="flex items-start">
+                      <div className="shrink-0">
+                        <svg className="h-5 w-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-yellow-800">
+                          Collection Charge Applied
+                        </h3>
+                        <div className="mt-1 text-sm text-yellow-700">
+                          <p>
+                            Additional collection charge of ₹{cart.collectionCharge.toFixed(2)} is applicable 
+                            because your order amount is less than ₹300.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Price Summary */}
+                <div className="space-y-2 mb-4">
+                  {/* Original Price (MRP) */}
+                  {cart.subtotal > 0 && (
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>Original Price:</span>
+                      <span>₹{cart.subtotal.toFixed(2)}</span>
+                    </div>
+                  )}
+                  
+                  {/* Discount */}
+                  {cart.totalDiscount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Discount:</span>
+                      <span>-₹{cart.totalDiscount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  
+                  {/* Product Total (After Discount) */}
+                  {cart.productTotal > 0 && (
+                    <div className="flex justify-between text-sm font-medium text-gray-800 pt-2 border-t border-gray-200">
+                      <span>Product Total:</span>
+                      <span>₹{cart.productTotal.toFixed(2)}</span>
+                    </div>
+                  )}
+                  
+                  {/* Collection Charge (if applicable) */}
+                  {cart.collectionCharge > 0 && (
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>Collection Charge:</span>
+                      <span className="text-yellow-700 font-medium">₹{cart.collectionCharge.toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Grand Total */}
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-0 pt-4 border-t border-gray-300">
+                  <div>
+                    <p className="text-lg sm:text-base font-semibold text-gray-800">
+                      Total Payable Amount:
+                    </p>
+                    {cart.hasCollectionCharge && cart.collectionCharge > 0 && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Includes ₹{cart.collectionCharge.toFixed(2)} collection charge
+                      </p>
+                    )}
+                    {cart.totalDiscount > 0 && (
+                      <p className="text-xs text-green-600 mt-1">
+                        You saved ₹{cart.totalDiscount.toFixed(2)}
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-lg sm:text-xl font-bold text-blue-700">
+                    ₹{cart.totalAmount.toFixed(2)}
+                  </p>
+                </div>
               </div>
             </div>
 
