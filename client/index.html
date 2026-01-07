@@ -5,6 +5,8 @@
   <meta charset="UTF-8" />
 
   <!-- Preconnect to external domains for faster loading -->
+  <link rel="preconnect" href="https://mpc-prod-14-s6uit34pua-ue.a.run.app">
+  <link rel="dns-prefetch" href="https://mpc-prod-14-s6uit34pua-ue.a.run.app">
   <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
   <link rel="preconnect" href="https://www.clarity.ms" crossorigin>
   <link rel="dns-prefetch" href="https://connect.facebook.net">
@@ -33,30 +35,51 @@
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
 
-  <!-- Meta Pixel Code (Deferred) -->
-  <script defer>
-    !function (f, b, e, v, n, t, s) {
-      if (f.fbq) return; n = f.fbq = function () {
-        n.callMethod ?
-          n.callMethod.apply(n, arguments) : n.queue.push(arguments)
-      };
-      if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0';
-      n.queue = []; t = b.createElement(e); t.async = !0;
-      t.src = v; s = b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t, s)
-    }(window, document, 'script',
-      'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '1627667764900223');
-    fbq('track', 'PageView');
-  </script>
+  <!-- Optimized loading for 3rd-party scripts -->
+  <script>
+    window.addEventListener('load', () => {
+      // Defer Facebook Pixel
+      setTimeout(() => {
+        !function (f, b, e, v, n, t, s) {
+          if (f.fbq) return; n = f.fbq = function () {
+            n.callMethod ?
+              n.callMethod.apply(n, arguments) : n.queue.push(arguments)
+          };
+          if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0';
+          n.queue = []; t = b.createElement(e); t.async = !0;
+          t.src = v; s = b.getElementsByTagName(e)[0];
+          s.parentNode.insertBefore(t, s)
+        }(window, document, 'script',
+          'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '1627667764900223');
+        fbq('track', 'PageView');
+      }, 3000);
 
-  <!-- Microsoft Clarity (Deferred) -->
-  <script defer>
-    (function (c, l, a, r, i, t, y) {
-      c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
-      t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
-      y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
-    })(window, document, "clarity", "script", "uiq4b3lsim");
+      // Defer Microsoft Clarity until scroll or 5s delay
+      const loadClarity = () => {
+        if (window.clarityLoaded) return;
+        window.clarityLoaded = true;
+        (function (c, l, a, r, i, t, y) {
+          c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
+          t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
+          y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+        })(window, document, "clarity", "script", "uiq4b3lsim");
+      };
+
+      const onInteraction = () => {
+        loadClarity();
+        window.removeEventListener('scroll', onInteraction);
+        window.removeEventListener('mousemove', onInteraction);
+        window.removeEventListener('touchstart', onInteraction);
+      };
+
+      window.addEventListener('scroll', onInteraction, { passive: true });
+      window.addEventListener('mousemove', onInteraction, { passive: true });
+      window.addEventListener('touchstart', onInteraction, { passive: true });
+
+      // Fallback load after 6 seconds if no interaction
+      setTimeout(loadClarity, 6000);
+    });
   </script>
 </body>
 

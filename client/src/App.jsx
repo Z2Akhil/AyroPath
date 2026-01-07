@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { Suspense, lazy } from 'react';
 import { UserProvider } from './context/UserProvider';
 import { ProductProvider } from './context/ProductContext';
 import { ToastProvider } from './context/ToastContext';
@@ -10,17 +11,27 @@ import Footer from './components/Footer';
 import ToastContainer from './components/Toast';
 import VerificationAlert from './components/VerificationAlert';
 import LandingPage from './pages/LandingPage';
-import PackagePage from './pages/PackagePage';
-import OfferPage from './pages/OfferPage';
-import TestPage from './pages/TestPage';
-import PackageDetailedPage from './pages/PackageDetailedPage';
-import AboutPage from './pages/AboutPage';
-import AccountPage from './pages/AccountPage';
-import CartPage from './pages/CartPage';
-import OrderPage from './pages/OrderPage';
-import OrderHistory from './pages/OrderHistory'
+
+// Lazy load non-critical pages
+const PackagePage = lazy(() => import('./pages/PackagePage'));
+const OfferPage = lazy(() => import('./pages/OfferPage'));
+const TestPage = lazy(() => import('./pages/TestPage'));
+const PackageDetailedPage = lazy(() => import('./pages/PackageDetailedPage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const AccountPage = lazy(() => import('./pages/AccountPage'));
+const CartPage = lazy(() => import('./pages/CartPage'));
+const OrderPage = lazy(() => import('./pages/OrderPage'));
+const OrderHistory = lazy(() => import('./pages/OrderHistory'));
+
 import { OrderSuccessProvider } from './context/OrderSuccessContext';
 import { ScrollToTopProvider } from './context/ScrollToTopProvider';
+
+// Loading fallback component
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+  </div>
+);
 function App() {
   return (
     <ToastProvider>
@@ -35,21 +46,23 @@ function App() {
                       <Header />
                       <VerificationAlert />
                       <main className="grow">
-                        <Routes>
-                          <Route path="/" element={<LandingPage />} />
-                          <Route path="/packages" element={<PackagePage />} />
-                          <Route path="/packages/:slug/:type/:code" element={<PackageDetailedPage />} />
-                          <Route path="/tests" element={<TestPage />} />
-                          <Route path="/offers" element={<OfferPage />} />
-                          <Route path="/account" element={<AccountPage />} />
-                          <Route path="/cart" element={<CartPage />} />
-                          <Route path="/orders" element={<OrderPage />} />
-                          <Route path="/about" element={<AboutPage />} />
-                          <Route path="/order-history" element={<OrderHistory />} />
-                          <Route path="/popular-packages" element={<Navigate to="/packages" replace />} />
-                          <Route path="/all-tests" element={<Navigate to="/tests" replace />} />
-                          <Route path="*" element={<Navigate to="/" replace />} />
-                        </Routes>
+                        <Suspense fallback={<PageLoader />}>
+                          <Routes>
+                            <Route path="/" element={<LandingPage />} />
+                            <Route path="/packages" element={<PackagePage />} />
+                            <Route path="/packages/:slug/:type/:code" element={<PackageDetailedPage />} />
+                            <Route path="/tests" element={<TestPage />} />
+                            <Route path="/offers" element={<OfferPage />} />
+                            <Route path="/account" element={<AccountPage />} />
+                            <Route path="/cart" element={<CartPage />} />
+                            <Route path="/orders" element={<OrderPage />} />
+                            <Route path="/about" element={<AboutPage />} />
+                            <Route path="/order-history" element={<OrderHistory />} />
+                            <Route path="/popular-packages" element={<Navigate to="/packages" replace />} />
+                            <Route path="/all-tests" element={<Navigate to="/tests" replace />} />
+                            <Route path="*" element={<Navigate to="/" replace />} />
+                          </Routes>
+                        </Suspense>
                       </main>
                       <Footer />
                       <ToastContainer />

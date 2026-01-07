@@ -52,7 +52,7 @@ export default function Footer() {
 
   const { logo, email, helplineNumber, socialMedia } = settings;
 
-  const logoImage = !imgError && settings?.logo ? settings.logo : "./logo.jpg";
+  const logoImage = !imgError && settings?.logo ? settings.logo : "./logo.webp";
   return (
     <footer className="bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -63,10 +63,14 @@ export default function Footer() {
             <div className="flex items-center gap-3">
               <img
                 src={logoImage}
-                alt="Company Logo"
+                srcSet={`${logoImage} 1x, ${logoImage} 2x`}
+                alt="Ayropath Company Logo"
                 onError={() => setImgError(true)}
                 className="w-10 h-10 object-contain rounded-full"
+                loading="lazy"
+                decoding="async"
               />
+
               <div>
                 <h3 className="text-xl font-bold">Ayropath</h3>
                 <p className="text-xs text-gray-400">
