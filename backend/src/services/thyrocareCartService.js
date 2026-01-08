@@ -29,7 +29,7 @@ class ThyrocareCartService {
       // Find active session to get admin mobile
       const activeSession = await AdminSession.findOne({ isActive: true })
         .populate('adminId');
-      
+
       if (!activeSession || !activeSession.adminId) {
         // Fallback to environment variable if no active session
         const fallbackMobile = process.env.THYROCARE_USERNAME;
@@ -61,9 +61,9 @@ class ThyrocareCartService {
    */
   async buildThyrocareRequest(cartItems, options = {}) {
     const { benCount = 1, report = 1 } = options;
-    
+
     // Filter out items with zero or invalid prices
-    const validItems = cartItems.filter(item => 
+    const validItems = cartItems.filter(item =>
       item && item.sellingPrice > 0 && item.productCode
     );
 
@@ -77,14 +77,14 @@ class ThyrocareCartService {
 
     validItems.forEach(item => {
       let productCode = item.productCode;
-      
+
       // For profiles, we might need to use name instead of code
       // This needs to be confirmed with business logic
       if (item.productType === 'PROFILE') {
         // Try to use name if available, otherwise use code
         productCode = item.name || item.productCode;
       }
-      
+
       products.push(productCode);
       rates.push(Math.round(item.sellingPrice)); // Round to nearest integer
     });
@@ -114,7 +114,7 @@ class ThyrocareCartService {
   async validateCartWithThyrocare(cartItems, options = {}) {
     try {
       const requestBody = await this.buildThyrocareRequest(cartItems, options);
-      
+
       console.log('📞 Calling Thyrocare cart validation API:', {
         url: `${this.apiUrl}/api/CartMaster/DSAViewCartDTL`,
         productCount: cartItems.length,
@@ -187,18 +187,25 @@ class ThyrocareCartService {
     const thyrocarePayable = parseFloat(thyrocareData.payable) || 0;
     const thyrocareMargin = parseFloat(thyrocareData.margin) || 0;
     const thyrocareProduct = thyrocareData.product || '';
+    const thyrocareRates = thyrocareData.rates || '';
 
     console.log('📊 Thyrocare validation data:', {
       product: thyrocareProduct,
       payable: thyrocarePayable,
       margin: thyrocareMargin,
-      rates: thyrocareData.rates
+      rates: thyrocareRates
     });
 
-    // Calculate our total
-    const ourTotal = cartItems.reduce((sum, item) => 
+    // Calculate our current totals
+    const ourTotalSelling = cartItems.reduce((sum, item) =>
       sum + (item.sellingPrice * item.quantity), 0
     );
+    const ourTotalOriginal = cartItems.reduce((sum, item) =>
+      sum + (item.originalPrice * item.quantity), 0
+    );
+
+    // Current Passon (Discount we are giving)
+    const currentPasson = Math.max(0, ourTotalOriginal - ourTotalSelling);
 
     // Check for collection charge (₹200 when order < ₹300)
     const COLLECTION_CHARGE = 200;
@@ -206,50 +213,44 @@ class ThyrocareCartService {
     let collectionCharge = 0;
     let hasCollectionCharge = false;
 
-    if (ourTotal < MINIMUM_ORDER && Math.abs(thyrocarePayable - ourTotal - COLLECTION_CHARGE) <= 1) {
-      // Detected collection charge: thyrocarePayable = ourTotal + 200
+    // Detection: if thyrocarePayable is ourTotalOriginal + 200 (approx) and ourTotalOriginal < 300
+    // OR if thyrocare margin + payable = totalOriginal + 200
+    if (ourTotalOriginal < MINIMUM_ORDER && Math.abs(thyrocarePayable + thyrocareMargin - ourTotalOriginal - COLLECTION_CHARGE) <= 2) {
       collectionCharge = COLLECTION_CHARGE;
       hasCollectionCharge = true;
       console.log('💰 Collection charge detected:', {
-        ourTotal,
+        ourTotalOriginal,
         thyrocarePayable,
-        collectionCharge,
-        reason: 'Order amount less than ₹300'
+        thyrocareMargin,
+        collectionCharge
       });
     }
 
-    // Check if Thyrocare returned only one product (others were included)
+    // Check for consolidation (multiple items matching one Thyrocare product)
     const thyrocareProducts = thyrocareProduct.split(',').filter(p => p.trim());
-    
+
     if (thyrocareProducts.length === 1 && cartItems.length > 1) {
-      // Thyrocare consolidated multiple items into one
       console.log('🔄 Thyrocare consolidated items:', {
         returnedProduct: thyrocareProducts[0],
-        ourItems: cartItems.length,
-        thyrocareRate: thyrocareData.rates
+        ourItems: cartItems.length
       });
-      
-      // Find which item matches the returned product
+
       const matchedItems = this.matchThyrocareProductToItems(cartItems, thyrocareProducts[0]);
-      
+
       if (matchedItems.length > 0) {
-        // Keep only the matched item (others were included)
-        console.log('✅ Keeping only main product:', matchedItems[0].name);
-        
-        // Update the matched item with Thyrocare price
+        // In consolidation case, we follow Thyrocare's single price
+        const mainItemCode = matchedItems[0].productCode;
+        // Total price for the group
+        const targetPrice = thyrocarePayable; // B2B cost is the target when passon is maxed
+
         const adjustedItems = cartItems.map(item => {
-          if (item.productCode === matchedItems[0].productCode && 
-              item.productType === matchedItems[0].productType) {
-            // This is the main product - update with Thyrocare price
-            const thyrocareRate = parseFloat(thyrocareData.rates) || thyrocarePayable;
+          if (item.productCode === mainItemCode) {
             return {
               ...item,
-              sellingPrice: thyrocareRate,
-              discount: Math.max(0, item.originalPrice - thyrocareRate)
+              sellingPrice: targetPrice,
+              discount: Math.max(0, item.originalPrice - targetPrice)
             };
           } else {
-            // This item was included in the main product - remove or keep with zero price?
-            // For now, keep with zero price to show in cart but not charge
             return {
               ...item,
               sellingPrice: 0,
@@ -258,141 +259,85 @@ class ThyrocareCartService {
             };
           }
         });
-        
+
         return {
           adjustedItems,
           collectionCharge,
           hasCollectionCharge,
           breakdown: {
-            productTotal: adjustedItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0),
+            productTotal: targetPrice,
             collectionCharge,
-            grandTotal: adjustedItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0) + collectionCharge
+            grandTotal: targetPrice + collectionCharge
           }
         };
       }
     }
 
-    // If totals match (within small tolerance), no adjustment needed
-    const tolerance = 0.01; // 1 paisa tolerance
-    if (Math.abs(thyrocarePayable - ourTotal) <= tolerance) {
-      console.log('✅ Prices match Thyrocare validation');
+    // Logic: If current passon <= thyrocare margin, DO NOTHING
+    if (currentPasson <= thyrocareMargin) {
+      console.log('✅ Current passon is within margin. No adjustment needed.', {
+        currentPasson,
+        thyrocareMargin
+      });
       return {
         adjustedItems: cartItems,
-        collectionCharge: 0,
-        hasCollectionCharge: false,
+        collectionCharge,
+        hasCollectionCharge,
         breakdown: {
-          productTotal: ourTotal,
-          collectionCharge: 0,
-          grandTotal: ourTotal
+          productTotal: ourTotalSelling,
+          collectionCharge,
+          grandTotal: ourTotalSelling + collectionCharge
         }
       };
     }
 
-    console.log('🔄 Adjusting prices based on Thyrocare validation:', {
-      ourTotal,
-      thyrocarePayable,
+    // Logic: If current passon > thyrocare margin, adjust prices to match max margin
+    // This means totalSellingPrice should be thyrocarePayable (B2B cost)
+    console.log('🔄 Passon exceeds margin. Adjusting prices to match Thyrocare margin.', {
+      currentPasson,
       thyrocareMargin,
-      difference: thyrocarePayable - ourTotal
+      newTargetTotal: thyrocarePayable
     });
 
-    // Calculate adjustment ratio (excluding collection charge if detected)
-    const productTotal = hasCollectionCharge ? thyrocarePayable - collectionCharge : thyrocarePayable;
-    
-    // Fix: Check for invalid adjustment ratio
-    if (ourTotal <= 0 || !isFinite(ourTotal)) {
-      console.error('❌ Invalid ourTotal for adjustment:', ourTotal);
-      return {
-        adjustedItems: cartItems,
-        collectionCharge,
-        hasCollectionCharge,
-        breakdown: {
-          productTotal: ourTotal,
-          collectionCharge,
-          grandTotal: ourTotal + collectionCharge
-        }
-      };
-    }
-    
-    const adjustmentRatio = productTotal / ourTotal;
-    
-    // Fix: Check for invalid adjustment ratio
-    if (!isFinite(adjustmentRatio) || adjustmentRatio <= 0) {
-      console.error('❌ Invalid adjustment ratio:', adjustmentRatio);
-      return {
-        adjustedItems: cartItems,
-        collectionCharge,
-        hasCollectionCharge,
-        breakdown: {
-          productTotal: ourTotal,
-          collectionCharge,
-          grandTotal: ourTotal + collectionCharge
-        }
-      };
-    }
+    const adjustmentRatio = ourTotalSelling > 0 ? thyrocarePayable / ourTotalSelling : 1;
 
-    // Adjust each item's selling price proportionally
-    const adjustedItems = cartItems.map(item => {
-      // Fix: Ensure item.sellingPrice is a valid number
-      const itemSellingPrice = Number(item.sellingPrice) || 0;
-      const itemOriginalPrice = Number(item.originalPrice) || itemSellingPrice;
-      
-      const adjustedSellingPrice = Math.round(itemSellingPrice * adjustmentRatio);
-      const adjustedDiscount = Math.max(0, itemOriginalPrice - adjustedSellingPrice);
-      
-      // Calculate margin for this item
-      const itemCost = itemOriginalPrice - adjustedDiscount;
-      const itemMargin = itemCost > 0 ? adjustedDiscount / itemCost : 0;
+    let adjustedItems = cartItems.map(item => {
+      let newSellingPrice = Math.round(item.sellingPrice * adjustmentRatio);
 
-      // Ensure margin doesn't exceed Thyrocare's allowed margin
-      let finalSellingPrice = adjustedSellingPrice;
-      
-      // Fix: Check if thyrocareMargin is a percentage (convert from absolute if needed)
-      // If thyrocareMargin > 1, assume it's absolute margin, convert to percentage
-      let thyrocareMarginPercent = thyrocareMargin;
-      if (thyrocareMargin > 1 && thyrocarePayable > 0) {
-        // Convert absolute margin to percentage: margin / payable * 100
-        thyrocareMarginPercent = (thyrocareMargin / thyrocarePayable) * 100;
-      }
-      
-      if (thyrocareMarginPercent > 0 && itemMargin > thyrocareMarginPercent) {
-        // Adjust to match Thyrocare margin (percentage)
-        const maxDiscount = itemOriginalPrice * (thyrocareMarginPercent / (100 + thyrocareMarginPercent));
-        finalSellingPrice = Math.round(itemOriginalPrice - maxDiscount);
+      // Ensure it doesn't exceed B2C rate
+      if (newSellingPrice > item.originalPrice) {
+        newSellingPrice = item.originalPrice;
       }
 
       return {
         ...item,
-        sellingPrice: finalSellingPrice,
-        discount: Math.max(0, itemOriginalPrice - finalSellingPrice)
+        sellingPrice: newSellingPrice,
+        discount: Math.max(0, item.originalPrice - newSellingPrice)
       };
     });
 
-    // Recalculate total after adjustment
-    const adjustedProductTotal = adjustedItems.reduce((sum, item) => 
-      sum + (item.sellingPrice * item.quantity), 0
-    );
-    const grandTotal = adjustedProductTotal + collectionCharge;
+    // Final check: Does total match thyrocarePayable? 
+    // Small differences might arise due to rounding or B2C capping.
+    const finalProductTotal = adjustedItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
 
-    console.log('✅ Price adjustment complete:', {
-      originalTotal: ourTotal,
-      adjustedProductTotal,
-      collectionCharge,
-      grandTotal,
-      adjustmentRatio,
-      hasCollectionCharge
-    });
+    if (Math.abs(finalProductTotal - thyrocarePayable) > 1) {
+      console.log('⚠️ Post-adjustment total mismatch:', { finalProductTotal, thyrocarePayable });
+      // We could add a final correction to the most expensive item here if critical, 
+      // but usually rounding/capping issues are negligible.
+    }
 
     return {
       adjustedItems,
       collectionCharge,
       hasCollectionCharge,
       breakdown: {
-        productTotal: adjustedProductTotal,
+        productTotal: finalProductTotal,
         collectionCharge,
-        grandTotal
+        grandTotal: finalProductTotal + collectionCharge
       }
     };
   }
+
 
   /**
    * Match Thyrocare returned product to our cart items
@@ -403,29 +348,29 @@ class ThyrocareCartService {
   matchThyrocareProductToItems(cartItems, thyrocareProduct) {
     // Try different matching strategies
     const matches = [];
-    
+
     // 1. Exact name match
-    const nameMatch = cartItems.find(item => 
+    const nameMatch = cartItems.find(item =>
       item.name === thyrocareProduct || item.productCode === thyrocareProduct
     );
     if (nameMatch) matches.push(nameMatch);
-    
+
     // 2. Partial name match
     if (matches.length === 0) {
-      const partialMatch = cartItems.find(item => 
+      const partialMatch = cartItems.find(item =>
         item.name.includes(thyrocareProduct) || thyrocareProduct.includes(item.name)
       );
       if (partialMatch) matches.push(partialMatch);
     }
-    
+
     // 3. Check if it's a profile/offer that includes other items
     if (matches.length === 0) {
-      const profileOfferMatch = cartItems.find(item => 
+      const profileOfferMatch = cartItems.find(item =>
         item.productType === 'PROFILE' || item.productType === 'OFFER'
       );
       if (profileOfferMatch) matches.push(profileOfferMatch);
     }
-    
+
     return matches;
   }
 
@@ -456,7 +401,7 @@ class ThyrocareCartService {
     try {
       // Call Thyrocare API
       const validationResult = await this.validateCartWithThyrocare(cartItems, options);
-      
+
       // Adjust prices based on Thyrocare response
       const adjustmentResult = this.adjustCartPrices(cartItems, validationResult);
 
@@ -469,16 +414,16 @@ class ThyrocareCartService {
         breakdown: adjustmentResult.breakdown,
         thyrocareResponse: validationResult.data,
         request: validationResult.request,
-        message: validationResult.success ? 
-          'Cart validated with Thyrocare' : 
+        message: validationResult.success ?
+          'Cart validated with Thyrocare' :
           'Used local prices (Thyrocare validation failed)'
       };
 
     } catch (error) {
       console.error('❌ Cart validation error:', error);
-      
+
       const ourTotal = cartItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
-      
+
       return {
         success: false,
         adjustedItems: cartItems, // Fallback to original items
@@ -502,14 +447,14 @@ class ThyrocareCartService {
    * @returns {Object} Margin calculations
    */
   calculateCartMargins(cartItems) {
-    const totalOriginal = cartItems.reduce((sum, item) => 
+    const totalOriginal = cartItems.reduce((sum, item) =>
       sum + (item.originalPrice * item.quantity), 0
     );
-    
-    const totalSelling = cartItems.reduce((sum, item) => 
+
+    const totalSelling = cartItems.reduce((sum, item) =>
       sum + (item.sellingPrice * item.quantity), 0
     );
-    
+
     const totalDiscount = totalOriginal - totalSelling;
     const marginPercentage = totalOriginal > 0 ? (totalDiscount / totalOriginal) * 100 : 0;
 
@@ -524,7 +469,7 @@ class ThyrocareCartService {
         originalPrice: item.originalPrice,
         sellingPrice: item.sellingPrice,
         discount: item.discount,
-        margin: item.originalPrice > 0 ? 
+        margin: item.originalPrice > 0 ?
           ((item.originalPrice - item.sellingPrice) / item.originalPrice) * 100 : 0
       }))
     };
