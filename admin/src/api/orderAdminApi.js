@@ -16,17 +16,17 @@ export const orderAdminApi = {
    * @param {string} params.search - Search term
    * @returns {Promise<Object>} Orders with pagination
    */
-  getOrders: ({ 
-    page = 1, 
-    limit = 20, 
-    status, 
-    thyrocareStatus, 
-    startDate, 
-    endDate, 
-    search 
+  getOrders: ({
+    page = 1,
+    limit = 20,
+    status,
+    thyrocareStatus,
+    startDate,
+    endDate,
+    search
   } = {}) => {
     const params = new URLSearchParams();
-    
+
     params.append('page', page);
     params.append('limit', limit);
     if (status) params.append('status', status);
@@ -34,7 +34,7 @@ export const orderAdminApi = {
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
     if (search) params.append('search', search);
-    
+
     return axiosInstance.get(`/admin/orders?${params.toString()}`);
   },
 
@@ -98,6 +98,15 @@ export const orderAdminApi = {
    */
   syncOrderStatus: (orderId) => {
     return axiosInstance.post(`/admin/orders/${orderId}/sync-status`);
+  },
+
+  /**
+   * Book a test/package on behalf of a user
+   * @param {Object} orderData - Order data
+   * @returns {Promise<Object>} Booking result
+   */
+  bookOnBehalf: (orderData) => {
+    return axiosInstance.post('/admin/orders/book-on-behalf', orderData);
   }
 };
 

@@ -254,6 +254,52 @@ class ActivityLogger {
       }
     });
   }
+
+  /**
+   * Log when admin initiates user migration to mobile
+   * @param {Object} admin - Admin document
+   * @param {Object} session - AdminSession document
+   * @param {string} userId - ID of the user being migrated
+   * @param {Object} userData - User data
+   * @returns {Promise<Object>} Activity document
+   */
+  static async logUserMigrationInitiated(admin, session, userId, userData) {
+    return this.logUserActivity(
+      admin,
+      session,
+      'USERS_MIGRATION',
+      `Admin ${admin.name} initiated mobile migration for user ${userData.email || userId}`,
+      {
+        userId,
+        userEmail: userData.email,
+        userName: `${userData.firstName} ${userData.lastName}`,
+        migrationStatus: 'pending',
+        reminderSent: true
+      }
+    );
+  }
+
+  /**
+   * Log when admin bulk initiates user migration
+   * @param {Object} admin - Admin document
+   * @param {Object} session - AdminSession document
+   * @param {Array} userIds - Array of user IDs being migrated
+   * @param {number} count - Number of users in bulk operation
+   * @returns {Promise<Object>} Activity document
+   */
+  static async logBulkUserMigration(admin, session, userIds, count) {
+    return this.logUserActivity(
+      admin,
+      session,
+      'USERS_MIGRATION_BULK',
+      `Admin ${admin.name} initiated mobile migration for ${count} users`,
+      {
+        userIds,
+        userCount: count,
+        migrationStatus: 'pending'
+      }
+    );
+  }
 }
 
 export default ActivityLogger;

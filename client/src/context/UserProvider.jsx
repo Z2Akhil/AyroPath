@@ -11,6 +11,9 @@ export const UserProvider = ({ children }) => {
       const token = localStorage.getItem("authToken");
       const savedUser = localStorage.getItem("user");
 
+      // Clear any existing session expired flag
+      localStorage.removeItem("sessionExpired");
+
       if (token && savedUser) {
         // Check if token is expired
         try {
@@ -22,14 +25,14 @@ export const UserProvider = ({ children }) => {
             console.log('Token expired, clearing session');
             authService.logout();
             setUser(null);
-            localStorage.setItem("sessionExpired", "true");
-            window.location.reload();
+            // No page reload - just clear the session
             return;
           }
 
           setUser(JSON.parse(savedUser));
         } catch (e) {
           // If token is invalid/cant be decoded, log out
+          console.log('Invalid token, clearing session');
           authService.logout();
           setUser(null);
         }
@@ -40,23 +43,20 @@ export const UserProvider = ({ children }) => {
     checkAuth();
   }, []);
 
-  // Phone-based registration (deprecated - kept for backward compatibility)
-  const register = async (name, phone, password, otp) => {
+  // Phone-based registration
+  const register = async (firstName, lastName, mobileNumber, password, otp) => {
     try {
-      const nameParts = name.trim().split(" ");
-      const firstName = nameParts[0];
-      const lastName = nameParts.slice(1).join(" ") || "";
-
-      const response = await authService.register(firstName, lastName, phone, password, otp);
+      const response = await authService.register(firstName, lastName, mobileNumber, password, otp);
 
       if (response.success && response.user) {
+
         const userData = {
           id: response.user.id,
           firstName: response.user.firstName,
           lastName: response.user.lastName,
           mobileNumber: response.user.mobileNumber,
           isVerified: response.user.isVerified,
-          name: `${response.user.firstName} ${response.user.lastName || ""}`.trim(),
+          name: `${response.user.firstName} ${response.user.lastName}`.trim(),
         };
 
         if (response.token) {
@@ -66,11 +66,14 @@ export const UserProvider = ({ children }) => {
         localStorage.setItem("user", JSON.stringify(userData));
         setUser(userData);
 
+        console.log('Registration successful, user data:', userData); // Debug log
+
         return { success: true, user: userData };
       }
 
       throw new Error(response.message || "Registration failed");
     } catch (error) {
+      console.error('Registration error:', error);
       throw new Error(error.response?.data?.message || error.message);
     }
   };
@@ -81,14 +84,18 @@ export const UserProvider = ({ children }) => {
       const response = await authService.emailRegister(firstName, lastName, email, password);
 
       if (response.success && response.user) {
+        // Ensure we have valid firstName and lastName
+        const userFirstName = response.user.firstName || firstName || '';
+        const userLastName = response.user.lastName || lastName || '';
+
         const userData = {
           id: response.user.id,
-          firstName: response.user.firstName,
-          lastName: response.user.lastName,
+          firstName: userFirstName,
+          lastName: userLastName,
           email: response.user.email,
           isVerified: response.user.isVerified,
           authProvider: response.user.authProvider,
-          name: `${response.user.firstName} ${response.user.lastName || ""}`.trim(),
+          name: `${userFirstName} ${userLastName}`.trim() || email, // Fallback to email if name is empty
         };
 
         if (response.token) {
@@ -98,11 +105,14 @@ export const UserProvider = ({ children }) => {
         localStorage.setItem("user", JSON.stringify(userData));
         setUser(userData);
 
+        console.log('Email registration successful, user data:', userData); // Debug log
+
         return { success: true, user: userData };
       }
 
       throw new Error(response.message || "Registration failed");
     } catch (error) {
+      console.error('Email registration error:', error);
       throw new Error(error.response?.data?.message || error.message);
     }
   };
@@ -113,14 +123,18 @@ export const UserProvider = ({ children }) => {
       const response = await authService.emailRegisterWithOTP(firstName, lastName, email, password, otp);
 
       if (response.success && response.user) {
+        // Ensure we have valid firstName and lastName
+        const userFirstName = response.user.firstName || firstName || '';
+        const userLastName = response.user.lastName || lastName || '';
+
         const userData = {
           id: response.user.id,
-          firstName: response.user.firstName,
-          lastName: response.user.lastName,
+          firstName: userFirstName,
+          lastName: userLastName,
           email: response.user.email,
           isVerified: response.user.isVerified,
           authProvider: response.user.authProvider,
-          name: `${response.user.firstName} ${response.user.lastName || ""}`.trim(),
+          name: `${userFirstName} ${userLastName}`.trim() || email, // Fallback to email if name is empty
         };
 
         if (response.token) {
@@ -130,11 +144,14 @@ export const UserProvider = ({ children }) => {
         localStorage.setItem("user", JSON.stringify(userData));
         setUser(userData);
 
+        console.log('Email registration with OTP successful, user data:', userData); // Debug log
+
         return { success: true, user: userData };
       }
 
       throw new Error(response.message || "Registration failed");
     } catch (error) {
+      console.error('Email registration with OTP error:', error);
       throw new Error(error.response?.data?.message || error.message);
     }
   };
@@ -156,19 +173,24 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // LOGIN
-  const login = async (phone, password) => {
+  // LOGIN (Unified - accepts mobile number or email)
+  const login = async (identifier, password) => {
     try {
-      const response = await authService.login(phone, password);
+      const response = await authService.login(identifier, password);
 
       if (response.success && response.user) {
+        // Ensure we have valid firstName and lastName
+        const firstName = response.user.firstName || '';
+        const lastName = response.user.lastName || '';
+
         const userData = {
           id: response.user.id,
-          firstName: response.user.firstName,
-          lastName: response.user.lastName,
+          firstName: firstName,
+          lastName: lastName,
           mobileNumber: response.user.mobileNumber,
+          email: response.user.email,
           isVerified: response.user.isVerified,
-          name: `${response.user.firstName} ${response.user.lastName || ""}`.trim(),
+          name: `${firstName} ${lastName}`.trim() || identifier, // Fallback to identifier if name is empty
         };
 
         if (response.token) {
@@ -178,11 +200,14 @@ export const UserProvider = ({ children }) => {
         localStorage.setItem("user", JSON.stringify(userData));
         setUser(userData);
 
+        console.log('Login successful, user data:', userData); // Debug log
+
         return { success: true, user: userData };
       }
 
       throw new Error(response.message || "Login failed");
     } catch (error) {
+      console.error('Login error:', error);
       authService.logout();
       setUser(null);
       throw new Error(error.response?.data?.message || error.message);
@@ -195,14 +220,18 @@ export const UserProvider = ({ children }) => {
       const response = await authService.emailLogin(email, password);
 
       if (response.success && response.user) {
+        // Ensure we have valid firstName and lastName
+        const firstName = response.user.firstName || '';
+        const lastName = response.user.lastName || '';
+
         const userData = {
           id: response.user.id,
-          firstName: response.user.firstName,
-          lastName: response.user.lastName,
+          firstName: firstName,
+          lastName: lastName,
           email: response.user.email,
           isVerified: response.user.isVerified,
           authProvider: response.user.authProvider,
-          name: `${response.user.firstName} ${response.user.lastName || ""}`.trim(),
+          name: `${firstName} ${lastName}`.trim() || email, // Fallback to email if name is empty
         };
 
         if (response.token) {
@@ -212,11 +241,14 @@ export const UserProvider = ({ children }) => {
         localStorage.setItem("user", JSON.stringify(userData));
         setUser(userData);
 
+        console.log('Email login successful, user data:', userData); // Debug log
+
         return { success: true, user: userData };
       }
 
       throw new Error(response.message || "Login failed");
     } catch (error) {
+      console.error('Email login error:', error);
       authService.logout();
       setUser(null);
       throw new Error(error.response?.data?.message || error.message);
@@ -286,20 +318,29 @@ export const UserProvider = ({ children }) => {
       const response = await authService.updateProfile(profileData);
 
       if (response.success && response.user) {
+        // Ensure we have valid firstName and lastName
+        const firstName = response.user.firstName || user.firstName || '';
+        const lastName = response.user.lastName || user.lastName || '';
+
         const updatedUser = {
           ...user,
           ...response.user,
-          name: `${response.user.firstName} ${response.user.lastName || ""}`.trim(),
+          firstName,
+          lastName,
+          name: `${firstName} ${lastName}`.trim() || user.email || user.mobileNumber,
         };
 
         setUser(updatedUser);
         localStorage.setItem("user", JSON.stringify(updatedUser));
+
+        console.log('Profile updated, user data:', updatedUser); // Debug log
 
         return { success: true, message: "Profile updated", user: updatedUser };
       }
 
       throw new Error(response.message || "Profile update failed");
     } catch (error) {
+      console.error('Profile update error:', error);
       throw new Error(error.response?.data?.message || error.message);
     }
   };

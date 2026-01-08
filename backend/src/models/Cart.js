@@ -180,12 +180,20 @@ cartSchema.methods.clearCart = async function() {
 };
 
 // Method to get cart summary
-cartSchema.methods.getSummary = function() {
+cartSchema.methods.getSummary = function(collectionCharge = 0) {
+  const productTotal = this.items.reduce((sum, item) => 
+    sum + (item.sellingPrice * item.quantity), 0
+  );
+  
+  const grandTotal = productTotal + collectionCharge;
+  
   return {
     totalItems: this.totalItems,
     subtotal: this.subtotal,
     totalDiscount: this.totalDiscount,
-    totalAmount: this.totalAmount,
+    productTotal: productTotal,           // Total of cart items only
+    collectionCharge: collectionCharge,   // Additional service charges
+    totalAmount: grandTotal,              // Grand total (productTotal + collectionCharge)
     items: this.items.map(item => ({
       productCode: item.productCode,
       productType: item.productType,

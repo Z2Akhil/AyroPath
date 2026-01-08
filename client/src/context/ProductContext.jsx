@@ -21,7 +21,7 @@ export const ProductProvider = ({ children }) => {
         setLoading(true);
         // Fetch ALL products at once
         const data = await getProductsFromBackend("ALL");
-        
+
         if (data && data.length > 0) {
           setAllProducts(data);
 
@@ -32,9 +32,9 @@ export const ProductProvider = ({ children }) => {
           // Based on previous file views, getProductsFromBackend takes a type. 
           // If we fetch "ALL", we expect the backend to return everything.
           // Let's categorize them.
-          
+
           const uniqueProducts = Array.from(
-            new Map(data.map((p) => [p.code, p])).values()
+            new Map(data.map((p) => [`${p.code}-${p.type}`, p])).values()
           );
 
           // Filter logic (adjust based on your actual data structure)
@@ -42,15 +42,15 @@ export const ProductProvider = ({ children }) => {
           // Packages/Profiles -> type === "PROFILE" or groupName === "PROFILE"
           // Tests -> type === "TEST"
           // Offers -> type === "OFFER" (if applicable)
-          
-          const pkgs = uniqueProducts.filter(p => p.type === "PROFILE" || p.type === "POP"); 
+
+          const pkgs = uniqueProducts.filter(p => p.type === "PROFILE" || p.type === "POP");
           const tsts = uniqueProducts.filter(p => p.type === "TEST");
           const offrs = uniqueProducts.filter(p => p.type === "OFFER");
 
           // Fallback: If type isn't distinct, we might need to rely on how the pages were fetching them.
           // PackagePage fetched "PROFILE". TestPage likely fetches "TESTS".
           // If the "ALL" endpoint returns everything with a 'type' field, this works.
-          
+
           setPackages(pkgs);
           setTests(tsts);
           setOffers(offrs);

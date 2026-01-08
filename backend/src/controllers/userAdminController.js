@@ -385,6 +385,277 @@ class UserAdminController {
       });
     }
   }
+
+  /**
+   * Get users who need migration to mobile (email-only users)
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  static async getUsersNeedingMigration(req, res) {
+    const startTime = Date.now();
+    
+    try {
+      const { page = 1, limit = 20 } = req.query;
+      
+      console.log('Admin fetching users needing migration:', {
+        admin: req.admin.name,
+        page,
+        limit,
+        sessionId: req.adminSession._id
+      });
+
+      // Find users who have email but no mobile number or have pending migration
+      const query = {
+        $or: [
+          { mobileNumber: { $exists: false } },
+          { mobileNumber: null },
+          { mobileNumber: '' },
+          { migrationStatus: { $in: ['pending', 'in_progress'] } }
+        ],
+        email: { $exists: true, $ne: null, $ne: '' } // Must have email
+      };
+
+      // Calculate pagination
+      const skip = (page - 1) * limit;
+      
+      // Execute query with pagination
+      const [users, totalCount] = await Promise.all([
+        User.find(query)
+          .select('-password')
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(parseInt(limit)),
+        User.countDocuments(query)
+      ]);
+
+      const responseTime = Date.now() - startTime;
+      
+      res.json({
+        success: true,
+        users,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalCount,
+          totalPages: Math.ceil(totalCount / limit)
+        },
+        responseTime
+      });
+
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      console.error('Get users needing migration error:', error);
+
+      // Log error activity
+      await ActivityLogger.logError(
+        req.admin,
+        req.adminSession,
+        `Failed to fetch users needing migration: ${error.message}`,
+        error,
+        '/api/admin/users/migration/needed',
+        'GET'
+      );
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch users needing migration',
+        responseTime
+      });
+    }
+  }
+
+  /**
+   * Initiate migration for a user (send migration email)
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  static async initiateUserMigration(req, res) {
+    const startTime = Date.now();
+    
+    try {
+      const { userId } = req.params;
+      
+      console.log('Admin initiating user migration:', {
+        admin: req.admin.name,
+        userId,
+        sessionId: req.adminSession._id
+      });
+
+      // Find user
+      const user = await User.findById(userId).select('-password');
+      
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+
+      // Check if user already has mobile number
+      if (user.mobileNumber && user.mobileNumber.trim() !== '') {
+        return res.status(400).json({
+          success: false,
+          error: 'User already has a mobile number',
+          user
+        });
+      }
+
+      // Update migration status
+      user.migrationStatus = 'pending';
+      user.lastMigrationReminder = new Date();
+      await user.save();
+
+      // TODO: Send migration email to user
+      // This would integrate with your email service
+      // For now, we'll log it
+      console.log(`Migration email would be sent to: ${user.email}`);
+      console.log(`User: ${user.firstName} ${user.lastName}`);
+      console.log('Migration instructions email template needed');
+
+      // Log the migration initiation
+      await ActivityLogger.logUserMigrationInitiated(
+        req.admin,
+        req.adminSession,
+        userId,
+        user
+      );
+
+      const responseTime = Date.now() - startTime;
+      
+      res.json({
+        success: true,
+        message: 'Migration initiated successfully. Email would be sent to user.',
+        user,
+        responseTime
+      });
+
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      console.error('Initiate user migration error:', error);
+
+      // Log error activity
+      await ActivityLogger.logError(
+        req.admin,
+        req.adminSession,
+        `Failed to initiate user migration: ${error.message}`,
+        error,
+        `/api/admin/users/${req.params.userId}/migrate`,
+        'POST'
+      );
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to initiate user migration',
+        responseTime
+      });
+    }
+  }
+
+  /**
+   * Bulk initiate migration for multiple users
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  static async bulkInitiateMigration(req, res) {
+    const startTime = Date.now();
+    
+    try {
+      const { userIds } = req.body;
+      
+      if (!Array.isArray(userIds) || userIds.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'userIds array is required'
+        });
+      }
+
+      console.log('Admin bulk initiating migration:', {
+        admin: req.admin.name,
+        userIdCount: userIds.length,
+        sessionId: req.adminSession._id
+      });
+
+      const results = {
+        successful: [],
+        failed: [],
+        alreadyHaveMobile: []
+      };
+
+      // Process each user
+      for (const userId of userIds) {
+        try {
+          const user = await User.findById(userId).select('-password');
+          
+          if (!user) {
+            results.failed.push({ userId, error: 'User not found' });
+            continue;
+          }
+
+          // Check if user already has mobile number
+          if (user.mobileNumber && user.mobileNumber.trim() !== '') {
+            results.alreadyHaveMobile.push({ userId, user });
+            continue;
+          }
+
+          // Update migration status
+          user.migrationStatus = 'pending';
+          user.lastMigrationReminder = new Date();
+          await user.save();
+
+          // TODO: Send migration email
+          console.log(`Migration email would be sent to: ${user.email}`);
+
+          results.successful.push({ userId, user });
+          
+          // Log individual migration initiation
+          await ActivityLogger.logUserMigrationInitiated(
+            req.admin,
+            req.adminSession,
+            userId,
+            user
+          );
+
+        } catch (userError) {
+          results.failed.push({ userId, error: userError.message });
+        }
+      }
+
+      const responseTime = Date.now() - startTime;
+      
+      res.json({
+        success: true,
+        message: 'Bulk migration initiated',
+        results,
+        summary: {
+          total: userIds.length,
+          successful: results.successful.length,
+          alreadyHaveMobile: results.alreadyHaveMobile.length,
+          failed: results.failed.length
+        },
+        responseTime
+      });
+
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      console.error('Bulk initiate migration error:', error);
+
+      // Log error activity
+      await ActivityLogger.logError(
+        req.admin,
+        req.adminSession,
+        `Failed to bulk initiate migration: ${error.message}`,
+        error,
+        '/api/admin/users/migration/bulk',
+        'POST'
+      );
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to bulk initiate migration',
+        responseTime
+      });
+    }
+  }
 }
 
 export default UserAdminController;

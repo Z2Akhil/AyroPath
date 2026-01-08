@@ -34,7 +34,13 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response && error.response.status === 401) {
+    // Check if it's a login request (don't reload for login failures)
+    const isLoginRequest = error.config && error.config.url && (
+      error.config.url.includes('/auth/login') || 
+      error.config.url.includes('/auth/email-login')
+    );
+
+    if (error.response && error.response.status === 401 && !isLoginRequest) {
       // Clear exact items used in UserProvider/authService
       localStorage.removeItem("authToken");
       localStorage.removeItem("user");

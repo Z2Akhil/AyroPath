@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useUser } from '../context/userContext';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Smartphone, Lock, Eye, EyeOff, ArrowRight, RefreshCw, ArrowLeft } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+
 const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
-  const { forgotPasswordEmail, resetPasswordEmail } = useUser();
+  const { forgotPassword, resetPassword } = useUser();
   const [step, setStep] = useState(1); // 1: Request OTP, 2: Reset password
   const [formData, setFormData] = useState({
-    email: '',
+    mobileNumber: '',
     otp: '',
     newPassword: '',
     confirmPassword: '',
@@ -17,8 +18,20 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
   const [otpLoading, setOtpLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const { info, success, error: toastError } = useToast();
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    // For mobile number, only allow digits and max 10 chars
+    if (name === 'mobileNumber') {
+      const numericValue = value.replace(/\D/g, '').slice(0, 10);
+      setFormData(prev => ({
+        ...prev,
+        [name]: numericValue
+      }));
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -29,24 +42,25 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
     if (e) {
       e.preventDefault();
     }
-    if (!formData.email.trim()) {
-      toastError('Email address is required');
+    if (!formData.mobileNumber.trim()) {
+      toastError('Mobile number is required');
       return;
     }
-    if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      toastError('Please enter a valid email address');
+    if (formData.mobileNumber.length !== 10) {
+      toastError('Please enter a valid 10-digit mobile number');
       return;
     }
     setOtpLoading(true);
     try {
-      console.log('Sending forgot password OTP request for:', formData.email);
-      const response = await forgotPasswordEmail(formData.email);
+      console.log('Sending forgot password OTP request for:', formData.mobileNumber);
+      const response = await forgotPassword(formData.mobileNumber);
       console.log('Forgot password response:', response);
+      success("OTP sent successfully!");
       setStep(2);
       startCountdown();
     } catch (err) {
       console.error('Forgot password error:', err);
-      toastError(err.message);
+      toastError(err.message || "Failed to send OTP");
     } finally {
       setOtpLoading(false);
     }
@@ -69,10 +83,11 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
     if (countdown > 0) return;
     setOtpLoading(true);
     try {
-      await forgotPasswordEmail(formData.email);
+      await forgotPassword(formData.mobileNumber);
+      success("OTP resent successfully!");
       startCountdown();
     } catch (err) {
-      toastError(err.message);
+      toastError(err.message || "Failed to resend OTP");
     } finally {
       setOtpLoading(false);
     }
@@ -104,17 +119,18 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    
+
     if (!validateStep2()) return;
 
     setLoading(true);
 
     try {
-      await resetPasswordEmail(formData.email, formData.otp, formData.newPassword);
+      await resetPassword(formData.mobileNumber, formData.otp, formData.newPassword);
+      success("Password reset successful! Please login.");
       // Password reset successful, redirect to login
       onSwitchToLogin();
     } catch (err) {
-      toastError(err.message);
+      toastError(err.message || "Failed to reset password");
     } finally {
       setLoading(false);
     }
@@ -128,9 +144,9 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
           {step === 1 ? 'Reset Password' : 'Create New Password'}
         </h2>
         <p className="text-gray-600">
-          {step === 1 
-            ? 'Enter your email address to receive OTP' 
-            : 'Enter the OTP and create a new password'
+          {step === 1
+            ? 'Enter your mobile number to receive OTP'
+            : 'Enter the OTP sent to your mobile'
           }
         </p>
       </div>
@@ -139,21 +155,21 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
 
         {step === 1 ? (
           <>
-            {/* Email Address */}
+            {/* Mobile Number */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address *
+                Mobile Number *
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                  <Smartphone className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
+                  type="tel"
+                  name="mobileNumber"
+                  value={formData.mobileNumber}
                   onChange={handleChange}
-                  placeholder="Enter your registered email address"
+                  placeholder="Enter your 10-digit mobile number"
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg 
                              placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
                              focus:border-blue-500 transition-all duration-200 bg-white"

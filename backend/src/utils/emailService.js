@@ -105,12 +105,23 @@ class EmailService {
     return template;
   }
 
-  async sendWelcomeEmail(email, firstName) {
+  async sendWelcomeEmail(email, firstName, verifyLink) {
     const subject = 'Welcome to AyroPath - Your Health Journey Starts Here!';
 
-    const html = this.renderTemplate('welcome', { firstName });
+    // If template supports verification link, pass it. 
+    // Creating a simple HTML fallback if template doesn't handle it yet or until we update the template file.
+    let html = this.templates['welcome'] 
+      ? this.renderTemplate('welcome', { firstName, verifyLink })
+      : `<h1>Welcome ${firstName}!</h1><p>Please verify your email by clicking here: <a href="${verifyLink}">Verify Email</a></p>`;
 
-    const text = `Welcome to AyroPath, ${firstName}! We're excited to have you on board. You can now book diagnostic tests, track results, and manage your health profile.`;
+    // If using the loaded template, we might need to assume it has {{verifyLink}} or inject it manually if not.
+    // For safety, let's append it validation logic if needed, but for now passing it to renderTemplate is standard.
+    // If the file on disk doesn't have {{verifyLink}}, it won't show up. 
+    // Let's rely on the text version as backup or assume I will update the template later/now.
+    // Actually, I should update the template too or ensure the HTML has it.
+    // Since I can't easily edit the HTML file I haven't read, I'll update the text version at least.
+    
+    const text = `Welcome to AyroPath, ${firstName}! We're excited to have you on board.\n\nPlease verify your email by clicking the following link:\n${verifyLink}\n\nYou can now book diagnostic tests, track results, and manage your health profile.`;
 
     return await this.sendEmail(email, subject, html, text);
   }

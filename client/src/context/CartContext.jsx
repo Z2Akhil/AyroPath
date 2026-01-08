@@ -12,7 +12,16 @@ export const CartProvider = ({ children }) => {
     totalItems: 0,
     subtotal: 0,
     totalDiscount: 0,
-    totalAmount: 0
+    productTotal: 0,
+    collectionCharge: 0,
+    totalAmount: 0,
+    hasCollectionCharge: false,
+    thyrocareValidation: false,
+    breakdown: {
+      productTotal: 0,
+      collectionCharge: 0,
+      grandTotal: 0
+    }
   });
   const [loading, setLoading] = useState(false);
 
@@ -26,7 +35,18 @@ export const CartProvider = ({ children }) => {
       if (user) {
         const response = await CartApi.getCart();
         if (response.success && response.cart) {
-          setCart(response.cart);
+          // Merge backend cart data with collection charge info
+          const enhancedCart = {
+            ...response.cart,
+            hasCollectionCharge: response.hasCollectionCharge || false,
+            thyrocareValidation: response.thyrocareValidation || false,
+            breakdown: response.breakdown || {
+              productTotal: response.cart.productTotal || response.cart.totalAmount,
+              collectionCharge: response.collectionCharge || 0,
+              grandTotal: response.cart.totalAmount
+            }
+          };
+          setCart(enhancedCart);
         }
       } else {
         loadCartFromLocalStorage();
@@ -44,7 +64,20 @@ export const CartProvider = ({ children }) => {
     if (saved) {
       try {
         const localCart = JSON.parse(saved);
-        setCart(localCart);
+        // Ensure all fields exist for backward compatibility
+        const enhancedCart = {
+          ...localCart,
+          productTotal: localCart.productTotal || localCart.totalAmount || 0,
+          collectionCharge: localCart.collectionCharge || 0,
+          hasCollectionCharge: localCart.hasCollectionCharge || false,
+          thyrocareValidation: localCart.thyrocareValidation || false,
+          breakdown: localCart.breakdown || {
+            productTotal: localCart.productTotal || localCart.totalAmount || 0,
+            collectionCharge: localCart.collectionCharge || 0,
+            grandTotal: localCart.totalAmount || 0
+          }
+        };
+        setCart(enhancedCart);
       } catch (err) {
         console.error("Error parsing cart from localStorage:", err);
         setCart({
@@ -52,7 +85,16 @@ export const CartProvider = ({ children }) => {
           totalItems: 0,
           subtotal: 0,
           totalDiscount: 0,
-          totalAmount: 0
+          productTotal: 0,
+          collectionCharge: 0,
+          totalAmount: 0,
+          hasCollectionCharge: false,
+          thyrocareValidation: false,
+          breakdown: {
+            productTotal: 0,
+            collectionCharge: 0,
+            grandTotal: 0
+          }
         });
       }
     }
@@ -86,14 +128,26 @@ export const CartProvider = ({ children }) => {
     const totalItems = cartData.items.reduce((sum, item) => sum + item.quantity, 0);
     const subtotal = cartData.items.reduce((sum, item) => sum + (item.originalPrice * item.quantity), 0);
     const totalDiscount = cartData.items.reduce((sum, item) => sum + ((item.originalPrice - item.sellingPrice) * item.quantity), 0);
-    const totalAmount = cartData.items.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
+    const productTotal = cartData.items.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
+    
+    // For local cart, we don't have collection charge info
+    // It will be added when synced with backend
+    const collectionCharge = cartData.collectionCharge || 0;
+    const totalAmount = productTotal + collectionCharge;
 
     return {
       ...cartData,
       totalItems,
       subtotal,
       totalDiscount,
-      totalAmount
+      productTotal,
+      collectionCharge,
+      totalAmount,
+      breakdown: {
+        productTotal,
+        collectionCharge,
+        grandTotal: totalAmount
+      }
     };
   };
 
@@ -104,13 +158,24 @@ export const CartProvider = ({ children }) => {
     try {
       const updatedCart = { ...cart };
       const existingItemIndex = updatedCart.items.findIndex(
-        cartItem => cartItem.productCode === item.code
+        cartItem => cartItem.productCode === item.code && cartItem.productType === (item.type?.toUpperCase() || "TEST")
       );
 
       // ALWAYS use price shown in UI
       const originalPrice = item.originalPrice || item.rate?.b2C || 0;
       const sellingPrice = item.sellingPrice || originalPrice;
       const discount = originalPrice > sellingPrice ? (originalPrice - sellingPrice) : 0;
+      const productType = item.type?.toUpperCase() || "TEST";
+
+      // Validation: Only one product of type 'OFFER' allowed
+      if (productType === 'OFFER') {
+        const existingOffer = updatedCart.items.find(i => i.productType === 'OFFER' && i.productCode !== item.code);
+        if (existingOffer) {
+          const msg = 'Only one offer product can be added per order.';
+          window.alert(msg);
+          return { success: false, message: msg };
+        }
+      }
 
       if (existingItemIndex > -1) {
         // Item already exists, increase quantity
@@ -119,7 +184,7 @@ export const CartProvider = ({ children }) => {
         // Add new item
         updatedCart.items.push({
           productCode: item.code,
-          productType: item.type?.toUpperCase() || "TEST",
+          productType: productType,
           name: item.name,
           quantity: 1,
           originalPrice,
@@ -136,12 +201,12 @@ export const CartProvider = ({ children }) => {
       // Sync with backend
       if (user) {
         const itemToAdd = updatedCart.items.find(
-          cartItem => cartItem.productCode === item.code
+          cartItem => cartItem.productCode === item.code && cartItem.productType === productType
         );
 
         await CartApi.addToCart(
           item.code,
-          item.type?.toUpperCase() || "TEST",
+          productType,
           itemToAdd.quantity
         );
       }
@@ -158,13 +223,23 @@ export const CartProvider = ({ children }) => {
 
 
   // Remove item from cart
-  const removeFromCart = async (productCode) => {
+  const removeFromCart = async (productCode, productType) => {
     setLoading(true);
 
     try {
       const updatedCart = { ...cart };
-      const itemToRemove = updatedCart.items.find(item => item.productCode === productCode);
-      updatedCart.items = updatedCart.items.filter(item => item.productCode !== productCode);
+      const itemToRemove = updatedCart.items.find(
+        item => item.productCode === productCode && (!productType || item.productType === productType)
+      );
+
+      if (!itemToRemove) {
+        setLoading(false);
+        return { success: false, message: "Item not found in cart" };
+      }
+
+      updatedCart.items = updatedCart.items.filter(
+        item => !(item.productCode === productCode && item.productType === itemToRemove.productType)
+      );
 
       // Recalculate totals
       const finalCart = recalculateTotals(updatedCart);
@@ -191,12 +266,14 @@ export const CartProvider = ({ children }) => {
   };
 
   // Update item quantity
-  const updateQuantity = async (productCode, quantity) => {
+  const updateQuantity = async (productCode, productType, quantity) => {
     setLoading(true);
 
     try {
       const updatedCart = { ...cart };
-      const item = updatedCart.items.find(item => item.productCode === productCode);
+      const item = updatedCart.items.find(
+        item => item.productCode === productCode && (!productType || item.productType === productType)
+      );
 
       if (item && quantity > 0 && quantity <= 10) {
         item.quantity = quantity;
@@ -237,7 +314,16 @@ export const CartProvider = ({ children }) => {
         totalItems: 0,
         subtotal: 0,
         totalDiscount: 0,
-        totalAmount: 0
+        productTotal: 0,
+        collectionCharge: 0,
+        totalAmount: 0,
+        hasCollectionCharge: false,
+        thyrocareValidation: false,
+        breakdown: {
+          productTotal: 0,
+          collectionCharge: 0,
+          grandTotal: 0
+        }
       };
 
       // Update state and localStorage
@@ -258,13 +344,19 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  // Refresh cart from backend
+  const refreshCart = async () => {
+    await loadCart();
+  };
+
   const value = {
     cart,
     loading,
     addToCart,
     removeFromCart,
     updateQuantity,
-    clearCart
+    clearCart,
+    refreshCart
   };
 
   return (

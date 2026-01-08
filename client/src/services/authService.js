@@ -19,14 +19,14 @@ export const authService = {
     return response.data;
   },
 
-  // Register user (phone-based)
-  async register(firstName, lastName, mobileNumber, password, otp) {
+  // Register user (phone-based profile completion)
+  async register(firstName, lastName, mobileNumber, password, email) {
     const response = await api.post('/auth/register', {
       firstName,
       lastName,
       mobileNumber,
       password,
-      otp,
+      email, 
     });
     return response.data;
   },
@@ -51,19 +51,19 @@ export const authService = {
     return response.data;
   },
 
-  // Login (phone-based)
-  async login(mobileNumber, password) {
+  // Unified login (accepts both mobile number or email)
+  async login(identifier, password) {
     const response = await api.post('/auth/login', {
-      mobileNumber,
+      identifier,
       password,
     });
     return response.data;
   },
 
-  // Email login
+  // Email login (deprecated - kept for backward compatibility)
   async emailLogin(email, password) {
-    const response = await api.post('/auth/email-login', {
-      email,
+    const response = await api.post('/auth/login', {
+      identifier: email,
       password,
     });
     return response.data;
@@ -130,6 +130,18 @@ export const authService = {
       password,
       otp,
     });
+    return response.data;
+  },
+
+  // Resend Verification Email (Logged in user)
+  async resendVerification() {
+    const response = await api.post('/auth/resend-verification');
+    return response.data;
+  },
+
+  // Resend Verification Email Public (Unverified user)
+  async resendVerificationPublic(email) {
+    const response = await api.post('/auth/resend-verification-public', { email });
     return response.data;
   },
 

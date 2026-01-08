@@ -2,6 +2,7 @@ import React from "react";
 import { useCart } from "../../context/CartContext";
 import { getProductDisplayPrice } from "../../api/backendProductApi";
 import { Link } from "react-router-dom";
+import AddToCartWithValidation from "../AddToCartWithValidation";
 
 const TestCard = ({ test }) => {
   const {
@@ -15,7 +16,7 @@ const TestCard = ({ test }) => {
   } = test;
 
   const priceInfo = getProductDisplayPrice(test);
-  const { cart, addToCart } = useCart();
+  const { cart } = useCart();
   const inCart = cart?.items?.some((item) => item.productCode === code) || false;
 
   return (
@@ -88,12 +89,15 @@ const TestCard = ({ test }) => {
               View Cart
             </Link>
           ) : (
-            <button
-              onClick={() => addToCart(test)}
+            <AddToCartWithValidation
+              productCode={code}
+              productType="TEST"
+              productName={name}
+              quantity={1}
+              buttonText="Add to Cart"
+              showIcon={false}
               className="px-4 sm:px-5 py-2 bg-green-600 text-white font-medium text-xs sm:text-sm rounded-md hover:bg-green-700 transition-colors shadow-sm whitespace-nowrap"
-            >
-              Add to Cart
-            </button>
+            />
           )}
 
           {/* Booked Count */}

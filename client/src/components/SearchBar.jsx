@@ -22,7 +22,7 @@ const SearchBar = () => {
         (async () => {
             try {
                 const data = await getProducts("ALL");
-                const unique = Array.from(new Map(data.map((p) => [p.code, p])).values());
+                const unique = Array.from(new Map(data.map((p) => [`${p.code}-${p.type}`, p])).values());
                 setAllProducts(unique || []);
             } catch (err) {
                 console.error("Failed to fetch products:", err);
@@ -64,12 +64,13 @@ const SearchBar = () => {
     }, [query, allProducts]);
 
     const isInCart = (item) => {
-        return cart.items?.some((p) => p.productCode === item.code);
+        return cart.items?.some((p) => p.productCode === item.code && p.productType === (item.type?.toUpperCase() || "TEST"));
     };
 
     const handleSelect = (item) => {
         setShowDropdown(false);
-        navigate(`/packages/${slugify(item.name)}`, { state: { product: item } });
+        const type = item.type || "PROFILE";
+        navigate(`/packages/${slugify(item.name)}/${type}/${item.code}`, { state: { product: item } });
     };
 
     const handleKeyDown = (e) => {
@@ -151,7 +152,7 @@ const SearchBar = () => {
                                                 isInCart(item) ? (
                                                     <button
                                                         className="text-xs bg-red-600 text-white px-3 py-1 rounded-full hover:bg-red-700"
-                                                        onMouseDown={() => removeFromCart(item.code)}
+                                                        onMouseDown={() => removeFromCart(item.code, item.type?.toUpperCase() || "TEST")}
                                                     >
                                                         Remove
                                                     </button>

@@ -39,7 +39,8 @@ const adminActivitySchema = new mongoose.Schema({
       'ORDER_STATUS_SYNC',
       'ANALYTICS_FETCH',
       'ANALYTICS_TRENDS_FETCH',
-      'DASHBOARD_FETCH'
+      'DASHBOARD_FETCH',
+      'ORDER_BOOK_ON_BEHALF'
     ]
   },
   description: {

@@ -80,9 +80,16 @@
   outline-offset: 2px;
 }
 
-/* Smooth transitions for all interactive elements */
-* {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+/* Optimized transitions - Avoid wildcard * selector for performance */
+.transition-standard {
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+  transition-duration: 200ms;
 }
+
+/* Specific composited animations for the 'Lab technician' card/hero */
+.hero-card {
+  will-change: transform, opacity;
+  transform: translateZ(0); /* Force layer creation */
+}
+

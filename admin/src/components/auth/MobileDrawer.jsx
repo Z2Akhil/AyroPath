@@ -22,28 +22,28 @@ const MobileDrawer = ({
       <div className="fixed top-0 left-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-out-cubic animate-slide-in-left">
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div className="flex items-center justify-between p-6 bg-gradient-to-r from-blue-600 to-blue-700">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center border-2 border-white/30">
                   <span className="text-white font-bold text-lg">{user.adminProfile.name.split(" ")[0][0]}</span>
                 </div>
               </div>
               <div>
-                <p className="font-semibold text-gray-900">Welcome, {user.adminProfile.name.split(" ")[0]}</p>
-                <p className="text-sm text-gray-500">Admin Dashboard</p>
+                <p className="font-semibold text-white">Welcome, {user.adminProfile.name.split(" ")[0]}</p>
+                <p className="text-sm text-blue-100">Admin Dashboard</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-full hover:bg-blue-800 transition-colors"
             >
-              <X size={20} className="text-gray-600" />
+              <X size={20} className="text-white" />
             </button>
           </div>
 
           <nav className="flex-1 p-6 overflow-y-auto">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Navigation</p>
+            <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-4">Navigation</p>
             <div className="space-y-2">
               <NavLink
                 to="home"
@@ -53,7 +53,7 @@ const MobileDrawer = ({
                 Home
               </NavLink>
               <NavLink
-                to="analytics"
+                to="reports"
                 onClick={onClose}
                 className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
               >
