@@ -1,24 +1,65 @@
 import axios from 'axios';
-
-/**
- * Thyrocare Cart Validation Service
- * Validates cart prices with Thyrocare API and adjusts if needed
- */
+import AdminSession from '../models/AdminSession.js';
+import ThyrocareRefreshService from './thyrocareRefreshService.js';
 
 class ThyrocareCartService {
   constructor() {
     this.apiUrl = process.env.THYROCARE_API_URL;
-    this.apiKey = process.env.THYROCARE_API_KEY;
-    this.adminMobile = process.env.THYROCARE_USERNAME;
+  }
+
+  async getApiKey() {
+    try {
+      const apiKey = await ThyrocareRefreshService.getOrRefreshApiKey();
+      if (!apiKey) {
+        throw new Error('No active API key available');
+      }
+      return apiKey;
+    } catch (error) {
+      console.error('❌ Failed to get API key:', error);
+      throw new Error(`Failed to get API key: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get admin mobile (username) from active AdminSession
+   * @returns {Promise<string>} Admin mobile/username
+   */
+  async getAdminMobile() {
+    try {
+      // Find active session to get admin mobile
+      const activeSession = await AdminSession.findOne({ isActive: true })
+        .populate('adminId');
+      
+      if (!activeSession || !activeSession.adminId) {
+        // Fallback to environment variable if no active session
+        const fallbackMobile = process.env.THYROCARE_USERNAME;
+        if (!fallbackMobile) {
+          throw new Error('No active admin session and THYROCARE_USERNAME not configured');
+        }
+        console.warn('⚠️ Using fallback admin mobile from environment variable');
+        return fallbackMobile;
+      }
+
+      // Get mobile from admin document
+      return activeSession.adminId.mobile || process.env.THYROCARE_USERNAME || '';
+    } catch (error) {
+      console.error('❌ Failed to get admin mobile:', error);
+      // Fallback to environment variable
+      const fallbackMobile = process.env.THYROCARE_USERNAME;
+      if (!fallbackMobile) {
+        throw new Error(`Failed to get admin mobile: ${error.message}`);
+      }
+      return fallbackMobile;
+    }
   }
 
   /**
    * Build Thyrocare API request from cart items
    * @param {Array} cartItems - Array of cart items
    * @param {Object} options - Additional options (benCount, reportType)
-   * @returns {Object} Request body for Thyrocare API
+   * @returns {Promise<Object>} Request body for Thyrocare API
    */
-  buildThyrocareRequest(cartItems, options = {}) {
+  async buildThyrocareRequest(cartItems, options = {}) {
     const { benCount = 1, report = 1 } = options;
     
     // Filter out items with zero or invalid prices
@@ -48,12 +89,16 @@ class ThyrocareCartService {
       rates.push(Math.round(item.sellingPrice)); // Round to nearest integer
     });
 
+    // Get API key and admin mobile dynamically
+    const apiKey = await this.getApiKey();
+    const adminMobile = await this.getAdminMobile();
+
     return {
-      ApiKey: this.apiKey,
+      ApiKey: apiKey,
       Products: products.join(','),
       Rates: rates.join(','),
       ClientType: 'PUBLIC',
-      Mobile: this.adminMobile,
+      Mobile: adminMobile,
       BenCount: benCount.toString(),
       Report: report.toString(),
       Discount: ''
@@ -68,7 +113,7 @@ class ThyrocareCartService {
    */
   async validateCartWithThyrocare(cartItems, options = {}) {
     try {
-      const requestBody = this.buildThyrocareRequest(cartItems, options);
+      const requestBody = await this.buildThyrocareRequest(cartItems, options);
       
       console.log('📞 Calling Thyrocare cart validation API:', {
         url: `${this.apiUrl}/api/CartMaster/DSAViewCartDTL`,
@@ -252,29 +297,73 @@ class ThyrocareCartService {
 
     // Calculate adjustment ratio (excluding collection charge if detected)
     const productTotal = hasCollectionCharge ? thyrocarePayable - collectionCharge : thyrocarePayable;
+    
+    // Fix: Check for invalid adjustment ratio
+    if (ourTotal <= 0 || !isFinite(ourTotal)) {
+      console.error('❌ Invalid ourTotal for adjustment:', ourTotal);
+      return {
+        adjustedItems: cartItems,
+        collectionCharge,
+        hasCollectionCharge,
+        breakdown: {
+          productTotal: ourTotal,
+          collectionCharge,
+          grandTotal: ourTotal + collectionCharge
+        }
+      };
+    }
+    
     const adjustmentRatio = productTotal / ourTotal;
+    
+    // Fix: Check for invalid adjustment ratio
+    if (!isFinite(adjustmentRatio) || adjustmentRatio <= 0) {
+      console.error('❌ Invalid adjustment ratio:', adjustmentRatio);
+      return {
+        adjustedItems: cartItems,
+        collectionCharge,
+        hasCollectionCharge,
+        breakdown: {
+          productTotal: ourTotal,
+          collectionCharge,
+          grandTotal: ourTotal + collectionCharge
+        }
+      };
+    }
 
     // Adjust each item's selling price proportionally
     const adjustedItems = cartItems.map(item => {
-      const adjustedSellingPrice = Math.round(item.sellingPrice * adjustmentRatio);
-      const adjustedDiscount = Math.max(0, item.originalPrice - adjustedSellingPrice);
+      // Fix: Ensure item.sellingPrice is a valid number
+      const itemSellingPrice = Number(item.sellingPrice) || 0;
+      const itemOriginalPrice = Number(item.originalPrice) || itemSellingPrice;
+      
+      const adjustedSellingPrice = Math.round(itemSellingPrice * adjustmentRatio);
+      const adjustedDiscount = Math.max(0, itemOriginalPrice - adjustedSellingPrice);
       
       // Calculate margin for this item
-      const itemCost = item.originalPrice - adjustedDiscount;
+      const itemCost = itemOriginalPrice - adjustedDiscount;
       const itemMargin = itemCost > 0 ? adjustedDiscount / itemCost : 0;
 
       // Ensure margin doesn't exceed Thyrocare's allowed margin
       let finalSellingPrice = adjustedSellingPrice;
-      if (thyrocareMargin > 0 && itemMargin > thyrocareMargin) {
-        // Adjust to match Thyrocare margin
-        const maxDiscount = item.originalPrice * (thyrocareMargin / (1 + thyrocareMargin));
-        finalSellingPrice = Math.round(item.originalPrice - maxDiscount);
+      
+      // Fix: Check if thyrocareMargin is a percentage (convert from absolute if needed)
+      // If thyrocareMargin > 1, assume it's absolute margin, convert to percentage
+      let thyrocareMarginPercent = thyrocareMargin;
+      if (thyrocareMargin > 1 && thyrocarePayable > 0) {
+        // Convert absolute margin to percentage: margin / payable * 100
+        thyrocareMarginPercent = (thyrocareMargin / thyrocarePayable) * 100;
+      }
+      
+      if (thyrocareMarginPercent > 0 && itemMargin > thyrocareMarginPercent) {
+        // Adjust to match Thyrocare margin (percentage)
+        const maxDiscount = itemOriginalPrice * (thyrocareMarginPercent / (100 + thyrocareMarginPercent));
+        finalSellingPrice = Math.round(itemOriginalPrice - maxDiscount);
       }
 
       return {
         ...item,
         sellingPrice: finalSellingPrice,
-        discount: Math.max(0, item.originalPrice - finalSellingPrice)
+        discount: Math.max(0, itemOriginalPrice - finalSellingPrice)
       };
     });
 
