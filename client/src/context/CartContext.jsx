@@ -29,25 +29,31 @@ export const CartProvider = ({ children }) => {
     loadCart();
   }, [user]);
 
+  const processCartResponse = (response) => {
+    if (response.success && response.cart) {
+      const enhancedCart = {
+        ...response.cart,
+        hasCollectionCharge: response.hasCollectionCharge || false,
+        thyrocareValidation: response.thyrocareValidation || false,
+        breakdown: response.breakdown || {
+          productTotal: response.cart.productTotal || response.cart.totalAmount,
+          collectionCharge: response.collectionCharge || 0,
+          grandTotal: response.cart.totalAmount
+        }
+      };
+      setCart(enhancedCart);
+      saveCartToLocalStorage(enhancedCart);
+      return enhancedCart;
+    }
+    return null;
+  };
+
   const loadCart = async () => {
     setLoading(true);
     try {
       if (user) {
         const response = await CartApi.getCart();
-        if (response.success && response.cart) {
-          // Merge backend cart data with collection charge info
-          const enhancedCart = {
-            ...response.cart,
-            hasCollectionCharge: response.hasCollectionCharge || false,
-            thyrocareValidation: response.thyrocareValidation || false,
-            breakdown: response.breakdown || {
-              productTotal: response.cart.productTotal || response.cart.totalAmount,
-              collectionCharge: response.collectionCharge || 0,
-              grandTotal: response.cart.totalAmount
-            }
-          };
-          setCart(enhancedCart);
-        }
+        processCartResponse(response);
       } else {
         loadCartFromLocalStorage();
       }
@@ -129,7 +135,7 @@ export const CartProvider = ({ children }) => {
     const subtotal = cartData.items.reduce((sum, item) => sum + (item.originalPrice * item.quantity), 0);
     const totalDiscount = cartData.items.reduce((sum, item) => sum + ((item.originalPrice - item.sellingPrice) * item.quantity), 0);
     const productTotal = cartData.items.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
-    
+
     // For local cart, we don't have collection charge info
     // It will be added when synced with backend
     const collectionCharge = cartData.collectionCharge || 0;
@@ -204,11 +210,12 @@ export const CartProvider = ({ children }) => {
           cartItem => cartItem.productCode === item.code && cartItem.productType === productType
         );
 
-        await CartApi.addToCart(
+        const response = await CartApi.addToCart(
           item.code,
           productType,
           itemToAdd.quantity
         );
+        processCartResponse(response);
       }
 
       setLoading(false);
@@ -250,10 +257,11 @@ export const CartProvider = ({ children }) => {
 
       // Remove from database if user is logged in
       if (user && itemToRemove) {
-        await CartApi.removeFromCart(
+        const response = await CartApi.removeFromCart(
           productCode,
           itemToRemove.productType
         );
+        processCartResponse(response);
       }
 
       setLoading(false);
@@ -287,11 +295,12 @@ export const CartProvider = ({ children }) => {
 
         // Update database if user is logged in
         if (user) {
-          await CartApi.updateQuantity(
+          const response = await CartApi.updateQuantity(
             productCode,
             item.productType,
             quantity
           );
+          processCartResponse(response);
         }
       }
 

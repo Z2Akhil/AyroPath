@@ -171,14 +171,28 @@ class ThyrocareCartService {
   adjustCartPrices(cartItems, thyrocareResponse) {
     if (!thyrocareResponse.success || !thyrocareResponse.data) {
       console.log('⚠️ Using local prices (Thyrocare validation failed)');
+
+      const ourTotal = cartItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
+      const COLLECTION_CHARGE = 200;
+      const MINIMUM_ORDER = 300;
+
+      let collectionCharge = 0;
+      let hasCollectionCharge = false;
+
+      if (ourTotal > 0 && ourTotal < MINIMUM_ORDER) {
+        collectionCharge = COLLECTION_CHARGE;
+        hasCollectionCharge = true;
+        console.log('💰 [Local Fallback] Collection charge applied (Order < 300)');
+      }
+
       return {
         adjustedItems: cartItems,
-        collectionCharge: 0,
-        hasCollectionCharge: false,
+        collectionCharge,
+        hasCollectionCharge,
         breakdown: {
-          productTotal: cartItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0),
-          collectionCharge: 0,
-          grandTotal: cartItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0)
+          productTotal: ourTotal,
+          collectionCharge,
+          grandTotal: ourTotal + collectionCharge
         }
       };
     }
@@ -207,21 +221,36 @@ class ThyrocareCartService {
     // Current Passon (Discount we are giving)
     const currentPasson = Math.max(0, ourTotalOriginal - ourTotalSelling);
 
-    // Check for collection charge (₹200 when order < ₹300)
+    // Detect collection charge (₹200 when product total < ₹300)
     const COLLECTION_CHARGE = 200;
     const MINIMUM_ORDER = 300;
+
+    // Sum the individual rates returned by Thyrocare to get the true product-only payable amount
+    const rateArray = thyrocareRates.split(',')
+      .map(r => parseFloat(r.trim()))
+      .filter(r => !isNaN(r));
+    const thyrocareProductPayable = rateArray.length > 0
+      ? rateArray.reduce((sum, r) => sum + r, 0)
+      : (thyrocarePayable >= 300 && thyrocarePayable < 500) ? thyrocarePayable - 200 : thyrocarePayable; // Heuristic fallback
+
     let collectionCharge = 0;
     let hasCollectionCharge = false;
 
-    // Detection: if thyrocarePayable is ourTotalOriginal + 200 (approx) and ourTotalOriginal < 300
-    // OR if thyrocare margin + payable = totalOriginal + 200
-    if (ourTotalOriginal < MINIMUM_ORDER && Math.abs(thyrocarePayable + thyrocareMargin - ourTotalOriginal - COLLECTION_CHARGE) <= 2) {
+    // If there's a ~200 difference between total payable and sum of rates, it's a collection charge
+    if (Math.abs(thyrocarePayable - thyrocareProductPayable - COLLECTION_CHARGE) <= 5) {
       collectionCharge = COLLECTION_CHARGE;
       hasCollectionCharge = true;
-      console.log('💰 Collection charge detected:', {
-        ourTotalOriginal,
+      console.log('💰 Collection charge detected via rates comparison:', {
         thyrocarePayable,
-        thyrocareMargin,
+        thyrocareProductPayable,
+        collectionCharge
+      });
+    } else if (thyrocareProductPayable < MINIMUM_ORDER && thyrocarePayable >= MINIMUM_ORDER) {
+      // Fallback detection logic
+      collectionCharge = COLLECTION_CHARGE;
+      hasCollectionCharge = true;
+      console.log('💰 Collection charge detected via threshold:', {
+        thyrocareProductPayable,
         collectionCharge
       });
     }
@@ -241,7 +270,7 @@ class ThyrocareCartService {
         // In consolidation case, we follow Thyrocare's single price
         const mainItemCode = matchedItems[0].productCode;
         // Total price for the group
-        const targetPrice = thyrocarePayable; // B2B cost is the target when passon is maxed
+        const targetPrice = thyrocareProductPayable; // B2B cost is the target when passon is maxed
 
         const adjustedItems = cartItems.map(item => {
           if (item.productCode === mainItemCode) {
@@ -296,10 +325,10 @@ class ThyrocareCartService {
     console.log('🔄 Passon exceeds margin. Adjusting prices to match Thyrocare margin.', {
       currentPasson,
       thyrocareMargin,
-      newTargetTotal: thyrocarePayable
+      newTargetTotal: thyrocareProductPayable
     });
 
-    const adjustmentRatio = ourTotalSelling > 0 ? thyrocarePayable / ourTotalSelling : 1;
+    const adjustmentRatio = ourTotalSelling > 0 ? thyrocareProductPayable / ourTotalSelling : 1;
 
     let adjustedItems = cartItems.map(item => {
       let newSellingPrice = Math.round(item.sellingPrice * adjustmentRatio);
@@ -320,8 +349,8 @@ class ThyrocareCartService {
     // Small differences might arise due to rounding or B2C capping.
     const finalProductTotal = adjustedItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
 
-    if (Math.abs(finalProductTotal - thyrocarePayable) > 1) {
-      console.log('⚠️ Post-adjustment total mismatch:', { finalProductTotal, thyrocarePayable });
+    if (Math.abs(finalProductTotal - thyrocareProductPayable) > 1) {
+      console.log('⚠️ Post-adjustment total mismatch:', { finalProductTotal, thyrocareProductPayable });
       // We could add a final correction to the most expensive item here if critical, 
       // but usually rounding/capping issues are negligible.
     }
@@ -423,17 +452,28 @@ class ThyrocareCartService {
       console.error('❌ Cart validation error:', error);
 
       const ourTotal = cartItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
+      const COLLECTION_CHARGE = 200;
+      const MINIMUM_ORDER = 300;
+
+      let collectionCharge = 0;
+      let hasCollectionCharge = false;
+
+      if (ourTotal > 0 && ourTotal < MINIMUM_ORDER) {
+        collectionCharge = COLLECTION_CHARGE;
+        hasCollectionCharge = true;
+        console.log('💰 [Local Error Fallback] Collection charge applied (Order < 300)');
+      }
 
       return {
         success: false,
         adjustedItems: cartItems, // Fallback to original items
         validationApplied: false,
-        collectionCharge: 0,
-        hasCollectionCharge: false,
+        collectionCharge,
+        hasCollectionCharge,
         breakdown: {
           productTotal: ourTotal,
-          collectionCharge: 0,
-          grandTotal: ourTotal
+          collectionCharge,
+          grandTotal: ourTotal + collectionCharge
         },
         error: error.message,
         message: 'Cart validation failed, using local prices'

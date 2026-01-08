@@ -11,18 +11,15 @@ import Footer from './components/Footer';
 import ToastContainer from './components/Toast';
 import VerificationAlert from './components/VerificationAlert';
 import LandingPage from './pages/LandingPage';
-
-// Lazy load non-critical pages
-const PackagePage = lazy(() => import('./pages/PackagePage'));
-const OfferPage = lazy(() => import('./pages/OfferPage'));
-const TestPage = lazy(() => import('./pages/TestPage'));
-const PackageDetailedPage = lazy(() => import('./pages/PackageDetailedPage'));
-const AboutPage = lazy(() => import('./pages/AboutPage'));
-const AccountPage = lazy(() => import('./pages/AccountPage'));
-const CartPage = lazy(() => import('./pages/CartPage'));
-const OrderPage = lazy(() => import('./pages/OrderPage'));
-const OrderHistory = lazy(() => import('./pages/OrderHistory'));
-
+import PackagePage from './pages/PackagePage';
+import OfferPage from './pages/OfferPage';
+import TestPage from './pages/TestPage';
+import PackageDetailedPage from './pages/PackageDetailedPage';
+import AboutPage from './pages/AboutPage';
+import AccountPage from './pages/AccountPage';
+import CartPage from './pages/CartPage';
+import OrderPage from './pages/OrderPage';
+import OrderHistory from './pages/OrderHistory';
 import { OrderSuccessProvider } from './context/OrderSuccessContext';
 import { ScrollToTopProvider } from './context/ScrollToTopProvider';
 
