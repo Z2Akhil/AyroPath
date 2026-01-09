@@ -32,6 +32,10 @@ const cartItemSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  thyrocareRate: {
+    type: Number,
+    required: false
+  },
   addedAt: {
     type: Date,
     default: Date.now
@@ -83,7 +87,7 @@ cartSchema.index({ guestSessionId: 1 });
 cartSchema.index({ lastUpdated: 1 });
 
 // Pre-save middleware to calculate totals
-cartSchema.pre('save', function(next) {
+cartSchema.pre('save', function (next) {
   this.totalItems = this.items.reduce((sum, item) => sum + item.quantity, 0);
   this.subtotal = this.items.reduce((sum, item) => sum + (item.originalPrice * item.quantity), 0);
   this.totalDiscount = this.items.reduce((sum, item) => sum + ((item.originalPrice - item.sellingPrice) * item.quantity), 0);
@@ -93,7 +97,7 @@ cartSchema.pre('save', function(next) {
 });
 
 // Static method to find cart by user or guest session
-cartSchema.statics.findByUserOrGuest = async function(userId, guestSessionId) {
+cartSchema.statics.findByUserOrGuest = async function (userId, guestSessionId) {
   if (userId) {
     return await this.findOne({ userId, isActive: true });
   } else if (guestSessionId) {
@@ -103,9 +107,9 @@ cartSchema.statics.findByUserOrGuest = async function(userId, guestSessionId) {
 };
 
 // Static method to create or update cart
-cartSchema.statics.createOrUpdateCart = async function(userId, guestSessionId, items = []) {
+cartSchema.statics.createOrUpdateCart = async function (userId, guestSessionId, items = []) {
   let cart = await this.findByUserOrGuest(userId, guestSessionId);
-  
+
   if (!cart) {
     cart = new this({
       userId: userId || null,
@@ -115,22 +119,23 @@ cartSchema.statics.createOrUpdateCart = async function(userId, guestSessionId, i
   } else {
     cart.items = items;
   }
-  
+
   await cart.save();
   return cart;
 };
 
 // Method to add item to cart
-cartSchema.methods.addItem = async function(itemData) {
+cartSchema.methods.addItem = async function (itemData) {
   const existingItemIndex = this.items.findIndex(
     item => item.productCode === itemData.productCode && item.productType === itemData.productType
   );
-  
+
   if (existingItemIndex > -1) {
     // Update existing item
     this.items[existingItemIndex].quantity += itemData.quantity || 1;
     this.items[existingItemIndex].sellingPrice = itemData.sellingPrice;
     this.items[existingItemIndex].discount = itemData.discount;
+    this.items[existingItemIndex].thyrocareRate = itemData.thyrocareRate;
   } else {
     // Add new item
     this.items.push({
@@ -140,53 +145,54 @@ cartSchema.methods.addItem = async function(itemData) {
       quantity: itemData.quantity || 1,
       originalPrice: itemData.originalPrice,
       sellingPrice: itemData.sellingPrice,
-      discount: itemData.discount
+      discount: itemData.discount,
+      thyrocareRate: itemData.thyrocareRate
     });
   }
-  
+
   await this.save();
   return this;
 };
 
 // Method to remove item from cart
-cartSchema.methods.removeItem = async function(productCode, productType) {
+cartSchema.methods.removeItem = async function (productCode, productType) {
   this.items = this.items.filter(
     item => !(item.productCode === productCode && item.productType === productType)
   );
-  
+
   await this.save();
   return this;
 };
 
 // Method to update item quantity
-cartSchema.methods.updateQuantity = async function(productCode, productType, quantity) {
+cartSchema.methods.updateQuantity = async function (productCode, productType, quantity) {
   const item = this.items.find(
     item => item.productCode === productCode && item.productType === productType
   );
-  
+
   if (item && quantity > 0 && quantity <= 10) {
     item.quantity = quantity;
     await this.save();
   }
-  
+
   return this;
 };
 
 // Method to clear cart
-cartSchema.methods.clearCart = async function() {
+cartSchema.methods.clearCart = async function () {
   this.items = [];
   await this.save();
   return this;
 };
 
 // Method to get cart summary
-cartSchema.methods.getSummary = function(collectionCharge = 0) {
-  const productTotal = this.items.reduce((sum, item) => 
+cartSchema.methods.getSummary = function (collectionCharge = 0) {
+  const productTotal = this.items.reduce((sum, item) =>
     sum + (item.sellingPrice * item.quantity), 0
   );
-  
+
   const grandTotal = productTotal + collectionCharge;
-  
+
   return {
     totalItems: this.totalItems,
     subtotal: this.subtotal,
@@ -202,6 +208,7 @@ cartSchema.methods.getSummary = function(collectionCharge = 0) {
       originalPrice: item.originalPrice,
       sellingPrice: item.sellingPrice,
       discount: item.discount,
+      thyrocareRate: item.thyrocareRate,
       totalPrice: item.sellingPrice * item.quantity
     }))
   };

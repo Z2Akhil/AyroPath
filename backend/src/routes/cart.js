@@ -126,7 +126,8 @@ const getProductDetails = async (productCode, productType) => {
     name: product.name,
     originalPrice: originalPrice,
     sellingPrice: sellingPrice,
-    discount: discount
+    discount: discount,
+    thyrocareRate: combinedData.thyrocareRate
   };
 };
 
@@ -143,13 +144,13 @@ const checkForDuplicateTests = async (cartItems, newItem) => {
         } else {
           product = await Offer.findOne({ code: cartItem.productCode, isActive: true });
         }
-        
+
         if (product && product.thyrocareData.childs) {
           // Check if the test is included in this profile/offer
           const isIncluded = product.thyrocareData.childs.some(
             child => child.code === newItem.productCode
           );
-          
+
           if (isIncluded) {
             return {
               hasDuplicates: true,
@@ -168,7 +169,7 @@ const checkForDuplicateTests = async (cartItems, newItem) => {
       }
     }
   }
-  
+
   // If new item is a PROFILE or OFFER, check if it includes any Tests in cart
   if (newItem.productType === 'PROFILE' || newItem.productType === 'OFFER') {
     let product;
@@ -177,17 +178,17 @@ const checkForDuplicateTests = async (cartItems, newItem) => {
     } else {
       product = await Offer.findOne({ code: newItem.productCode, isActive: true });
     }
-    
+
     if (product && product.thyrocareData.childs) {
       const duplicateTests = [];
-      
+
       // Check each test in cart against the profile/offer's childs
       for (const cartItem of cartItems) {
         if (cartItem.productType === 'TEST') {
           const isIncluded = product.thyrocareData.childs.some(
             child => child.code === cartItem.productCode
           );
-          
+
           if (isIncluded) {
             duplicateTests.push({
               testCode: cartItem.productCode,
@@ -199,7 +200,7 @@ const checkForDuplicateTests = async (cartItems, newItem) => {
           }
         }
       }
-      
+
       if (duplicateTests.length > 0) {
         return {
           hasDuplicates: true,
@@ -215,7 +216,7 @@ const checkForDuplicateTests = async (cartItems, newItem) => {
       }
     }
   }
-  
+
   // No duplicates found
   return {
     hasDuplicates: false,
@@ -253,17 +254,17 @@ router.get('/', optionalAuth, async (req, res) => {
     }
     await refreshCartPrices(cart);
     await cart.save();
-    
+
     // Validate cart with Thyrocare API for GET request too
     let validationResult = null;
     try {
       validationResult = await thyrocareCartService.validateAndAdjustCart(cart.items);
-      
+
       if (validationResult.success && validationResult.validationApplied) {
         // Update cart with Thyrocare-validated prices
         cart.items = validationResult.adjustedItems;
         await cart.save();
-        
+
         console.log('✅ Cart validated with Thyrocare (GET request):', {
           validationApplied: true,
           hasCollectionCharge: validationResult.hasCollectionCharge,
@@ -337,7 +338,7 @@ router.post('/items', optionalAuth, async (req, res) => {
     let duplicateCheckResult = null;
     if (!skipValidation) {
       duplicateCheckResult = await checkForDuplicateTests(cart.items, productDetails);
-      
+
       if (duplicateCheckResult.hasDuplicates) {
         // Return validation result without adding to cart
         return res.status(200).json({
@@ -368,17 +369,17 @@ router.post('/items', optionalAuth, async (req, res) => {
     const existing = cart.items.find(
       i => i.productCode === productCode && i.productType === productType
     );
-    
+
     if (existing) {
       // Product already in cart - don't increase quantity, just return success
       await refreshCartPrices(cart);
       await cart.save();
-      
+
       // Validate cart with Thyrocare API for already in cart case too
       let validationResult = null;
       try {
         validationResult = await thyrocareCartService.validateAndAdjustCart(cart.items);
-        
+
         if (validationResult.success && validationResult.validationApplied) {
           // Update cart with Thyrocare-validated prices
           cart.items = validationResult.adjustedItems;
@@ -390,7 +391,7 @@ router.post('/items', optionalAuth, async (req, res) => {
 
       const collectionCharge = validationResult?.collectionCharge || 0;
       const summary = cart.getSummary(collectionCharge);
-      
+
       console.log('✅ Product already in cart, returning current cart:', {
         productCode,
         productType,
@@ -399,7 +400,7 @@ router.post('/items', optionalAuth, async (req, res) => {
         collectionCharge: summary.collectionCharge,
         totalAmount: summary.totalAmount
       });
-      
+
       return res.json({
         success: true,
         message: 'Product already in cart',
@@ -417,7 +418,7 @@ router.post('/items', optionalAuth, async (req, res) => {
         }
       });
     }
-    
+
     // 6. Add new item to cart (quantity always 1)
     cart.items.push({ ...productDetails, quantity: 1 });
 
@@ -431,12 +432,12 @@ router.post('/items', optionalAuth, async (req, res) => {
     let validationResult = null;
     try {
       validationResult = await thyrocareCartService.validateAndAdjustCart(cart.items);
-      
+
       if (validationResult.success && validationResult.validationApplied) {
         // Update cart with Thyrocare-validated prices
         cart.items = validationResult.adjustedItems;
         await cart.save();
-        
+
         console.log('✅ Cart validated with Thyrocare:', {
           validationApplied: true,
           hasCollectionCharge: validationResult.hasCollectionCharge,
@@ -498,12 +499,12 @@ router.post('/items/with-confirmation', optionalAuth, async (req, res) => {
     const userId = req.user?._id;
     const guestSessionId = req.headers['x-guest-session-id'] || req.cookies?.guestSessionId;
 
-    console.log('➕ Adding item to cart with confirmation:', { 
-      productCode, 
-      productType, 
-      quantity, 
+    console.log('➕ Adding item to cart with confirmation:', {
+      productCode,
+      productType,
+      quantity,
       removeDuplicateTests,
-      userId: userId || 'guest' 
+      userId: userId || 'guest'
     });
 
     if (!productCode || !productType) {
@@ -522,7 +523,7 @@ router.post('/items/with-confirmation', optionalAuth, async (req, res) => {
     // 3. Remove duplicate tests if specified
     if (removeDuplicateTests && removeDuplicateTests.length > 0) {
       console.log(`🗑️ Removing duplicate tests: ${removeDuplicateTests.join(', ')}`);
-      cart.items = cart.items.filter(item => 
+      cart.items = cart.items.filter(item =>
         !(item.productType === 'TEST' && removeDuplicateTests.includes(item.productCode))
       );
     }
@@ -542,17 +543,17 @@ router.post('/items/with-confirmation', optionalAuth, async (req, res) => {
     const existing = cart.items.find(
       i => i.productCode === productCode && i.productType === productType
     );
-    
+
     if (existing) {
       // Product already in cart - don't increase quantity, just return success
       await refreshCartPrices(cart);
       await cart.save();
-      
+
       // Validate cart with Thyrocare API for already in cart case too
       let validationResult = null;
       try {
         validationResult = await thyrocareCartService.validateAndAdjustCart(cart.items);
-        
+
         if (validationResult.success && validationResult.validationApplied) {
           // Update cart with Thyrocare-validated prices
           cart.items = validationResult.adjustedItems;
@@ -564,7 +565,7 @@ router.post('/items/with-confirmation', optionalAuth, async (req, res) => {
 
       const collectionCharge = validationResult?.collectionCharge || 0;
       const summary = cart.getSummary(collectionCharge);
-      
+
       console.log('✅ Product already in cart (with confirmation), returning current cart:', {
         productCode,
         productType,
@@ -573,7 +574,7 @@ router.post('/items/with-confirmation', optionalAuth, async (req, res) => {
         collectionCharge: summary.collectionCharge,
         totalAmount: summary.totalAmount
       });
-      
+
       return res.json({
         success: true,
         message: 'Product already in cart',
@@ -591,7 +592,7 @@ router.post('/items/with-confirmation', optionalAuth, async (req, res) => {
         }
       });
     }
-    
+
     // 6. Add new item to cart (quantity always 1)
     cart.items.push({ ...productDetails, quantity: 1 });
 
@@ -605,12 +606,12 @@ router.post('/items/with-confirmation', optionalAuth, async (req, res) => {
     let validationResult = null;
     try {
       validationResult = await thyrocareCartService.validateAndAdjustCart(cart.items);
-      
+
       if (validationResult.success && validationResult.validationApplied) {
         // Update cart with Thyrocare-validated prices
         cart.items = validationResult.adjustedItems;
         await cart.save();
-        
+
         console.log('✅ Cart validated with Thyrocare (with confirmation):', {
           validationApplied: true,
           hasCollectionCharge: validationResult.hasCollectionCharge,
@@ -706,12 +707,12 @@ router.put('/items/:productCode', optionalAuth, async (req, res) => {
     let validationResult = null;
     try {
       validationResult = await thyrocareCartService.validateAndAdjustCart(cart.items);
-      
+
       if (validationResult.success && validationResult.validationApplied) {
         // Update cart with Thyrocare-validated prices
         cart.items = validationResult.adjustedItems;
         await cart.save();
-        
+
         console.log('✅ Cart validated with Thyrocare after update:', {
           validationApplied: true,
           hasCollectionCharge: validationResult.hasCollectionCharge,
@@ -801,12 +802,12 @@ router.delete('/items/:productCode', optionalAuth, async (req, res) => {
     if (cart.items.length > 0) {
       try {
         validationResult = await thyrocareCartService.validateAndAdjustCart(cart.items);
-        
+
         if (validationResult.success && validationResult.validationApplied) {
           // Update cart with Thyrocare-validated prices
           cart.items = validationResult.adjustedItems;
           await cart.save();
-          
+
           console.log('✅ Cart validated with Thyrocare after removal:', {
             validationApplied: true,
             hasCollectionCharge: validationResult.hasCollectionCharge,

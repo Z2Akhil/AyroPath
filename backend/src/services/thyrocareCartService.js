@@ -86,12 +86,19 @@ class ThyrocareCartService {
       }
 
       products.push(productCode);
-      rates.push(Math.round(item.sellingPrice)); // Round to nearest integer
+      const rate = item.thyrocareRate || item.sellingPrice;
+      rates.push(Math.round(rate)); // Round to nearest integer
     });
 
     // Get API key and admin mobile dynamically
     const apiKey = await this.getApiKey();
     const adminMobile = await this.getAdminMobile();
+
+    console.log('📦 Building Thyrocare request with rates:', {
+      products: products.join(','),
+      rates: rates.join(','),
+      itemRates: validItems.map(i => ({ code: i.productCode, thyrocareRate: i.thyrocareRate, sellingPrice: i.sellingPrice }))
+    });
 
     return {
       ApiKey: apiKey,
@@ -214,43 +221,39 @@ class ThyrocareCartService {
     const ourTotalSelling = cartItems.reduce((sum, item) =>
       sum + (item.sellingPrice * item.quantity), 0
     );
-    const ourTotalOriginal = cartItems.reduce((sum, item) =>
-      sum + (item.originalPrice * item.quantity), 0
+    // Sent Total (The basis on which Thyrocare calculates margin)
+    const sentTotal = cartItems.reduce((sum, item) =>
+      sum + ((item.thyrocareRate || item.sellingPrice) * item.quantity), 0
     );
 
-    // Current Passon (Discount we are giving)
-    const currentPasson = Math.max(0, ourTotalOriginal - ourTotalSelling);
+    // Current Passon (Discount we are giving relative to the sent rates)
+    const currentPasson = Math.max(0, sentTotal - ourTotalSelling);
 
     // Detect collection charge (₹200 when product total < ₹300)
     const COLLECTION_CHARGE = 200;
     const MINIMUM_ORDER = 300;
 
-    // Sum the individual rates returned by Thyrocare to get the true product-only payable amount
-    const rateArray = thyrocareRates.split(',')
-      .map(r => parseFloat(r.trim()))
-      .filter(r => !isNaN(r));
-    const thyrocareProductPayable = rateArray.length > 0
-      ? rateArray.reduce((sum, r) => sum + r, 0)
-      : (thyrocarePayable >= 300 && thyrocarePayable < 500) ? thyrocarePayable - 200 : thyrocarePayable; // Heuristic fallback
+    // Product-only B2B cost (Sent Total - Margin)
+    const thyrocareProductCost = Math.max(0, sentTotal - thyrocareMargin);
 
     let collectionCharge = 0;
     let hasCollectionCharge = false;
 
-    // If there's a ~200 difference between total payable and sum of rates, it's a collection charge
-    if (Math.abs(thyrocarePayable - thyrocareProductPayable - COLLECTION_CHARGE) <= 5) {
+    // If there's a ~200 difference between total payable and our calculated product cost, it's a collection charge
+    if (Math.abs(thyrocarePayable - thyrocareProductCost - COLLECTION_CHARGE) <= 10) {
       collectionCharge = COLLECTION_CHARGE;
       hasCollectionCharge = true;
-      console.log('💰 Collection charge detected via rates comparison:', {
+      console.log('💰 Collection charge detected via cost comparison:', {
         thyrocarePayable,
-        thyrocareProductPayable,
+        thyrocareProductCost,
         collectionCharge
       });
-    } else if (thyrocareProductPayable < MINIMUM_ORDER && thyrocarePayable >= MINIMUM_ORDER) {
+    } else if (thyrocareProductCost < MINIMUM_ORDER && thyrocarePayable >= MINIMUM_ORDER) {
       // Fallback detection logic
       collectionCharge = COLLECTION_CHARGE;
       hasCollectionCharge = true;
       console.log('💰 Collection charge detected via threshold:', {
-        thyrocareProductPayable,
+        thyrocareProductCost,
         collectionCharge
       });
     }
@@ -270,7 +273,7 @@ class ThyrocareCartService {
         // In consolidation case, we follow Thyrocare's single price
         const mainItemCode = matchedItems[0].productCode;
         // Total price for the group
-        const targetPrice = thyrocareProductPayable; // B2B cost is the target when passon is maxed
+        const targetPrice = thyrocareProductCost; // B2B cost is the target when passon is maxed
 
         const adjustedItems = cartItems.map(item => {
           if (item.productCode === mainItemCode) {
@@ -325,10 +328,10 @@ class ThyrocareCartService {
     console.log('🔄 Passon exceeds margin. Adjusting prices to match Thyrocare margin.', {
       currentPasson,
       thyrocareMargin,
-      newTargetTotal: thyrocareProductPayable
+      newTargetTotal: thyrocareProductCost
     });
 
-    const adjustmentRatio = ourTotalSelling > 0 ? thyrocareProductPayable / ourTotalSelling : 1;
+    const adjustmentRatio = ourTotalSelling > 0 ? thyrocareProductCost / ourTotalSelling : 1;
 
     let adjustedItems = cartItems.map(item => {
       let newSellingPrice = Math.round(item.sellingPrice * adjustmentRatio);
@@ -349,8 +352,8 @@ class ThyrocareCartService {
     // Small differences might arise due to rounding or B2C capping.
     const finalProductTotal = adjustedItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
 
-    if (Math.abs(finalProductTotal - thyrocareProductPayable) > 1) {
-      console.log('⚠️ Post-adjustment total mismatch:', { finalProductTotal, thyrocareProductPayable });
+    if (Math.abs(finalProductTotal - thyrocareProductCost) > 1) {
+      console.log('⚠️ Post-adjustment total mismatch:', { finalProductTotal, thyrocareProductCost });
       // We could add a final correction to the most expensive item here if critical, 
       // but usually rounding/capping issues are negligible.
     }
