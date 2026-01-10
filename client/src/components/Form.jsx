@@ -5,6 +5,7 @@ import { useUser } from "../context/userContext";
 import { axiosInstance } from "../api/axiosInstance";
 import { useCart } from "../context/CartContext";
 import { useOrderSuccess } from "../context/OrderSuccessContext";
+import CartApi from "../api/cartApi";
 
 import {
   getInitialFormData,
@@ -41,6 +42,8 @@ const Form = ({ pkgName, priceInfo, pkgId, items }) => {
   const { showSuccessCard } = useOrderSuccess();
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [checkoutPricing, setCheckoutPricing] = useState(null);
+  const [pricingLoading, setPricingLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -65,13 +68,49 @@ const Form = ({ pkgName, priceInfo, pkgId, items }) => {
     }
   }, [user]);
 
-  const handlePersonsChange = (e) => {
+  // Fetch checkout pricing on initial load
+  useEffect(() => {
+    const fetchInitialPricing = async () => {
+      if (items && items.length > 0) {
+        setPricingLoading(true);
+        try {
+          const result = await CartApi.getCheckoutPricing(numPersons, items);
+          if (result.success) {
+            setCheckoutPricing(result);
+          }
+        } catch (error) {
+          console.error('Error fetching initial checkout pricing:', error);
+        } finally {
+          setPricingLoading(false);
+        }
+      }
+    };
+
+    fetchInitialPricing();
+  }, [items]); // Re-fetch when items change
+
+  const handlePersonsChange = async (e) => {
     const count = parseInt(e.target.value);
     setNumPersons(count);
     // Preserve existing data when resizing
     setSelectedBeneficiaries(prev =>
       Array.from({ length: count }, (_, i) => prev[i] || { name: "", age: "", gender: "" })
     );
+
+    // Fetch actual margin-adjusted pricing from backend
+    if (items && items.length > 0) {
+      setPricingLoading(true);
+      try {
+        const result = await CartApi.getCheckoutPricing(count, items);
+        if (result.success) {
+          setCheckoutPricing(result);
+        }
+      } catch (error) {
+        console.error('Error fetching checkout pricing:', error);
+      } finally {
+        setPricingLoading(false);
+      }
+    }
   };
 
   const handleBeneficiaryChange = (index, field, value) => {
@@ -367,10 +406,60 @@ const Form = ({ pkgName, priceInfo, pkgId, items }) => {
           {[...Array(10)].map((_, i) => (
             <option key={i + 1} value={i + 1}>
               {i + 1} {i + 1 === 1 ? 'Person' : 'Persons'}
-              {i + 1 === 1 ? ` (₹${priceInfo.displayPrice})` : ` (₹${(i + 1) * priceInfo.displayPrice} only)`}
             </option>
           ))}
         </select>
+
+        {/* Dynamic Pricing Display */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          {pricingLoading ? (
+            <p className="text-sm text-blue-600 animate-pulse">Calculating best price...</p>
+          ) : checkoutPricing && checkoutPricing.success ? (
+            <>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-700">Original Price ({numPersons} {numPersons === 1 ? 'person' : 'people'}):</span>
+                <span className="text-gray-900 font-medium">₹{checkoutPricing.originalTotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-700">Your Discount:</span>
+                <span className="text-green-600 font-medium">-₹{checkoutPricing.totalDiscount.toFixed(2)}</span>
+              </div>
+              {checkoutPricing.marginAdjusted && (
+                <div className="text-xs text-amber-600 mt-1 italic">
+                  (Discount capped at ₹{checkoutPricing.thyrocareMargin?.toFixed(2) || checkoutPricing.totalDiscount.toFixed(2)} for {numPersons} {numPersons === 1 ? 'person' : 'people'})
+                </div>
+              )}
+              {checkoutPricing.collectionCharge > 0 && (
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-700">Collection Charge:</span>
+                  <span className="text-yellow-600">+₹{checkoutPricing.collectionCharge.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center font-bold text-lg border-t border-blue-200 pt-2 mt-2">
+                <span>Total Payable:</span>
+                <span className="text-blue-700">₹{checkoutPricing.grandTotal.toFixed(2)}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-700">Original Price ({numPersons} {numPersons === 1 ? 'person' : 'people'}):</span>
+                <span className="text-gray-900 font-medium">₹{(priceInfo.originalPrice * numPersons).toFixed(2)}</span>
+              </div>
+              {priceInfo.hasDiscount && (
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-700">Up to Discount:</span>
+                  <span className="text-green-600 font-medium">-₹{(priceInfo.discountAmount * numPersons).toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center font-bold text-lg border-t border-blue-200 pt-2 mt-2">
+                <span>Estimated Total:</span>
+                <span className="text-blue-700">₹{(priceInfo.displayPrice * numPersons).toFixed(2)}</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">*Final price may vary based on Thyrocare margin</p>
+            </>
+          )}
+        </div>
         <div className="flex gap-2 mb-3">
           <input
             type="text"

@@ -79,26 +79,17 @@ const PackageCard = ({ pkg }) => {
         </div>
 
         {/* Price Section - First Row */}
-        <div className="min-h-[50px] flex items-center mb-3">
-          {priceInfo.hasDiscount ? (
-            <div className="flex items-center gap-3 flex-wrap">
-              <p className="text-gray-500 line-through font-medium text-sm sm:text-base">
-                ₹{priceInfo.originalPrice}
-              </p>
-              <p className="text-blue-700 font-bold text-xl sm:text-2xl">
-                ₹{priceInfo.displayPrice}
-              </p>
+        <div className="min-h-[50px] flex flex-col justify-center mb-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <p className="text-blue-700 font-bold text-xl sm:text-2xl">
+              ₹{priceInfo.originalPrice}
+            </p>
+            {priceInfo.hasDiscount && (
               <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
-                {priceInfo.discountPercentage}% OFF
+                Up to {priceInfo.discountPercentage}% OFF
               </span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 flex-wrap">
-              <p className="text-gray-900 font-bold text-xl sm:text-2xl">
-                ₹{priceInfo.displayPrice}
-              </p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Buttons Section - Second Row */}

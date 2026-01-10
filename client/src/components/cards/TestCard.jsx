@@ -36,19 +36,14 @@ const TestCard = ({ test }) => {
         {/* Price Section - Stays top-right, no distortion, shrinks if needed */}
         <div className="flex flex-col items-end shrink-0 text-right">
           <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
-            {priceInfo.hasDiscount && (
-              <span className="text-[10px] sm:text-xs font-medium text-gray-500 line-through whitespace-nowrap">
-                ₹{priceInfo.originalPrice}
-              </span>
-            )}
             <span className="text-lg sm:text-xl font-bold text-blue-700 whitespace-nowrap">
-              ₹{priceInfo.displayPrice}
+              ₹{priceInfo.originalPrice}
             </span>
           </div>
 
           {priceInfo.hasDiscount && (
             <span className="mt-1 inline-block bg-red-500 text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded">
-              {priceInfo.discountPercentage}% OFF
+              Up to {priceInfo.discountPercentage}% OFF
             </span>
           )}
         </div>

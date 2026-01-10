@@ -30,10 +30,7 @@ const OfferCard = ({ pkg }) => {
         {/* Left side: Price & discount */}
         <div className="flex flex-col">
           <div className="flex items-baseline gap-2">
-            <p className="text-xl font-bold text-gray-900">₹{priceInfo.displayPrice}</p>
-            {priceInfo.hasDiscount && (
-              <p className="text-gray-400 line-through text-sm">₹{priceInfo.originalPrice}</p>
-            )}
+            <p className="text-xl font-bold text-gray-900">₹{priceInfo.originalPrice}</p>
           </div>
           {priceInfo.hasDiscount && (
             <span
@@ -43,7 +40,7 @@ const OfferCard = ({ pkg }) => {
                   "polygon(0 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 0 100%)",
               }}
             >
-              {priceInfo.discountPercentage}% OFF
+              Up to {priceInfo.discountPercentage}% OFF
             </span>
           )}
         </div>

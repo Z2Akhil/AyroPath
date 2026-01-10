@@ -248,21 +248,13 @@ const PackageDetailedPage = () => {
                 <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6 border border-blue-100">
                   <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between">
                     <div className="flex items-baseline gap-3 mb-4 sm:mb-0">
-                      <p className="text-4xl font-bold text-blue-700">₹{priceInfo.displayPrice}</p>
+                      <p className="text-4xl font-bold text-blue-700">₹{priceInfo.originalPrice}</p>
                       {priceInfo.hasDiscount && (
-                        <div className="flex items-center gap-2">
-                          <p className="text-xl text-gray-500 line-through">₹{priceInfo.originalPrice}</p>
-                          <span className="bg-linear-to-r from-green-500 to-emerald-500 text-white text-sm font-bold px-3 py-1 rounded-full shadow-sm">
-                            {priceInfo.discountPercentage}% OFF
-                          </span>
-                        </div>
+                        <span className="bg-linear-to-r from-green-500 to-emerald-500 text-white text-sm font-bold px-3 py-1 rounded-full shadow-sm">
+                          Up to {priceInfo.discountPercentage}% OFF
+                        </span>
                       )}
                     </div>
-                    {priceInfo.hasDiscount && (
-                      <div className="text-sm text-gray-600">
-                        You save ₹{priceInfo.originalPrice - priceInfo.displayPrice}
-                      </div>
-                    )}
                   </div>
                 </div>
               )}

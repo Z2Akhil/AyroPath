@@ -25,7 +25,7 @@ class CartApi {
         headers['x-guest-session-id'] = guestSessionId;
       }
 
-      const response = await axiosInstance.post('/cart/items', 
+      const response = await axiosInstance.post('/cart/items',
         { productCode, productType, quantity },
         { headers }
       );
@@ -44,7 +44,7 @@ class CartApi {
         headers['x-guest-session-id'] = guestSessionId;
       }
 
-      const response = await axiosInstance.post('/cart/items/with-confirmation', 
+      const response = await axiosInstance.post('/cart/items/with-confirmation',
         { productCode, productType, quantity, removeDuplicateTests },
         { headers }
       );
@@ -60,7 +60,7 @@ class CartApi {
     try {
       // Use the client products endpoint which returns product with childs data
       const response = await axiosInstance.get(`/client/products/${productCode}`);
-      
+
       if (response.data.success && response.data.product) {
         return response.data.product;
       } else {
@@ -81,7 +81,7 @@ class CartApi {
       }
 
       const response = await axiosInstance.get('/cart', { headers });
-      
+
       // Enhance cart items with childs data
       if (response.data.success && response.data.cart) {
         const enhancedItems = await Promise.all(
@@ -98,7 +98,7 @@ class CartApi {
             }
           })
         );
-        
+
         return {
           ...response.data,
           cart: {
@@ -107,7 +107,7 @@ class CartApi {
           }
         };
       }
-      
+
       return response.data;
     } catch (error) {
       console.error('Error getting cart with details:', error);
@@ -123,7 +123,7 @@ class CartApi {
         headers['x-guest-session-id'] = guestSessionId;
       }
 
-      const response = await axiosInstance.put(`/cart/items/${productCode}`, 
+      const response = await axiosInstance.put(`/cart/items/${productCode}`,
         { productType, quantity },
         { headers }
       );
@@ -142,10 +142,10 @@ class CartApi {
         headers['x-guest-session-id'] = guestSessionId;
       }
 
-      const response = await axiosInstance.delete(`/cart/items/${productCode}`, 
-        { 
+      const response = await axiosInstance.delete(`/cart/items/${productCode}`,
+        {
           data: { productType },
-          headers 
+          headers
         }
       );
       return response.data;
@@ -168,6 +168,34 @@ class CartApi {
     } catch (error) {
       console.error('Error clearing cart:', error);
       throw new Error(error.response?.data?.message || 'Failed to clear cart');
+    }
+  }
+
+  // Get checkout pricing with actual margin based on benCount
+  // Pass items for direct booking (without cart), or leave empty to use cart items
+  static async getCheckoutPricing(benCount = 1, items = null, guestSessionId = null) {
+    try {
+      const headers = {};
+      if (guestSessionId) {
+        headers['x-guest-session-id'] = guestSessionId;
+      }
+
+      const body = { benCount };
+      if (items && items.length > 0) {
+        body.items = items;
+      }
+
+      const response = await axiosInstance.post('/cart/get-checkout-pricing',
+        body,
+        { headers }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error getting checkout pricing:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Failed to get checkout pricing'
+      };
     }
   }
 

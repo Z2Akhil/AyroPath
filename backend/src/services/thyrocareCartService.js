@@ -175,7 +175,8 @@ class ThyrocareCartService {
    * @param {Object} thyrocareResponse - Thyrocare API response
    * @returns {Object} Adjusted cart items with collection charge info
    */
-  adjustCartPrices(cartItems, thyrocareResponse) {
+  adjustCartPrices(cartItems, thyrocareResponse, options = {}) {
+    const { benCount = 1 } = options;
     if (!thyrocareResponse.success || !thyrocareResponse.data) {
       console.log('⚠️ Using local prices (Thyrocare validation failed)');
 
@@ -227,7 +228,8 @@ class ThyrocareCartService {
     );
 
     // Current Passon (Discount we are giving relative to the sent rates)
-    const currentPasson = Math.max(0, sentTotal - ourTotalSelling);
+    // Must multiply by benCount since Thyrocare margin is for all beneficiaries
+    const currentPasson = Math.max(0, sentTotal - ourTotalSelling) * benCount;
 
     // Detect collection charge (₹200 when product total < ₹300)
     const COLLECTION_CHARGE = 200;
@@ -435,7 +437,7 @@ class ThyrocareCartService {
       const validationResult = await this.validateCartWithThyrocare(cartItems, options);
 
       // Adjust prices based on Thyrocare response
-      const adjustmentResult = this.adjustCartPrices(cartItems, validationResult);
+      const adjustmentResult = this.adjustCartPrices(cartItems, validationResult, options);
 
       return {
         success: true,

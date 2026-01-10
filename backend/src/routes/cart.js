@@ -907,6 +907,186 @@ router.delete('/', optionalAuth, async (req, res) => {
   }
 });
 
+// Get checkout pricing with actual margin based on benCount
+// Accepts optional 'items' array for direct booking (without cart)
+router.post('/get-checkout-pricing', optionalAuth, async (req, res) => {
+  try {
+    const { benCount = 1, items: directItems } = req.body;
+    const userId = req.user?._id;
+    const guestSessionId = req.headers['x-guest-session-id'] || req.cookies?.guestSessionId;
+
+    console.log('💰 Getting checkout pricing:', {
+      userId: userId || 'guest',
+      benCount,
+      directBooking: !!directItems
+    });
+
+    let itemsToPrice = [];
+
+    // If direct items provided (booking from package page), fetch product details
+    if (directItems && directItems.length > 0) {
+      // Fetch full product details for direct items
+      for (const item of directItems) {
+        let product = null;
+        if (item.productType === 'TEST') {
+          product = await Test.findOne({ code: item.productCode });
+        } else if (item.productType === 'PROFILE' || item.productType === 'POP') {
+          product = await Profile.findOne({ code: item.productCode });
+        } else if (item.productType === 'OFFER') {
+          product = await Offer.findOne({ code: item.productCode });
+        }
+
+        if (product) {
+          const combinedData = product.getCombinedData ? product.getCombinedData() : product;
+          itemsToPrice.push({
+            productCode: item.productCode,
+            productType: item.productType,
+            name: combinedData.name || item.name,
+            quantity: item.quantity || 1,
+            originalPrice: combinedData.originalPrice || combinedData.rate?.b2C || combinedData.rate?.offerRate || 0,
+            sellingPrice: combinedData.sellingPrice || combinedData.originalPrice || 0,
+            thyrocareRate: combinedData.originalPrice || combinedData.rate?.b2C || combinedData.rate?.offerRate || 0,
+            discount: combinedData.discount || 0
+          });
+        }
+      }
+    } else {
+      // Fall back to cart items
+      const cart = await Cart.findByUserOrGuest(userId, guestSessionId);
+
+      if (!cart || cart.items.length === 0) {
+        return res.json({
+          success: true,
+          originalTotal: 0,
+          totalDiscount: 0,
+          finalTotal: 0,
+          collectionCharge: 0,
+          grandTotal: 0,
+          marginAdjusted: false,
+          items: []
+        });
+      }
+
+      // Refresh cart prices from product data
+      await refreshCartPrices(cart);
+      await cart.save();
+      itemsToPrice = cart.items;
+    }
+
+    if (itemsToPrice.length === 0) {
+      return res.json({
+        success: true,
+        originalTotal: 0,
+        totalDiscount: 0,
+        finalTotal: 0,
+        collectionCharge: 0,
+        grandTotal: 0,
+        marginAdjusted: false,
+        items: []
+      });
+    }
+
+    // Call Thyrocare API with benCount to get actual margin
+    const validationResult = await thyrocareCartService.validateAndAdjustCart(
+      itemsToPrice,
+      { benCount }
+    );
+
+    // Calculate original total (B2C prices)
+    const originalTotal = itemsToPrice.reduce((sum, item) =>
+      sum + (item.originalPrice * item.quantity * benCount), 0
+    );
+
+    // Get the actual margin from Thyrocare response (ensure it's a number)
+    const thyrocareMargin = parseFloat(validationResult.thyrocareResponse?.margin) || 0;
+
+    // Calculate total admin discount requested
+    const totalAdminDiscount = itemsToPrice.reduce((sum, item) =>
+      sum + ((item.discount || 0) * item.quantity * benCount), 0
+    );
+
+    // Calculate final prices with margin-aware discount
+    // If total admin discount exceeds thyrocare margin, we need to reduce proportionally
+    let marginAdjusted = false;
+    const discountRatio = totalAdminDiscount > thyrocareMargin && thyrocareMargin > 0
+      ? thyrocareMargin / totalAdminDiscount
+      : 1;
+
+    if (discountRatio < 1) {
+      marginAdjusted = true;
+    }
+
+    const adjustedItems = itemsToPrice.map(item => {
+      const adminDiscount = item.discount || 0; // Admin-set discount per unit
+
+      // Apply proportional reduction if total discount exceeds margin
+      const applicableDiscount = Math.floor(adminDiscount * discountRatio);
+      const finalPrice = item.originalPrice - applicableDiscount;
+
+      return {
+        productCode: item.productCode,
+        productType: item.productType,
+        name: item.name,
+        quantity: item.quantity,
+        originalPrice: item.originalPrice,
+        adminDiscount: adminDiscount,
+        applicableDiscount: applicableDiscount,
+        finalPrice: finalPrice,
+        totalPrice: finalPrice * item.quantity * benCount,
+        marginAdjusted: applicableDiscount < adminDiscount
+      };
+    });
+
+    const finalTotal = adjustedItems.reduce((sum, item) => sum + item.totalPrice, 0);
+    const totalDiscount = originalTotal - finalTotal;
+
+    // Collection charge only applies if final total (after discount) < ₹300
+    const COLLECTION_CHARGE_THRESHOLD = 300;
+    const COLLECTION_CHARGE_AMOUNT = 200;
+    const collectionCharge = finalTotal < COLLECTION_CHARGE_THRESHOLD ? COLLECTION_CHARGE_AMOUNT : 0;
+    const grandTotal = finalTotal + collectionCharge;
+
+    console.log('✅ Checkout pricing calculated:', {
+      benCount,
+      originalTotal,
+      requestedDiscount: totalAdminDiscount,
+      totalDiscount,
+      finalTotal,
+      collectionCharge,
+      collectionChargeApplied: finalTotal < COLLECTION_CHARGE_THRESHOLD,
+      grandTotal,
+      marginAdjusted,
+      thyrocareMargin
+    });
+
+    res.json({
+      success: true,
+      benCount,
+      originalTotal,
+      requestedDiscount: totalAdminDiscount, // n * adminDiscount before cap
+      totalDiscount,  // min(requestedDiscount, margin)
+      finalTotal,
+      collectionCharge,
+      grandTotal,
+      marginAdjusted,
+      thyrocareMargin,
+      items: adjustedItems,
+      thyrocareValidation: validationResult.validationApplied || false,
+      message: marginAdjusted
+        ? 'Discount adjusted based on number of beneficiaries'
+        : 'Full discount applied'
+    });
+
+  } catch (error) {
+    console.error('❌ Error getting checkout pricing:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get checkout pricing',
+      error: error.message
+    });
+  }
+});
+
 // Merge guest cart with user cart (when user logs in)
 router.post('/merge', requiredAuth, async (req, res) => {
   try {
