@@ -254,8 +254,10 @@ const Form = ({ pkgName, priceInfo, pkgId, items }) => {
         }
         showSuccessCard({
           orderId: result.data.orderId,
-          packageName: pkgNames.join(","),
-          amount: (priceInfo.displayPrice * numPersons) + (wantHardcopy ? 75 : 0)
+          packageName: pkgNames.join(", "),
+          amount: checkoutPricing?.grandTotal
+            ? (checkoutPricing.grandTotal + (wantHardcopy ? 75 : 0)).toFixed(2)
+            : ((priceInfo.displayPrice * numPersons) + (wantHardcopy ? 75 : 0)).toFixed(2)
         });
       } else {
         alert(`Order creation failed: ${result.message || "Unknown error"}`);
