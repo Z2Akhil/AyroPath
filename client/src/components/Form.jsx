@@ -133,22 +133,6 @@ const Form = ({ pkgName, priceInfo, pkgId, items }) => {
       setContactInfo(prev => ({ ...prev, [field]: value }));
     }
   };
-  // Derive the packageId for order submission based on types
-  const getOrderPackageId = () => {
-    if (!items) return pkgId;
-
-    if (Array.isArray(pkgId)) {
-      return items.map(item => {
-        const type = (item.productType || item.type)?.toUpperCase();
-        return (type === 'TEST' || type === 'OFFER') ? (item.productCode || item.code) : item.name;
-      });
-    } else {
-      const item = items[0];
-      if (!item) return pkgId;
-      const type = (item.productType || item.type)?.toUpperCase();
-      return (type === 'TEST' || type === 'OFFER') ? (item.productCode || item.code) : item.name;
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -211,7 +195,7 @@ const Form = ({ pkgName, priceInfo, pkgId, items }) => {
 
       // Prepare order data
       const orderData = {
-        packageId: getOrderPackageId(),
+        packageId: pkgId,
         packageName: pkgNames.join(", "),
         packagePrice: priceInfo.displayPrice,
         originalPrice: priceInfo.originalPrice,

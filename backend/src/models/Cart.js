@@ -7,7 +7,7 @@ const cartItemSchema = new mongoose.Schema({
   },
   productType: {
     type: String,
-    enum: ['TEST', 'PROFILE', 'OFFER'],
+    enum: ['TEST', 'PROFILE', 'OFFER', 'POP'],
     required: true
   },
   name: {

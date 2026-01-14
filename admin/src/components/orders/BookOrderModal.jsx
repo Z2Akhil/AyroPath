@@ -167,10 +167,7 @@ const BookOrderModal = ({ user, onClose, onSuccess }) => {
         try {
             const payload = {
                 userId: user._id,
-                packageIds: selectedPackages.map(p => {
-                    const type = p.type?.toUpperCase();
-                    return (type === 'TEST' || type === 'OFFER') ? (p.code || p.Id) : p.name;
-                }),
+                packageIds: selectedPackages.map(p => p.code || p.Id),
                 packageNames: selectedPackages.map(p => p.name),
                 packagePrices: selectedPackages.map(p => ({
                     price: p.sellingPrice || p.price || 0,

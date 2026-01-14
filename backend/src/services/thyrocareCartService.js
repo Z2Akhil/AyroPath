@@ -76,16 +76,15 @@ class ThyrocareCartService {
     const rates = [];
 
     validItems.forEach(item => {
-      let productCode = item.productCode;
+      let productIdentifier = item.productCode;
 
-      // For profiles, we might need to use name instead of code
-      // This needs to be confirmed with business logic
-      if (item.productType === 'PROFILE') {
-        // Try to use name if available, otherwise use code
-        productCode = item.name || item.productCode;
+      // For cart payload: use name for PROFILE and POP, use code for TEST and OFFER
+      // Other Thyrocare API payloads (like booking) use code for all product types
+      if (item.productType === 'PROFILE' || item.productType === 'POP') {
+        productIdentifier = item.name || item.productCode;
       }
 
-      products.push(productCode);
+      products.push(productIdentifier);
       const rate = item.thyrocareRate || item.sellingPrice;
       rates.push(Math.round(rate)); // Round to nearest integer
     });
@@ -400,7 +399,7 @@ class ThyrocareCartService {
     // 3. Check if it's a profile/offer that includes other items
     if (matches.length === 0) {
       const profileOfferMatch = cartItems.find(item =>
-        item.productType === 'PROFILE' || item.productType === 'OFFER'
+        item.productType === 'PROFILE' || item.productType === 'OFFER' || item.productType === 'POP'
       );
       if (profileOfferMatch) matches.push(profileOfferMatch);
     }
