@@ -116,18 +116,18 @@ const getProductDetails = async (productCode, productType) => {
   const combinedData = product.getCombinedData();
 
   // Calculate proper prices based on the actual data structure
-  const originalPrice = combinedData.rate?.b2C || 0;
-  const sellingPrice = combinedData.sellingPrice || combinedData.rate?.offerRate || 0;
-  const discount = originalPrice > sellingPrice ? originalPrice - sellingPrice : 0;
+  const thyrocareRate = combinedData.thyrocareRate || combinedData.rate?.b2C || combinedData.rate?.offerRate || 0;
+  const sellingPrice = combinedData.sellingPrice || thyrocareRate;
+  const discount = Math.max(0, thyrocareRate - sellingPrice);
 
   return {
     productCode: product.code,
     productType: productType,
     name: product.name,
-    originalPrice: originalPrice,
+    originalPrice: thyrocareRate,
     sellingPrice: sellingPrice,
     discount: discount,
-    thyrocareRate: combinedData.thyrocareRate
+    thyrocareRate: thyrocareRate
   };
 };
 
@@ -938,15 +938,19 @@ router.post('/get-checkout-pricing', optionalAuth, async (req, res) => {
 
         if (product) {
           const combinedData = product.getCombinedData ? product.getCombinedData() : product;
+          const thyrocareRate = combinedData.thyrocareRate || combinedData.rate?.b2C || combinedData.rate?.offerRate || 0;
+          const sellingPrice = combinedData.sellingPrice || thyrocareRate;
+          const discount = Math.max(0, thyrocareRate - sellingPrice);
+
           itemsToPrice.push({
             productCode: item.productCode,
             productType: item.productType,
             name: combinedData.name || item.name,
             quantity: item.quantity || 1,
-            originalPrice: combinedData.originalPrice || combinedData.rate?.b2C || combinedData.rate?.offerRate || 0,
-            sellingPrice: combinedData.sellingPrice || combinedData.originalPrice || 0,
-            thyrocareRate: combinedData.originalPrice || combinedData.rate?.b2C || combinedData.rate?.offerRate || 0,
-            discount: combinedData.discount || 0
+            originalPrice: thyrocareRate,
+            sellingPrice: sellingPrice,
+            thyrocareRate: thyrocareRate,
+            discount: discount
           });
         }
       }
