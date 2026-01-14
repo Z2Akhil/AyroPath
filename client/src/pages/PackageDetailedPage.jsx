@@ -1,4 +1,4 @@
-import { AlertCircle, Home, Percent, Share2, ChevronDown, Calendar, CreditCard, CheckCircle, ShoppingCart } from "lucide-react";
+import { AlertCircle, Home, Percent, Share2, ChevronDown, Calendar, CreditCard, CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import Form from "../components/Form.jsx";
@@ -8,7 +8,6 @@ import { useProducts } from "../context/ProductContext";
 import SEO from "../components/SEO.jsx";
 import { slugify } from "../utils/slugify";
 import { useCart } from "../context/CartContext";
-import AddToCartWithValidation from "../components/AddToCartWithValidation.jsx";
 
 const PackageDetailedPage = () => {
   const { slug, type, code } = useParams();
@@ -19,17 +18,6 @@ const PackageDetailedPage = () => {
   const [pkg, setPkg] = useState(null);
   const { cart } = useCart();
 
-  const isInCart = cart?.items?.some(item => item.productCode === pkg?.code);
-
-  const handleAddToCartSuccess = (result) => {
-    console.log('Item added to cart successfully:', result);
-    // You could show a toast or update UI here
-  };
-
-  const handleAddToCartError = (error) => {
-    console.error('Failed to add to cart:', error);
-    // You could show an error toast here
-  };
 
   useEffect(() => {
     if (allProducts.length > 0 && code && type) {
@@ -220,26 +208,6 @@ const PackageDetailedPage = () => {
                     <Share2 className="w-5 h-5" />
                     <span className="font-semibold text-sm">Share</span>
                   </button>
-                  {isInCart ? (
-                    <Link
-                      to="/cart"
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 shadow-xs active:scale-95 bg-emerald-100 text-emerald-700 border border-emerald-200"
-                    >
-                      <ShoppingCart className="w-5 h-5" />
-                      <span className="font-semibold text-sm">Go to Cart</span>
-                    </Link>
-                  ) : (
-                    <AddToCartWithValidation
-                      productCode={pkg.code}
-                      productType={pkg.type}
-                      productName={pkg.name}
-                      quantity={1}
-                      buttonText="Add to Cart"
-                      showIcon={true}
-                      onSuccess={handleAddToCartSuccess}
-                      onError={handleAddToCartError}
-                    />
-                  )}
                 </div>
               </div>
 
