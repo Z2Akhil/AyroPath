@@ -1024,7 +1024,7 @@ router.post('/get-checkout-pricing', optionalAuth, async (req, res) => {
       const adminDiscount = item.discount || 0; // Admin-set discount per unit
 
       // Apply proportional reduction if total discount exceeds margin
-      const applicableDiscount = Math.floor(adminDiscount * discountRatio);
+      const applicableDiscount = Math.round(adminDiscount * discountRatio);
       const finalPrice = item.originalPrice - applicableDiscount;
 
       return {

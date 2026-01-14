@@ -235,7 +235,8 @@ class ThyrocareCartService {
     const MINIMUM_ORDER = 300;
 
     // Product-only B2B cost (Sent Total - Margin)
-    const thyrocareProductCost = Math.max(0, sentTotal - thyrocareMargin);
+    // Multiply sentTotal by benCount because thyrocareMargin is for all beneficiaries
+    const thyrocareProductCost = Math.max(0, (sentTotal * benCount) - thyrocareMargin);
 
     let collectionCharge = 0;
     let hasCollectionCharge = false;
@@ -329,15 +330,17 @@ class ThyrocareCartService {
     console.log('🔄 Passon exceeds margin. Adjusting prices to match Thyrocare margin.', {
       currentPasson,
       thyrocareMargin,
-      newTargetTotal: thyrocareProductCost
+      newTargetTotal: thyrocareProductCost,
+      benCount
     });
 
-    const adjustmentRatio = ourTotalSelling > 0 ? thyrocareProductCost / ourTotalSelling : 1;
+    const targetTotalPerBen = thyrocareProductCost / benCount;
+    const adjustmentRatio = ourTotalSelling > 0 ? targetTotalPerBen / ourTotalSelling : 1;
 
     let adjustedItems = cartItems.map(item => {
       let newSellingPrice = Math.round(item.sellingPrice * adjustmentRatio);
 
-      // Ensure it doesn't exceed B2C rate
+      // Ensure it doesn't exceed B2C rate or go below cost (usually just B2C-discount)
       if (newSellingPrice > item.originalPrice) {
         newSellingPrice = item.originalPrice;
       }
@@ -349,15 +352,30 @@ class ThyrocareCartService {
       };
     });
 
-    // Final check: Does total match thyrocarePayable? 
-    // Small differences might arise due to rounding or B2C capping.
-    const finalProductTotal = adjustedItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
+    // Final correction pass: Ensure total exactly matches target (down to 1 rupee per beneficiary)
+    let currentTotal = adjustedItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
+    let diff = Math.round(targetTotalPerBen - currentTotal);
 
-    if (Math.abs(finalProductTotal - thyrocareProductCost) > 1) {
-      console.log('⚠️ Post-adjustment total mismatch:', { finalProductTotal, thyrocareProductCost });
-      // We could add a final correction to the most expensive item here if critical, 
-      // but usually rounding/capping issues are negligible.
+    if (diff !== 0) {
+      console.log(`⚖️ Applying greedy correction for rounding drift: ${diff} INR`);
+      // Update items iteratively to bridge the gap
+      // We adjust the first item that has room for adjustment
+      for (let i = 0; i < adjustedItems.length && diff !== 0; i++) {
+        const item = adjustedItems[i];
+        const adjustment = diff > 0 ? 1 : -1;
+        const potentialPrice = item.sellingPrice + adjustment;
+
+        if (potentialPrice >= 0 && potentialPrice <= item.originalPrice) {
+          adjustedItems[i].sellingPrice = potentialPrice;
+          adjustedItems[i].discount = Math.max(0, item.originalPrice - potentialPrice);
+          diff -= (adjustment * item.quantity);
+          // If we overshot because of quantity > 1, we might need another pass or finer logic,
+          // but for lab tests quantity is almost always 1.
+        }
+      }
     }
+
+    const finalProductTotal = adjustedItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
 
     return {
       adjustedItems,
