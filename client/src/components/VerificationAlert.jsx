@@ -3,7 +3,7 @@ import { useUser } from "../context/userContext";
 import { useToast } from "../context/ToastContext";
 import { authService } from "../services/authService";
 import { AlertTriangle, X, CheckCircle, Mail } from "lucide-react";
-
+import { Link } from "react-router-dom";
 const VerificationAlert = () => {
     const { user } = useUser();
     const { success, error: toastError } = useToast();
@@ -56,7 +56,7 @@ const VerificationAlert = () => {
                     <p className="text-sm font-medium">
                         {!user?.email ? (
                             <span>
-                                Your profile is missing an email address. <a href="/profile" className="underline font-bold hover:text-yellow-900">Add Email</a> for better security.
+                                Your profile is missing an email address. <Link to="/account" className="underline font-bold hover:text-yellow-900">Add Email</Link> for better security.
                             </span>
                         ) : (
                             <span>
