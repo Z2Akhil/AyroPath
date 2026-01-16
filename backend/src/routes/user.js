@@ -140,7 +140,8 @@ router.put('/profile', async (req, res) => {
         updateData.email = email.toLowerCase();
         // Reset verification status if email changes
         updateData.emailVerified = false;
-        updateData.isVerified = false; // Reset main verification flag too if needed, depending on business logic
+        // Do NOT reset main isVerified flag as it blocks login (which requires isVerified: true)
+        // updateData.isVerified = false;
       }
     }
     if (mobileNumber !== undefined) updateData.mobileNumber = mobileNumber;
