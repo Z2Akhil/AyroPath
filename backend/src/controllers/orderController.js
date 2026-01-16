@@ -477,7 +477,10 @@ class OrderController {
         contactInfo,
         appointment,
         selectedSlot,
-        reports
+        reports,
+        totalDiscount, // Passon from checkout pricing (with margin capping)
+        collectionCharge,
+        grandTotal
       } = req.body;
 
       // Validate required fields
@@ -500,11 +503,16 @@ class OrderController {
         });
       }
 
-      // Calculate totals
-      const totalOriginalPrice = packagePrices.reduce((sum, p) => sum + (p.originalPrice || p.price || 0), 0);
+      // Calculate totals - use thyrocareRate for originalPrice
+      const totalOriginalPrice = packagePrices.reduce((sum, p) => sum + (p.thyrocareRate || p.originalPrice || p.price || 0), 0);
       const totalSellingPrice = packagePrices.reduce((sum, p) => sum + (p.sellingPrice || p.price || 0), 0);
-      const totalDiscountAmount = totalOriginalPrice - totalSellingPrice;
-      const totalDiscountPercentage = totalOriginalPrice > 0 ? Math.round((totalDiscountAmount / totalOriginalPrice) * 100) : 0;
+
+      // Use passed totalDiscount (from checkout pricing with margin capping) or calculate fallback
+      const calculatedDiscount = totalDiscount !== undefined && totalDiscount !== null
+        ? totalDiscount
+        : (totalOriginalPrice - totalSellingPrice) * beneficiaries.length;
+
+      const totalDiscountPercentage = totalOriginalPrice > 0 ? Math.round((calculatedDiscount / (totalOriginalPrice * beneficiaries.length)) * 100) : 0;
       const combinedName = packageNames.join(' + ');
 
       // Generate order ID
@@ -521,7 +529,7 @@ class OrderController {
           price: totalSellingPrice,
           originalPrice: totalOriginalPrice,
           discountPercentage: totalDiscountPercentage,
-          discountAmount: totalDiscountAmount
+          discountAmount: calculatedDiscount
         },
         beneficiaries: beneficiaries.map(b => ({
           name: b.name,
