@@ -52,7 +52,14 @@ export const CartProvider = ({ children }) => {
     setLoading(true);
     try {
       if (user) {
-        const response = await CartApi.getCart();
+        // Pass guestSessionId to backend to allow merging
+        // Try getting it from state first, then localStorage
+        const currentGuestSessionId = cart?.guestSessionId ||
+          (localStorage.getItem('cart') ? JSON.parse(localStorage.getItem('cart')).guestSessionId : null);
+
+        console.log("Loading cart for user, passing guestSessionId:", currentGuestSessionId);
+
+        const response = await CartApi.getCart(currentGuestSessionId);
         processCartResponse(response);
       } else {
         loadCartFromLocalStorage();
