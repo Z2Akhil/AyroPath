@@ -430,29 +430,13 @@ router.post('/items', optionalAuth, async (req, res) => {
       await refreshCartPrices(cart);
       await cart.save();
 
-      // Validate cart with Thyrocare API for already in cart case too
-      let validationResult = null;
-      try {
-        validationResult = await thyrocareCartService.validateAndAdjustCart(cart.items);
-
-        if (validationResult.success && validationResult.validationApplied) {
-          // Update cart with Thyrocare-validated prices
-          cart.items = validationResult.adjustedItems;
-          await cart.save();
-        }
-      } catch (validationError) {
-        console.error('❌ Thyrocare validation error (already in cart):', validationError);
-      }
-
-      const collectionCharge = validationResult?.collectionCharge || 0;
-      const summary = cart.getSummary(collectionCharge);
+      const summary = cart.getSummary();
 
       console.log('✅ Product already in cart, returning current cart:', {
         productCode,
         productType,
         cartId: cart._id,
         productTotal: summary.productTotal,
-        collectionCharge: summary.collectionCharge,
         totalAmount: summary.totalAmount
       });
 
@@ -462,13 +446,10 @@ router.post('/items', optionalAuth, async (req, res) => {
         cart: summary,
         guestSessionId: cart.guestSessionId,
         alreadyInCart: true,
-        thyrocareValidation: validationResult?.validationApplied || false,
-        thyrocareMessage: validationResult?.message,
-        collectionCharge: summary.collectionCharge,
-        hasCollectionCharge: validationResult?.hasCollectionCharge || false,
-        breakdown: validationResult?.breakdown || {
+        thyrocareValidation: false,
+        breakdown: {
           productTotal: summary.productTotal,
-          collectionCharge: summary.collectionCharge,
+          collectionCharge: 0,
           grandTotal: summary.totalAmount
         }
       });
@@ -483,43 +464,12 @@ router.post('/items', optionalAuth, async (req, res) => {
     await refreshCartPrices(cart);
     await cart.save();
 
-    // 8. Validate cart with Thyrocare API
-    let validationResult = null;
-    try {
-      validationResult = await thyrocareCartService.validateAndAdjustCart(cart.items);
+    const summary = cart.getSummary();
 
-      if (validationResult.success && validationResult.validationApplied) {
-        // Update cart with Thyrocare-validated prices
-        cart.items = validationResult.adjustedItems;
-        await cart.save();
-
-        console.log('✅ Cart validated with Thyrocare:', {
-          validationApplied: true,
-          hasCollectionCharge: validationResult.hasCollectionCharge,
-          collectionCharge: validationResult.collectionCharge,
-          thyrocareResponse: validationResult.thyrocareResponse
-        });
-      } else {
-        console.log('ℹ️ Using local prices (Thyrocare validation not applied):', {
-          validationApplied: false,
-          message: validationResult?.message
-        });
-      }
-    } catch (validationError) {
-      console.error('❌ Thyrocare validation error (using local prices):', validationError);
-      // Continue with local prices if validation fails
-    }
-
-    const collectionCharge = validationResult?.collectionCharge || 0;
-    const summary = cart.getSummary(collectionCharge);
-
-    console.log('✅ Cart returned with validated prices:', {
+    console.log('✅ Cart returned with local prices (Thyrocare validation deferred):', {
       totalItems: summary.totalItems,
       productTotal: summary.productTotal,
-      collectionCharge: summary.collectionCharge,
-      totalAmount: summary.totalAmount,
-      validationApplied: validationResult?.validationApplied || false,
-      hasCollectionCharge: validationResult?.hasCollectionCharge || false
+      totalAmount: summary.totalAmount
     });
 
     res.json({
@@ -528,13 +478,10 @@ router.post('/items', optionalAuth, async (req, res) => {
       cart: summary,
       guestSessionId: cart.guestSessionId,
       validation: duplicateCheckResult || { hasDuplicates: false, action: 'allow' },
-      thyrocareValidation: validationResult?.validationApplied || false,
-      thyrocareMessage: validationResult?.message,
-      collectionCharge: summary.collectionCharge,
-      hasCollectionCharge: validationResult?.hasCollectionCharge || false,
-      breakdown: validationResult?.breakdown || {
+      thyrocareValidation: false,
+      breakdown: {
         productTotal: summary.productTotal,
-        collectionCharge: summary.collectionCharge,
+        collectionCharge: 0,
         grandTotal: summary.totalAmount
       }
     });
@@ -657,45 +604,14 @@ router.post('/items/with-confirmation', optionalAuth, async (req, res) => {
     await refreshCartPrices(cart);
     await cart.save();
 
-    // 7. Validate cart with Thyrocare API
-    let validationResult = null;
-    try {
-      validationResult = await thyrocareCartService.validateAndAdjustCart(cart.items);
+    const summary = cart.getSummary();
 
-      if (validationResult.success && validationResult.validationApplied) {
-        // Update cart with Thyrocare-validated prices
-        cart.items = validationResult.adjustedItems;
-        await cart.save();
-
-        console.log('✅ Cart validated with Thyrocare (with confirmation):', {
-          validationApplied: true,
-          hasCollectionCharge: validationResult.hasCollectionCharge,
-          collectionCharge: validationResult.collectionCharge,
-          thyrocareResponse: validationResult.thyrocareResponse
-        });
-      } else {
-        console.log('ℹ️ Using local prices (Thyrocare validation not applied):', {
-          validationApplied: false,
-          message: validationResult?.message
-        });
-      }
-    } catch (validationError) {
-      console.error('❌ Thyrocare validation error (using local prices):', validationError);
-      // Continue with local prices if validation fails
-    }
-
-    const collectionCharge = validationResult?.collectionCharge || 0;
-    const summary = cart.getSummary(collectionCharge);
-
-    console.log('✅ Item added to cart with confirmation:', {
+    console.log('✅ Item added to cart with confirmation (local prices):', {
       cartId: cart._id,
       removedTests: removeDuplicateTests,
       totalItems: summary.totalItems,
       productTotal: summary.productTotal,
-      collectionCharge: summary.collectionCharge,
-      totalAmount: summary.totalAmount,
-      validationApplied: validationResult?.validationApplied || false,
-      hasCollectionCharge: validationResult?.hasCollectionCharge || false
+      totalAmount: summary.totalAmount
     });
 
     res.json({
@@ -704,13 +620,10 @@ router.post('/items/with-confirmation', optionalAuth, async (req, res) => {
       cart: summary,
       guestSessionId: cart.guestSessionId,
       removedTests: removeDuplicateTests,
-      thyrocareValidation: validationResult?.validationApplied || false,
-      thyrocareMessage: validationResult?.message,
-      collectionCharge: summary.collectionCharge,
-      hasCollectionCharge: validationResult?.hasCollectionCharge || false,
-      breakdown: validationResult?.breakdown || {
+      thyrocareValidation: false,
+      breakdown: {
         productTotal: summary.productTotal,
-        collectionCharge: summary.collectionCharge,
+        collectionCharge: 0,
         grandTotal: summary.totalAmount
       }
     });
@@ -758,38 +671,13 @@ router.put('/items/:productCode', optionalAuth, async (req, res) => {
     await refreshCartPrices(cart);
     await cart.save();
 
-    // Validate cart with Thyrocare API after update
-    let validationResult = null;
-    try {
-      validationResult = await thyrocareCartService.validateAndAdjustCart(cart.items);
+    const summary = cart.getSummary();
 
-      if (validationResult.success && validationResult.validationApplied) {
-        // Update cart with Thyrocare-validated prices
-        cart.items = validationResult.adjustedItems;
-        await cart.save();
-
-        console.log('✅ Cart validated with Thyrocare after update:', {
-          validationApplied: true,
-          hasCollectionCharge: validationResult.hasCollectionCharge,
-          collectionCharge: validationResult.collectionCharge
-        });
-      }
-    } catch (validationError) {
-      console.error('❌ Thyrocare validation error after update:', validationError);
-      // Continue with local prices if validation fails
-    }
-
-    const collectionCharge = validationResult?.collectionCharge || 0;
-    const summary = cart.getSummary(collectionCharge);
-
-    console.log('✅ Cart item updated:', {
+    console.log('✅ Cart item updated (local prices):', {
       cartId: cart._id,
       totalItems: summary.totalItems,
       productTotal: summary.productTotal,
-      collectionCharge: summary.collectionCharge,
-      totalAmount: summary.totalAmount,
-      validationApplied: validationResult?.validationApplied || false,
-      hasCollectionCharge: validationResult?.hasCollectionCharge || false
+      totalAmount: summary.totalAmount
     });
 
     res.json({
@@ -797,13 +685,10 @@ router.put('/items/:productCode', optionalAuth, async (req, res) => {
       message: 'Cart item updated successfully',
       cart: summary,
       guestSessionId: cart.guestSessionId,
-      thyrocareValidation: validationResult?.validationApplied || false,
-      thyrocareMessage: validationResult?.message,
-      collectionCharge: summary.collectionCharge,
-      hasCollectionCharge: validationResult?.hasCollectionCharge || false,
-      breakdown: validationResult?.breakdown || {
+      thyrocareValidation: false,
+      breakdown: {
         productTotal: summary.productTotal,
-        collectionCharge: summary.collectionCharge,
+        collectionCharge: 0,
         grandTotal: summary.totalAmount
       }
     });
