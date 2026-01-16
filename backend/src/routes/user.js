@@ -1,6 +1,6 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
-import {apiRateLimit} from '../middleware/rateLimit.js';
+import { apiRateLimit } from '../middleware/rateLimit.js';
 import User from '../models/User.js';
 import validator from 'validator';
 
@@ -31,7 +31,7 @@ router.get('/dashboard', (req, res) => {
 router.get('/profile', async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -68,9 +68,9 @@ router.put('/profile', async (req, res) => {
     console.log('User Route: PUT /profile - Request received');
     console.log('User Route: Request body:', req.body);
     console.log('User Route: Authenticated user:', req.user ? req.user.mobileNumber : 'No user');
-    
+
     const { firstName, lastName, email, mobileNumber, address, city, state } = req.body;
-    
+
     // Validate email if provided - but email should not be editable as it's primary contact
     if (email && !validator.isEmail(email)) {
       console.log('User Route: Invalid email provided:', email);
@@ -88,11 +88,11 @@ router.put('/profile', async (req, res) => {
           message: 'Invalid mobile number format'
         });
       }
-      
+
       // Check for duplicate mobile number (excluding current user)
-      const existingUser = await User.findOne({ 
-        mobileNumber, 
-        _id: { $ne: req.user._id } 
+      const existingUser = await User.findOne({
+        mobileNumber,
+        _id: { $ne: req.user._id }
       });
       if (existingUser) {
         return res.status(400).json({
@@ -120,15 +120,27 @@ router.put('/profile', async (req, res) => {
     const updateData = {};
     if (firstName !== undefined) updateData.firstName = firstName.trim();
     if (lastName !== undefined) updateData.lastName = lastName.trim();
-    // Email should not be updated as it's primary contact - only validate if provided
+    // Email update logic
     if (email !== undefined) {
-      // Only allow email update if it's the same email (frontend might send it)
       const currentUser = await User.findById(req.user._id);
       if (email !== currentUser.email) {
-        return res.status(400).json({
-          success: false,
-          message: 'Email cannot be changed as it is your primary contact'
+        // partial partial check if email is unique
+        const emailExists = await User.findOne({
+          email: email.toLowerCase(),
+          _id: { $ne: req.user._id }
         });
+
+        if (emailExists) {
+          return res.status(400).json({
+            success: false,
+            message: 'Email already in use by another account'
+          });
+        }
+
+        updateData.email = email.toLowerCase();
+        // Reset verification status if email changes
+        updateData.emailVerified = false;
+        updateData.isVerified = false; // Reset main verification flag too if needed, depending on business logic
       }
     }
     if (mobileNumber !== undefined) updateData.mobileNumber = mobileNumber;
@@ -167,7 +179,7 @@ router.put('/profile', async (req, res) => {
     });
   } catch (error) {
     console.error('Profile update error:', error);
-    
+
     // Handle validation errors from Mongoose
     if (error.name === 'ValidationError') {
       const errors = Object.values(error.errors).map(err => err.message);
@@ -176,7 +188,7 @@ router.put('/profile', async (req, res) => {
         message: errors.join(', ')
       });
     }
-    
+
     // Handle duplicate key error (mobileNumber unique constraint)
     if (error.code === 11000) {
       return res.status(400).json({
@@ -184,7 +196,7 @@ router.put('/profile', async (req, res) => {
         message: 'Mobile number already in use by another account'
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Server error while updating profile'

@@ -58,17 +58,17 @@ const AccountPage = () => {
         setOrdersLoading(true);
         const data = await fetchUserOrders();
         setOrders(data || []);
-        
+
         // Calculate statistics
         const totalOrders = data?.length || 0;
         const totalSpent = data?.reduce((sum, order) => sum + (order.package?.price || 0), 0) || 0;
-        const activeOrders = data?.filter(order => 
+        const activeOrders = data?.filter(order =>
           order.status && !["DONE", "REPORTED", "CANCELLED", "FAILED"].includes(order.status.toUpperCase())
         ).length || 0;
-        const completedOrders = data?.filter(order => 
+        const completedOrders = data?.filter(order =>
           order.status && ["DONE", "REPORTED", "COMPLETED"].includes(order.status.toUpperCase())
         ).length || 0;
-        
+
         setAccountStats({
           totalOrders,
           totalSpent,
@@ -157,7 +157,7 @@ const AccountPage = () => {
             <PackageIcon className="h-8 w-8 text-blue-500" />
           </div>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
@@ -167,7 +167,7 @@ const AccountPage = () => {
             <ShoppingCart className="h-8 w-8 text-green-500" />
           </div>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
@@ -177,7 +177,7 @@ const AccountPage = () => {
             <Clock className="h-8 w-8 text-yellow-500" />
           </div>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
@@ -216,7 +216,7 @@ const AccountPage = () => {
                 </p>
               </div>
             )}
-            
+
             {profileSuccess && (
               <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-green-600 text-sm flex items-center gap-2">
@@ -256,13 +256,14 @@ const AccountPage = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email <span className="text-gray-500 text-xs">(Primary contact - cannot be changed)</span>
+                    Email
                   </label>
                   <input
                     type="email"
                     value={email}
-                    disabled
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50 text-gray-500"
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isSavingProfile}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
 
@@ -469,11 +470,10 @@ const AccountPage = () => {
               {orders.slice(0, 3).map((order) => (
                 <div key={order.orderId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded ${
-                      order.status === 'COMPLETED' ? 'bg-green-100 text-green-600' :
-                      order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-600' :
-                      'bg-gray-100 text-gray-600'
-                    }`}>
+                    <div className={`p-2 rounded ${order.status === 'COMPLETED' ? 'bg-green-100 text-green-600' :
+                        order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-600' :
+                          'bg-gray-100 text-gray-600'
+                      }`}>
                       <PackageIcon className="h-4 w-4" />
                     </div>
                     <div>
@@ -489,7 +489,7 @@ const AccountPage = () => {
                   </div>
                 </div>
               ))}
-              
+
               {orders.length === 0 && (
                 <p className="text-gray-500 text-sm text-center py-4">No recent activity</p>
               )}
