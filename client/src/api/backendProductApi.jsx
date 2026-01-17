@@ -1,23 +1,34 @@
 import { axiosInstance } from "./axiosInstance";
 
 /**
- * Fetch products from our backend API
+ * Fetch products from our backend API with optional pagination
  * @param {string} productType - "ALL", "TESTS", "PROFILE", "OFFER"
- * @returns {Promise<Object[]>} - Array of products with enhanced data
+ * @param {Object} options - Pagination options { limit, skip }
+ * @returns {Promise<Object>} - { products, totalCount, hasMore }
  */
-export const getProductsFromBackend = async (productType) => {
+export const getProductsFromBackend = async (productType, options = {}) => {
   try {
-    const response = await axiosInstance.get(`/client/products?type=${productType}`);
+    const { limit, skip } = options;
+    let url = `/client/products?type=${productType}`;
+
+    if (limit) url += `&limit=${limit}`;
+    if (skip) url += `&skip=${skip}`;
+
+    const response = await axiosInstance.get(url);
 
     if (response.data.success) {
-      return response.data.products || [];
+      return {
+        products: response.data.products || [],
+        totalCount: response.data.totalCount || 0,
+        hasMore: response.data.hasMore || false
+      };
     } else {
       console.warn("⚠️ Unexpected API response:", response.data);
-      return [];
+      return { products: [], totalCount: 0, hasMore: false };
     }
   } catch (error) {
     console.error("Error fetching products from backend:", error);
-    return [];
+    return { products: [], totalCount: 0, hasMore: false };
   }
 };
 
@@ -75,16 +86,16 @@ export const getProductDisplayPrice = (product) => {
 
   // Use sellingPrice if available and lower than ThyroCare price
   let thyrocarePrice = 0;
-  if(product.type==='OFFER'){
-    thyrocarePrice=product.rate?.offerRate || 0;
-  }else{
-    thyrocarePrice=product.rate?.b2C || 0;
+  if (product.type === 'OFFER') {
+    thyrocarePrice = product.rate?.offerRate || 0;
+  } else {
+    thyrocarePrice = product.rate?.b2C || 0;
   }
 
   const sellingPrice = product.sellingPrice || thyrocarePrice;
-  const discountAmount=thyrocarePrice-sellingPrice;
+  const discountAmount = thyrocarePrice - sellingPrice;
   const hasDiscount = sellingPrice < thyrocarePrice && thyrocarePrice > 0;
-  const discountPercentage = hasDiscount 
+  const discountPercentage = hasDiscount
     ? Math.round(((thyrocarePrice - sellingPrice) / thyrocarePrice) * 100)
     : 0;
 

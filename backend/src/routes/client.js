@@ -11,52 +11,95 @@ const router = express.Router();
 const THYROCARE_BASE_URL = process.env.THYROCARE_API_URL || 'https://thyrocare-api.com';
 
 /**
- * Get all products for client
+ * Get products for client with optional pagination
  * @param {string} type - "ALL", "TESTS", "PROFILE", "OFFER"
+ * @param {number} limit - Optional limit for number of products per type
+ * @param {number} skip - Optional skip for pagination
  */
 router.get('/products', async (req, res) => {
   try {
-    const { type = 'ALL' } = req.query;
+    const { type = 'ALL', limit, skip } = req.query;
     const productType = type.toUpperCase();
 
+    // Parse pagination params
+    const limitNum = limit ? parseInt(limit, 10) : null;
+    const skipNum = skip ? parseInt(skip, 10) : 0;
+
     let products = [];
+    let totalCount = 0;
+
+    // Helper to apply pagination to a query
+    const applyPagination = (query) => {
+      let q = query.skip(skipNum);
+      if (limitNum) {
+        q = q.limit(limitNum);
+      }
+      return q;
+    };
 
     switch (productType) {
       case 'TESTS':
-        const tests = await Test.find({ isActive: true });
+        totalCount = await Test.countDocuments({ isActive: true });
+        const tests = await applyPagination(Test.find({ isActive: true }));
         products = tests.map(test => test.getCombinedData());
         break;
 
       case 'PROFILE':
-        const profiles = await Profile.find({ isActive: true });
+        totalCount = await Profile.countDocuments({ isActive: true });
+        const profiles = await applyPagination(Profile.find({ isActive: true }));
         products = profiles.map(profile => profile.getCombinedData());
         break;
 
       case 'OFFER':
-        const offers = await Offer.find({ isActive: true });
+        totalCount = await Offer.countDocuments({ isActive: true });
+        const offers = await applyPagination(Offer.find({ isActive: true }));
         products = offers.map(offer => offer.getCombinedData());
         break;
 
       case 'ALL':
       default:
-        const [allTests, allProfiles, allOffers] = await Promise.all([
-          Test.find({ isActive: true }),
-          Profile.find({ isActive: true }),
-          Offer.find({ isActive: true })
-        ]);
+        // For ALL with pagination, we need to fetch limited items from each type
+        if (limitNum) {
+          const perTypeLimit = Math.ceil(limitNum / 3); // Divide limit among 3 types
+          const [allTests, allProfiles, allOffers, testCount, profileCount, offerCount] = await Promise.all([
+            Test.find({ isActive: true }).skip(skipNum).limit(perTypeLimit),
+            Profile.find({ isActive: true }).skip(skipNum).limit(perTypeLimit),
+            Offer.find({ isActive: true }).skip(skipNum).limit(perTypeLimit),
+            Test.countDocuments({ isActive: true }),
+            Profile.countDocuments({ isActive: true }),
+            Offer.countDocuments({ isActive: true })
+          ]);
 
-        products = [
-          ...allTests.map(test => test.getCombinedData()),
-          ...allProfiles.map(profile => profile.getCombinedData()),
-          ...allOffers.map(offer => offer.getCombinedData())
-        ];
+          totalCount = testCount + profileCount + offerCount;
+          products = [
+            ...allOffers.map(offer => offer.getCombinedData()),
+            ...allProfiles.map(profile => profile.getCombinedData()),
+            ...allTests.map(test => test.getCombinedData())
+          ];
+        } else {
+          // No pagination - fetch all
+          const [allTests, allProfiles, allOffers] = await Promise.all([
+            Test.find({ isActive: true }),
+            Profile.find({ isActive: true }),
+            Offer.find({ isActive: true })
+          ]);
+
+          products = [
+            ...allOffers.map(offer => offer.getCombinedData()),
+            ...allProfiles.map(profile => profile.getCombinedData()),
+            ...allTests.map(test => test.getCombinedData())
+          ];
+          totalCount = products.length;
+        }
         break;
     }
 
     res.json({
       success: true,
       products,
-      count: products.length
+      count: products.length,
+      totalCount,
+      hasMore: totalCount > (skipNum + products.length)
     });
 
   } catch (error) {
