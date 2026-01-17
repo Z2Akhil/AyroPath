@@ -69,7 +69,7 @@ const Hero = () => {
           decoding="async"
         />
       </div>
-      <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
     </div>
   );
 };
