@@ -65,7 +65,13 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use("/api", rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
+app.use("/api", rateLimit({
+  windowMs: parseInt(process.env.API_RATE_LIMIT_WINDOW) || 15 * 60 * 1000, // Default: 15 minutes
+  max: parseInt(process.env.API_RATE_LIMIT_MAX) || 300, // Default: 300 requests per window
+  message: { success: false, message: "Too many requests. Please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+}));
 
 // --- SEO Routes (before API routes to handle /robots.txt and /sitemap.xml) ---
 app.use("/", seoRouter);
