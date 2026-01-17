@@ -24,6 +24,7 @@ services:
       - THYROCARE_PASSWORD=${THYROCARE_PASSWORD}
       - OTP_RATE_LIMIT_WINDOW=${OTP_RATE_LIMIT_WINDOW}
       - OTP_RATE_LIMIT_MAX=${OTP_RATE_LIMIT_MAX}
+      - CLIENT_URL=${CLIENT_URL}
     networks:
       - ayropath-network
     healthcheck:
