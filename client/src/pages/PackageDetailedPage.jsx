@@ -1,5 +1,5 @@
 import { AlertCircle, Home, Percent, Share2, ChevronDown, Calendar, CreditCard, CheckCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import Form from "../components/Form.jsx";
 import { getProductDisplayPrice } from "../api/backendProductApi";
@@ -17,6 +17,12 @@ const PackageDetailedPage = () => {
   const [openCategory, setOpenCategory] = useState(new Set());
   const [pkg, setPkg] = useState(null);
   const { cart } = useCart();
+
+  // Memoize items to prevent unnecessary re-renders of Form component
+  const formItems = useMemo(() => {
+    if (!pkg) return [];
+    return [{ productCode: pkg.code, productType: pkg.type, name: pkg.name }];
+  }, [pkg]);
 
 
   useEffect(() => {
@@ -298,7 +304,7 @@ const PackageDetailedPage = () => {
               pkgName={pkg.name}
               priceInfo={priceInfo}
               pkgId={pkg.code}
-              items={[{ productCode: pkg.code, productType: pkg.type, name: pkg.name }]}
+              items={formItems}
             />
           </div>
         </div>
