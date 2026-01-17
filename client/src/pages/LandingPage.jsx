@@ -13,7 +13,7 @@ const LandingPage = () => {
     "name": "Ayropath",
     "url": "https://ayropath.com",
     "description": "Ayropath is a trusted platform to book medical tests, blood tests and health packages powered by Thyrocare across India.",
-    "logo": "https://ayropath.com/logo.webp",
+    "logo": "https://ayropath.com/logo-240.webp",
     "image": "https://ayropath.com/og-image.webp",
     "areaServed": "India",
     "brand": {

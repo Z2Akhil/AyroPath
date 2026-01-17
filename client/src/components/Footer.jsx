@@ -10,7 +10,9 @@ export default function Footer() {
   const toggleSection = (section) => {
     setOpenSection(openSection === section ? null : section);
   };
-
+ const LOGO_1X = './logo-120.webp';   // 120×120
+ const LOGO_2X = './logo-240.webp';   // 240×240
+ 
   if (loading) {
     return (
       <footer className="bg-gray-900 text-white">
@@ -51,8 +53,7 @@ export default function Footer() {
   if (!settings) return <p className="text-center py-8 text-gray-500">No settings available</p>;
 
   const { logo, email, helplineNumber, socialMedia } = settings;
-
-  const logoImage = !imgError && settings?.logo ? settings.logo : "./logo.webp";
+  const logoImage = !imgError && settings?.logo ? settings.logo : LOGO_1X;
   return (
     <footer className="bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -63,12 +64,14 @@ export default function Footer() {
             <div className="flex items-center gap-3">
               <img
                 src={logoImage}
-                srcSet={`${logoImage} 1x, ${logoImage} 2x`}
+                srcSet={`${LOGO_1X} 1x, ${LOGO_2X} 2x`}
                 alt="Ayropath Company Logo"
                 onError={() => setImgError(true)}
                 className="w-10 h-10 object-contain rounded-full"
                 loading="lazy"
                 decoding="async"
+                width="40"
+                height="40"
               />
 
               <div>

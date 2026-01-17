@@ -29,19 +29,27 @@ const LogoSkeleton = () => (
 );
 
 /* ---------- Logo Component ---------- */
+const LOGO_1X = './logo-120.webp';   // 120×120
+const LOGO_2X = './logo-240.webp';   // 240×240
+
+const THYRO_1X = './Thyrocare-240.webp'; // 240×82
+const THYRO_2X = './Thyrocare-480.webp'; // 480×164
+
 const Logo = ({ logo, loading }) => {
   const [imgError, setImgError] = useState(false);
-
   if (loading) return <LogoSkeleton />;
 
-  const logoSrc = !imgError && logo ? logo : "./logo.webp";
+  const logoSrc = !imgError && logo ? logo : LOGO_1X;
 
   return (
-    <Link to="/" className="flex items-center  group cursor-pointer" aria-label="Ayropath Home">
+    <Link to="/" className="flex items-center group cursor-pointer" aria-label="Ayropath Home">
+      {/* COMPANY LOGO */}
       <div className="flex items-center gap-2">
         <img
           src={logoSrc}
-          srcSet={`${logoSrc} 1x, ${logoSrc} 2x`}
+          srcSet={`${LOGO_1X} 1x, ${LOGO_2X} 2x`}
+          width="120"
+          height="120"
           alt="Company Logo"
           className="w-15 h-15 object-contain rounded-full"
           onError={() => setImgError(true)}
@@ -49,10 +57,14 @@ const Logo = ({ logo, loading }) => {
           decoding="async"
         />
       </div>
-      <div className="leading-tight ">
+
+      {/* THYROCARE BADGE */}
+      <div className="leading-tight">
         <img
-          src="/Thyrocare.webp"
-          srcSet="/Thyrocare.webp 1x, /Thyrocare.webp 2x"
+          src={THYRO_1X}
+          srcSet={`${THYRO_1X} 1x, ${THYRO_2X} 2x`}
+          width="240"
+          height="82"
           alt="In association with ThyroCare"
           className="h-30 w-30 object-contain mt-1"
           loading="eager"
