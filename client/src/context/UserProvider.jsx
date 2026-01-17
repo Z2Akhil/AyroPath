@@ -351,6 +351,40 @@ export const UserProvider = ({ children }) => {
   };
 
   // Check required user info
+  // Fetch latest profile from backend
+  const fetchProfile = async () => {
+    try {
+      if (!localStorage.getItem('authToken')) return; // Don't fetch if no token
+
+      const response = await authService.getProfile();
+      if (response.success && response.user) {
+        const userData = {
+          ...user, // Keep existing fields
+          ...response.user,
+          // Ensure name is present
+          name: `${response.user.firstName || ''} ${response.user.lastName || ''}`.trim() || response.user.email || response.user.mobileNumber
+        };
+
+        setUser(userData);
+        localStorage.setItem("user", JSON.stringify(userData));
+        console.log('Profile refreshed:', userData);
+        return userData;
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      // Don't logout on profile fetch error, just log it. 
+      // It might be a network error, not necessarily invalid token.
+    }
+  };
+
+  // Manually update local user state (e.g. after verification)
+  const updateUserLocally = (updates) => {
+    if (!user) return;
+    const updatedUser = { ...user, ...updates };
+    setUser(updatedUser);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+  };
+
   const hasCompleteContactInfo = () => {
     if (!user) return false;
 
@@ -382,6 +416,8 @@ export const UserProvider = ({ children }) => {
     forgotPasswordEmail,
     resetPasswordEmail,
     updateProfile,
+    fetchProfile,
+    updateUserLocally,
     hasCompleteContactInfo,
   };
 

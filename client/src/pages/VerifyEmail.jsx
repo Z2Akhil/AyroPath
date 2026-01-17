@@ -1,44 +1,87 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { axiosInstance } from '../api/axiosInstance';
+import { useUser } from '../context/userContext';
 import { CheckCircle, XCircle, ArrowRight } from 'lucide-react';
+
+// Global cache to store verification promises
+// This ensures that even if the component unmounts/remounts (Strict Mode),
+// the exact same network request is reused and the result is shared.
+const verificationCache = new Map();
 
 const VerifyEmail = () => {
     const { token: pathToken } = useParams();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const { updateUserLocally } = useUser();
+
     const [status, setStatus] = useState('verifying'); // verifying, success, error
     const [message, setMessage] = useState('Verifying your email...');
 
+    // Get token from path or query params
     const token = pathToken || searchParams.get('token');
 
     useEffect(() => {
+        if (!token) {
+            setStatus('error');
+            setMessage('Invalid verification link.');
+            return;
+        }
+
         const verifyToken = async () => {
-            if (!token) {
-                setStatus('error');
-                setMessage('Invalid verification link.');
-                return;
+            // Check if we already have a promise for this token
+            if (!verificationCache.has(token)) {
+                // Create the request promise and cache it
+                const promise = axiosInstance.get(`/auth/verify-email/${token}`)
+                    .then(response => {
+                        if (response.data.success) {
+                            return {
+                                status: 'success',
+                                message: response.data.message || 'Email verified successfully!',
+                                shouldUpdateUser: true
+                            };
+                        } else {
+                            throw new Error(response.data.message || 'Verification failed');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Verification error:', error);
+                        const errorMessage = error.response?.data?.message || 'Verification failed. The link may be invalid or expired.';
+
+                        // Treat "already verified" as success
+                        if (errorMessage.toLowerCase().includes("already verified")) {
+                            return {
+                                status: 'success',
+                                message: 'Email is already verified!',
+                                shouldUpdateUser: true
+                            };
+                        }
+
+                        return { status: 'error', message: errorMessage };
+                    });
+
+                verificationCache.set(token, promise);
             }
 
+            // Await the shared promise (whether created by us or a previous instance)
             try {
-                // Find the right URL. backend auth.js has router.get("/verify-email/:token", ...)
-                const response = await axiosInstance.get(`/auth/verify-email/${token}`);
+                const result = await verificationCache.get(token);
 
-                if (response.data.success) {
-                    setStatus('success');
-                    setMessage(response.data.message || 'Email verified successfully!');
-                } else {
-                    throw new Error(response.data.message || 'Verification failed');
+                setStatus(result.status);
+                setMessage(result.message);
+
+                if (result.shouldUpdateUser) {
+                    updateUserLocally({ emailVerified: true });
                 }
-            } catch (error) {
-                console.error('Verification error:', error);
+            } catch (err) {
                 setStatus('error');
-                setMessage(error.response?.data?.message || 'Verification failed. The link may be invalid or expired.');
+                setMessage('An unexpected error occurred.');
             }
         };
 
         verifyToken();
-    }, [token]);
+
+    }, [token, updateUserLocally]);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { useUser } from "../context/userContext";
 import { useToast } from "../context/ToastContext";
 import { authService } from "../services/authService";
-import { AlertTriangle, X, CheckCircle, Mail } from "lucide-react";
+import { AlertTriangle, X, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const VerificationAlert = () => {

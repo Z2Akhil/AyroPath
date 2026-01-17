@@ -26,7 +26,7 @@ export const authService = {
       lastName,
       mobileNumber,
       password,
-      email, 
+      email,
     });
     return response.data;
   },
