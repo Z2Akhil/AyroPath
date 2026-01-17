@@ -1,15 +1,13 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { Search, Loader2, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getProducts } from "../api/productApi";
+import { useProducts } from "../context/ProductContext";
 import { useCart } from "../context/CartContext";
 import { slugify } from "../utils/slugify";
 
 const SearchBar = () => {
     const [query, setQuery] = useState("");
-    const [allProducts, setAllProducts] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
-    const [loading, setLoading] = useState(true);
     const [highlightIndex, setHighlightIndex] = useState(0);
 
     const navigate = useNavigate();
@@ -18,19 +16,8 @@ const SearchBar = () => {
 
     const { cart, addToCart, removeFromCart } = useCart();
 
-    useEffect(() => {
-        (async () => {
-            try {
-                const data = await getProducts("ALL");
-                const unique = Array.from(new Map(data.map((p) => [`${p.code}-${p.type}`, p])).values());
-                setAllProducts(unique || []);
-            } catch (err) {
-                console.error("Failed to fetch products:", err);
-            } finally {
-                setLoading(false);
-            }
-        })();
-    }, []);
+    // Use products from shared context instead of fetching separately
+    const { allProducts, loading } = useProducts();
 
     // Close dropdown on outside click
     useEffect(() => {

@@ -29,8 +29,14 @@ export const ProductProvider = ({ children }) => {
 
   // Track if we've done the background fetch
   const backgroundFetchDone = useRef(false);
+  // Guard against StrictMode double-mounting
+  const initialFetchDone = useRef(false);
 
   useEffect(() => {
+    // Prevent double fetch in StrictMode
+    if (initialFetchDone.current) return;
+    initialFetchDone.current = true;
+
     const fetchProducts = async () => {
       try {
         setLoading(true);
