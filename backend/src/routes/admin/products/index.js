@@ -57,7 +57,7 @@ router.post('/products', adminAuth, async (req, res) => {
     // Step 2: Extract products based on type
     let thyrocareProducts = [];
     const master = response.data.master || {};
-    
+
     switch (productType.toUpperCase()) {
       case 'OFFER':
         thyrocareProducts = master.offer || master.offers || master.OFFER || master.OFFERS || [];
@@ -98,7 +98,7 @@ router.post('/products', adminAuth, async (req, res) => {
     const combinedProducts = [];
     let processedCount = 0;
     let errorCount = 0;
-    
+
     for (const thyrocareProduct of thyrocareProducts) {
       try {
         console.log(`Processing product ${processedCount + 1}/${thyrocareProducts.length}:`, {
@@ -106,9 +106,9 @@ router.post('/products', adminAuth, async (req, res) => {
           name: thyrocareProduct.name,
           type: thyrocareProduct.type
         });
-        
+
         let product;
-        
+
         // Use the appropriate model based on product type
         switch (thyrocareProduct.type?.toUpperCase()) {
           case 'TEST':
@@ -127,19 +127,19 @@ router.post('/products', adminAuth, async (req, res) => {
             console.warn(`Unknown product type: ${thyrocareProduct.type}, defaulting to Test model`);
             product = await Test.findOrCreateFromThyroCare(thyrocareProduct);
         }
-        
+
         // Ensure product is marked as active since it's in ThyroCare
         if (!product.isActive) {
           product.isActive = true;
           await product.save();
         }
-        
+
         // Get combined data for frontend
         const combinedData = product.getCombinedData();
         combinedData.isInThyrocare = true; // Flag to indicate product is in ThyroCare
         combinedProducts.push(combinedData);
         processedCount++;
-        
+
         console.log(`Successfully processed product: ${thyrocareProduct.code}`);
       } catch (error) {
         console.error(`Error processing product ${thyrocareProduct.code}:`, error);
@@ -154,11 +154,11 @@ router.post('/products', adminAuth, async (req, res) => {
     // Step 5: Find orphaned products (in DB but not in ThyroCare)
     let orphanedProducts = [];
     let orphanedCount = 0;
-    
+
     // Determine which models to check based on productType
     const modelsToCheck = [];
     const productTypeUpper = productType.toUpperCase();
-    
+
     if (productTypeUpper === 'ALL') {
       modelsToCheck.push({ model: Test, type: 'TEST' });
       modelsToCheck.push({ model: Profile, type: 'PROFILE' });
@@ -170,7 +170,7 @@ router.post('/products', adminAuth, async (req, res) => {
     } else if (productTypeUpper === 'OFFER') {
       modelsToCheck.push({ model: Offer, type: 'OFFER' });
     }
-    
+
     // Find orphaned products in each model
     for (const { model, type } of modelsToCheck) {
       try {
@@ -179,34 +179,34 @@ router.post('/products', adminAuth, async (req, res) => {
         if (thyrocareProductCodes.size > 0) {
           query.code = { $nin: Array.from(thyrocareProductCodes) };
         }
-        
+
         const orphaned = await model.find(query);
-        
+
         for (const product of orphaned) {
           // Mark as inactive if not already
           if (product.isActive) {
             product.isActive = false;
             await product.save();
           }
-          
+
           // Get combined data for frontend
           const combinedData = product.getCombinedData();
           combinedData.isInThyrocare = false; // Flag to indicate product is NOT in ThyroCare
           orphanedProducts.push(combinedData);
           orphanedCount++;
         }
-        
+
         console.log(`Found ${orphaned.length} orphaned ${type} products`);
       } catch (error) {
         console.error(`Error finding orphaned ${type} products:`, error);
       }
     }
-    
+
     console.log(`Total orphaned products: ${orphanedCount}`);
 
     // Step 6: Combine both active and orphaned products
     const allProducts = [...combinedProducts, ...orphanedProducts];
-    
+
     req.adminSession.lastProductFetch = new Date();
     await req.adminSession.save();
 
@@ -273,7 +273,7 @@ router.post('/products', adminAuth, async (req, res) => {
         status: error.response.status,
         data: error.response.data
       });
-      
+
       res.status(error.response.status).json({
         success: false,
         error: error.response.data?.response || 'Failed to fetch products'
@@ -308,17 +308,17 @@ router.put('/products/pricing', adminAuth, async (req, res) => {
       });
     }
 
-    console.log('Updating custom pricing:', { 
-      code, 
+    console.log('Updating custom pricing:', {
+      code,
       discount,
       admin: req.admin.name,
-      sessionId: req.adminSession._id 
+      sessionId: req.adminSession._id
     });
 
     // Update custom pricing in database - try each model to find the product
     let updatedProduct;
     let found = false;
-    
+
     // Try Test model first
     try {
       updatedProduct = await Test.updateCustomPricing(code, discount);
@@ -326,7 +326,7 @@ router.put('/products/pricing', adminAuth, async (req, res) => {
     } catch (error) {
       // Product not found in Test model, continue to next model
     }
-    
+
     // Try Profile model if not found
     if (!found) {
       try {
@@ -336,7 +336,7 @@ router.put('/products/pricing', adminAuth, async (req, res) => {
         // Product not found in Profile model, continue to next model
       }
     }
-    
+
     // Try Offer model if not found
     if (!found) {
       try {
@@ -419,16 +419,16 @@ router.put('/products/:code/activate', adminAuth, async (req, res) => {
       });
     }
 
-    console.log('Activating product:', { 
-      code, 
+    console.log('Activating product:', {
+      code,
       admin: req.admin.name,
-      sessionId: req.adminSession._id 
+      sessionId: req.adminSession._id
     });
 
     // Try to find and activate product in each model
     let activatedProduct;
     let found = false;
-    
+
     // Try Test model first
     try {
       const product = await Test.findOne({ code });
@@ -442,7 +442,7 @@ router.put('/products/:code/activate', adminAuth, async (req, res) => {
     } catch (error) {
       // Product not found in Test model, continue to next model
     }
-    
+
     // Try Profile model if not found
     if (!found) {
       try {
@@ -458,7 +458,7 @@ router.put('/products/:code/activate', adminAuth, async (req, res) => {
         // Product not found in Profile model, continue to next model
       }
     }
-    
+
     // Try Offer model if not found
     if (!found) {
       try {
@@ -550,16 +550,16 @@ router.put('/products/:code/deactivate', adminAuth, async (req, res) => {
       });
     }
 
-    console.log('Deactivating product:', { 
-      code, 
+    console.log('Deactivating product:', {
+      code,
       admin: req.admin.name,
-      sessionId: req.adminSession._id 
+      sessionId: req.adminSession._id
     });
 
     // Try to find and deactivate product in each model
     let deactivatedProduct;
     let found = false;
-    
+
     // Try Test model first
     try {
       const product = await Test.findOne({ code });
@@ -573,7 +573,7 @@ router.put('/products/:code/deactivate', adminAuth, async (req, res) => {
     } catch (error) {
       // Product not found in Test model, continue to next model
     }
-    
+
     // Try Profile model if not found
     if (!found) {
       try {
@@ -589,7 +589,7 @@ router.put('/products/:code/deactivate', adminAuth, async (req, res) => {
         // Product not found in Profile model, continue to next model
       }
     }
-    
+
     // Try Offer model if not found
     if (!found) {
       try {
