@@ -56,6 +56,7 @@ export const UserProvider = ({ children }) => {
           lastName: response.user.lastName,
           mobileNumber: response.user.mobileNumber,
           isVerified: response.user.isVerified,
+          emailVerified: response.user.emailVerified,
           name: `${response.user.firstName} ${response.user.lastName}`.trim(),
         };
 
@@ -94,6 +95,7 @@ export const UserProvider = ({ children }) => {
           lastName: userLastName,
           email: response.user.email,
           isVerified: response.user.isVerified,
+          emailVerified: response.user.emailVerified,
           authProvider: response.user.authProvider,
           name: `${userFirstName} ${userLastName}`.trim() || email, // Fallback to email if name is empty
         };
@@ -133,6 +135,7 @@ export const UserProvider = ({ children }) => {
           lastName: userLastName,
           email: response.user.email,
           isVerified: response.user.isVerified,
+          emailVerified: response.user.emailVerified,
           authProvider: response.user.authProvider,
           name: `${userFirstName} ${userLastName}`.trim() || email, // Fallback to email if name is empty
         };
@@ -190,6 +193,7 @@ export const UserProvider = ({ children }) => {
           mobileNumber: response.user.mobileNumber,
           email: response.user.email,
           isVerified: response.user.isVerified,
+          emailVerified: response.user.emailVerified,
           name: `${firstName} ${lastName}`.trim() || identifier, // Fallback to identifier if name is empty
         };
 
@@ -230,6 +234,7 @@ export const UserProvider = ({ children }) => {
           lastName: lastName,
           email: response.user.email,
           isVerified: response.user.isVerified,
+          emailVerified: response.user.emailVerified,
           authProvider: response.user.authProvider,
           name: `${firstName} ${lastName}`.trim() || email, // Fallback to email if name is empty
         };

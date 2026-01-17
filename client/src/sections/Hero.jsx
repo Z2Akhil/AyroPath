@@ -28,7 +28,7 @@ const Hero = () => {
 
   // Decide which image to show
   const heroImage =
-    !imgError && settings?.heroImage ? settings.heroImage : "/hero.png";
+    !imgError && settings?.heroImage ? settings.heroImage : "/hero.webp";
 
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden md:flex mb-12 hero-card transition-standard">

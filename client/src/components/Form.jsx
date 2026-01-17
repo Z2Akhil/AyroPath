@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { checkPincode } from "../api/pinCodeAvailabilityApi";
 import { getAppointmentSlots } from "../api/appointmentSlotApi";
 import { useUser } from "../context/userContext";
@@ -17,6 +18,8 @@ import AuthModal from "./AuthModal";
 const Form = ({ pkgName, priceInfo, pkgId, items }) => {
   const pkgNames = [].concat(pkgName || []);
   const { user } = useUser();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [numPersons, setNumPersons] = useState(1);
   const [selectedBeneficiaries, setSelectedBeneficiaries] = useState([{ name: "", age: "", gender: "" }]);
   const [pincode, setPincode] = useState("");
@@ -137,6 +140,7 @@ const Form = ({ pkgName, priceInfo, pkgId, items }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Check if user is logged in
     // Check if user is logged in
     if (!user) {
       setShowLoginPrompt(true);

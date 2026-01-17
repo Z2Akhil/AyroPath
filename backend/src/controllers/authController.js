@@ -33,7 +33,7 @@ class AuthController {
 
       // Send OTP via Message Central
       const smsResult = await SMSService.sendOTP(mobileNumber, otp, { purpose });
-      
+
       if (!smsResult.success) {
         return res.status(500).json({
           success: false,
@@ -112,7 +112,7 @@ class AuthController {
 
       // Check if we have a verificationId (Message Central flow)
       const actualVerificationId = verificationId || otpRecord.verificationId;
-      
+
       if (!actualVerificationId) {
         return res.status(400).json({
           success: false,
@@ -122,7 +122,7 @@ class AuthController {
 
       // Use Message Central validation
       const validationResult = await SMSService.validateOTP(actualVerificationId, otp);
-      
+
       if (!validationResult.success) {
         otpRecord.attempts += 1;
         await otpRecord.save();
@@ -154,10 +154,10 @@ class AuthController {
         user:
           purpose === "verification"
             ? {
-                id: user._id,
-                mobileNumber: user.mobileNumber,
-                isVerified: user.isVerified,
-              }
+              id: user._id,
+              mobileNumber: user.mobileNumber,
+              isVerified: user.isVerified,
+            }
             : undefined,
         purpose,
         provider: otpRecord.provider,
@@ -242,7 +242,7 @@ class AuthController {
       // Determine if identifier is mobile number or email
       const isMobileNumber = validator.isMobilePhone(identifier, "any", { strictMode: false });
       const isEmail = validator.isEmail(identifier);
-      
+
       if (!isMobileNumber && !isEmail) {
         return res.status(400).json({
           success: false,
@@ -260,7 +260,7 @@ class AuthController {
 
       // Add verification and active status checks
       query.isVerified = true;
-      
+
       const user = await User.findOne(query).select("+password");
 
       if (!user || !user.isActive) {
@@ -302,6 +302,7 @@ class AuthController {
           mobileNumber: user.mobileNumber,
           email: user.email,
           isVerified: user.isVerified,
+          emailVerified: user.emailVerified,
         },
       });
     } catch (err) {
@@ -333,7 +334,7 @@ class AuthController {
           message: "User not found",
         });
       }
-      
+
       // Generate OTP for password reset
       const otp = OTPGenerator.generateOTP();
       const expiresAt = OTPGenerator.getExpiryTime();
@@ -426,10 +427,10 @@ class AuthController {
 
       // Check if we have a verificationId (Message Central flow)
       const actualVerificationId = verificationId || otpRecord.verificationId;
-      
+
       // Use Message Central validation
       const validationResult = await SMSService.validateOTP(actualVerificationId, otp);
-      
+
       if (!validationResult.success) {
         otpRecord.attempts += 1;
         await otpRecord.save();
@@ -493,13 +494,13 @@ class AuthController {
 
       // Check for existing user (Status must be: Verified Mobile but Incomplete Profile)
       const user = await User.findOne({ mobileNumber });
-      
+
       if (!user) {
-         // Security: Can't register without passing Stage 2 (which creates the user stub)
-         return res.status(400).json({
-           success: false,
-           message: "Mobile number not verified. Please verify OTP first.",
-         });
+        // Security: Can't register without passing Stage 2 (which creates the user stub)
+        return res.status(400).json({
+          success: false,
+          message: "Mobile number not verified. Please verify OTP first.",
+        });
       }
 
       if (user.isVerified && user.password) {
@@ -517,34 +518,34 @@ class AuthController {
 
       // If email is provided, save it and generate verification token
       if (email) {
-          // Check if email unique
-          const emailExists = await User.findOne({ email });
-          if (emailExists && emailExists._id.toString() !== user._id.toString()) {
-              return res.status(400).json({
-                  success: false,
-                  message: "Email is already in use by another account",
-              });
-          }
-          user.email = email;
-          
-          // Generate verification token
-          const verificationToken = crypto.randomBytes(32).toString('hex');
-          user.emailVerificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
-          user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-          
-          await user.save();
-
-          // Send welcome email with verification link
-          const verifyURL = `${req.protocol}://${req.get('host')}/api/v1/auth/verify-email/${verificationToken}`;
-          // Or simpler for frontend handling: `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`
-          // Let's use CLIENT_URL based link
-          const clientVerifyURL = `${process.env.CLIENT_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}`;
-
-          EmailService.sendWelcomeEmail(email, firstName, clientVerifyURL).catch(err => {
-              console.error("Failed to send welcome email:", err);
+        // Check if email unique
+        const emailExists = await User.findOne({ email });
+        if (emailExists && emailExists._id.toString() !== user._id.toString()) {
+          return res.status(400).json({
+            success: false,
+            message: "Email is already in use by another account",
           });
+        }
+        user.email = email;
+
+        // Generate verification token
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        user.emailVerificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
+        user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+
+        await user.save();
+
+        // Send welcome email with verification link
+        const verifyURL = `${req.protocol}://${req.get('host')}/api/v1/auth/verify-email/${verificationToken}`;
+        // Or simpler for frontend handling: `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`
+        // Let's use CLIENT_URL based link
+        const clientVerifyURL = `${process.env.CLIENT_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}`;
+
+        EmailService.sendWelcomeEmail(email, firstName, clientVerifyURL).catch(err => {
+          console.error("Failed to send welcome email:", err);
+        });
       } else {
-         await user.save();
+        await user.save();
       }
 
       const token = jwt.sign(
@@ -566,7 +567,7 @@ class AuthController {
           mobileNumber: user.mobileNumber,
           isVerified: user.isVerified,
           email: user.email,
-          emailVerified: user.emailVerified 
+          emailVerified: user.emailVerified
         },
       });
     } catch (err) {
@@ -639,6 +640,7 @@ class AuthController {
           lastName: user.lastName,
           email: user.email,
           isVerified: user.isVerified,
+          emailVerified: user.emailVerified,
           authProvider: user.authProvider,
         },
       });
@@ -715,6 +717,7 @@ class AuthController {
           lastName: user.lastName,
           email: user.email,
           isVerified: user.isVerified,
+          emailVerified: user.emailVerified,
           authProvider: user.authProvider,
         },
       });
@@ -915,16 +918,16 @@ class AuthController {
       // For browser request (standard link click), redirect to frontend
       // The frontend URL would be: CLIENT_URL/email-verified?status=success
       const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-      
+
       // If the request accepts JSON, return JSON (for API testing)
       if (req.headers.accept && req.headers.accept.includes('application/json')) {
         return res.json({
           success: true,
           message: "Email verified successfully",
           user: {
-             id: user._id, 
-             email: user.email,
-             emailVerified: user.emailVerified 
+            id: user._id,
+            email: user.email,
+            emailVerified: user.emailVerified
           }
         });
       } else {
@@ -970,14 +973,14 @@ class AuthController {
       const verificationToken = crypto.randomBytes(32).toString('hex');
       user.emailVerificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
       user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-      
+
       await user.save();
 
       // Send verification email
       const clientVerifyURL = `${process.env.CLIENT_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}`;
 
       EmailService.sendWelcomeEmail(user.email, user.firstName, clientVerifyURL).catch(err => {
-          console.error("Failed to resend verification email:", err);
+        console.error("Failed to resend verification email:", err);
       });
 
       res.json({
@@ -1009,19 +1012,19 @@ class AuthController {
 
       // Security: Don't reveal if user exists, but if they do and are unverified, send email
       if (user && !user.emailVerified) {
-          // Generate verification token
-          const verificationToken = crypto.randomBytes(32).toString('hex');
-          user.emailVerificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
-          user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-          
-          await user.save();
+        // Generate verification token
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        user.emailVerificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
+        user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
 
-          // Send verification email
-          const clientVerifyURL = `${process.env.CLIENT_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}`;
+        await user.save();
 
-          EmailService.sendWelcomeEmail(user.email, user.firstName, clientVerifyURL).catch(err => {
-              console.error("Failed to resend public verification email:", err);
-          });
+        // Send verification email
+        const clientVerifyURL = `${process.env.CLIENT_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}`;
+
+        EmailService.sendWelcomeEmail(user.email, user.firstName, clientVerifyURL).catch(err => {
+          console.error("Failed to resend public verification email:", err);
+        });
       }
 
       // Always return success to prevent email enumeration
@@ -1050,6 +1053,7 @@ class AuthController {
           mobileNumber: req.user.mobileNumber,
           email: req.user.email,
           isVerified: req.user.isVerified,
+          emailVerified: req.user.emailVerified,
           authProvider: req.user.authProvider,
           createdAt: req.user.createdAt,
         },
@@ -1187,10 +1191,10 @@ class AuthController {
         user:
           purpose === "email_verification"
             ? {
-                id: user._id,
-                email: user.email,
-                isVerified: user.isVerified,
-              }
+              id: user._id,
+              email: user.email,
+              isVerified: user.isVerified,
+            }
             : undefined,
         purpose,
       });

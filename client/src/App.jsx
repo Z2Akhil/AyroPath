@@ -20,6 +20,7 @@ import AccountPage from './pages/AccountPage';
 import CartPage from './pages/CartPage';
 import OrderPage from './pages/OrderPage';
 import OrderHistory from './pages/OrderHistory';
+import VerifyEmail from './pages/VerifyEmail';
 import { OrderSuccessProvider } from './context/OrderSuccessContext';
 import { ScrollToTopProvider } from './context/ScrollToTopProvider';
 
@@ -57,6 +58,8 @@ function App() {
                             <Route path="/order-history" element={<OrderHistory />} />
                             <Route path="/popular-packages" element={<Navigate to="/packages" replace />} />
                             <Route path="/all-tests" element={<Navigate to="/tests" replace />} />
+                            <Route path="/verify-email" element={<VerifyEmail />} />
+                            <Route path="/verify-email/:token" element={<VerifyEmail />} />
                             <Route path="*" element={<Navigate to="/" replace />} />
                           </Routes>
                         </Suspense>

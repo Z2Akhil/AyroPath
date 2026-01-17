@@ -4,29 +4,15 @@ import { useToast } from "../context/ToastContext";
 import { authService } from "../services/authService";
 import { AlertTriangle, X, CheckCircle, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
+
 const VerificationAlert = () => {
     const { user } = useUser();
     const { success, error: toastError } = useToast();
     const [isVisible, setIsVisible] = useState(true);
     const [loading, setLoading] = useState(false);
-
-    // Check if we should show the banner
-    useEffect(() => {
-        // If user is not logged in or is already verified, don't show
-        if (!user || user.emailVerified) {
-            setIsVisible(false);
-            return;
-        }
-
-        // Check if user has an email
-        if (!user.email) {
-            setIsVisible(true);
-            return;
-        }
-
-        // Default to visible for unverified users
-        setIsVisible(true);
-    }, [user]);
+    console.log(user);
+    // Derived state - don't render if verified or no user
+    if (!user || user.emailVerified) return null;
 
     const handleDismiss = () => {
         setIsVisible(false);
@@ -40,7 +26,16 @@ const VerificationAlert = () => {
             setIsVisible(false); // Hide after sending
         } catch (err) {
             console.error(err);
-            toastError(err.response?.data?.message || "Failed to send email");
+            const errorMessage = err.response?.data?.message || "Failed to send email";
+
+            // If already verified, refresh user profile and hide alert
+            if (errorMessage.includes("already verified")) {
+                success("Email is already verified! Updating status...");
+                window.location.reload();
+                return;
+            }
+
+            toastError(errorMessage);
         } finally {
             setLoading(false);
         }
