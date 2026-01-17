@@ -2,39 +2,48 @@ import { useState } from 'react';
 import { ShoppingCart } from 'lucide-react';
 import { useCartValidation } from '../hooks/useCartValidation';
 import ConfirmationDialog from './ConfirmationDialog';
+import AuthModal from './AuthModal';
 import { useUser } from '../context/userContext';
 import { useCart } from '../context/CartContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-const AddToCartWithValidation = ({ 
-  productCode, 
-  productType, 
+const AddToCartWithValidation = ({
+  productCode,
+  productType,
   productName,
   quantity = 1,
   className = '',
   buttonText = 'Add to Cart',
   showIcon = true,
-  onSuccess = () => {},
-  onError = () => {}
+  onSuccess = () => { },
+  onError = () => { }
 }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const { user } = useUser();
   const { refreshCart } = useCart();
-  const { 
-    validationDialog, 
-    closeValidationDialog, 
-    addToCartWithValidation 
+  // const navigate = useNavigate(); // Not needed for popup
+  // const location = useLocation(); // Not needed for popup
+  const {
+    validationDialog,
+    closeValidationDialog,
+    addToCartWithValidation
   } = useCartValidation();
 
   const handleAddToCart = async () => {
+    // FORCE LOGIN: Open Modal if not logged in
+    if (!user) {
+      setAuthOpen(true);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const guestSessionId = !user ? localStorage.getItem('guestSessionId') : null;
       const result = await addToCartWithValidation(
-        productCode, 
-        productType, 
+        productCode,
+        productType,
         productName,
-        quantity, 
-        guestSessionId
+        quantity
       );
 
       if (result.success) {
@@ -104,6 +113,7 @@ const AddToCartWithValidation = ({
         cancelText={validationDialog.cancelText}
         isLoading={isLoading}
       />
+      {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
     </>
   );
 };

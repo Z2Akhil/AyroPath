@@ -238,53 +238,7 @@ router.get('/', optionalAuth, async (req, res) => {
 
     let cart = await Cart.findByUserOrGuest(userId, guestSessionId);
 
-    // If we have a user and a guestSessionId, check for guest cart to merge
-    if (userId && guestSessionId) {
-      const guestCart = await Cart.findOne({ guestSessionId, userId: null, isActive: true });
-
-      if (guestCart && guestCart.items.length > 0) {
-        console.log(`🔀 Merging guest cart (${guestCart._id}) into user cart`);
-
-        // Find or create user cart (explicitly by userId)
-        let userCart = await Cart.findOne({ userId, isActive: true });
-        if (!userCart) {
-          userCart = new Cart({ userId, items: [] });
-        }
-
-        let mergedCount = 0;
-
-        // Merge items
-        for (const guestItem of guestCart.items) {
-          const existingItemIndex = userCart.items.findIndex(
-            ui => ui.productCode === guestItem.productCode && ui.productType === guestItem.productType
-          );
-
-          if (existingItemIndex > -1) {
-            // Item exists, maybe update quantity? 
-            // For now, let's keep user's quantity or add guest's? 
-            // Better to keep user's or sum them up? Let's sum them up but cap at 10
-            let newQty = userCart.items[existingItemIndex].quantity + guestItem.quantity;
-            if (newQty > 10) newQty = 10;
-            userCart.items[existingItemIndex].quantity = newQty;
-          } else {
-            // New item, push it
-            userCart.items.push(guestItem);
-            mergedCount++;
-          }
-        }
-
-        await userCart.save();
-        console.log(`✅ Merged ${mergedCount} new items from guest cart`);
-
-        // Deactivate or clear guest cart
-        guestCart.items = [];
-        guestCart.isActive = false; // Optional: mark as inactive loop
-        await guestCart.save();
-
-        // Use the merged cart
-        cart = userCart;
-      }
-    }
+    /* Merge logic removed - forcing login on frontend instead */
 
     if (!cart) {
       // Create empty cart if none exists (and no merge happened)
