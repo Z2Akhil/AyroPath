@@ -896,7 +896,6 @@ class AuthController {
 
       // Hash token to compare with DB
       const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-
       const user = await User.findOne({
         emailVerificationToken: hashedToken,
         emailVerificationExpires: { $gt: Date.now() },
