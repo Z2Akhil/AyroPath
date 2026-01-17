@@ -58,11 +58,9 @@ const Hero = () => {
         </div>
       </div>
 
-      <div className="md:w-1/2 h-64 md:h-auto min-h-[300px] relative overflow-hidden bg-gray-100 aspect-square md:aspect-auto">
+      <div className="md:w-1/2 h-64 md:h-auto min-h-[300px]">
         <img
           src={heroImage}
-          srcSet={`${heroImage} 800w, ${heroImage} 1200w`}
-          sizes="(max-width: 768px) 100vw, 50vw"
           alt="Lab technician"
           onError={() => setImgError(true)} // fallback trigger
           className="w-full h-full object-cover"
@@ -71,6 +69,7 @@ const Hero = () => {
           decoding="async"
         />
       </div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
     </div>
   );
 };
