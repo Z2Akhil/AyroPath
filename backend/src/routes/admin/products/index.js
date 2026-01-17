@@ -5,6 +5,7 @@ import AdminActivity from '../../../models/AdminActivity.js';
 import Test from '../../../models/Test.js';
 import Profile from '../../../models/Profile.js';
 import Offer from '../../../models/Offer.js';
+import { makeThyrocareRequest } from '../../../utils/thyrocareApiHelper.js';
 
 const router = express.Router();
 
@@ -38,25 +39,28 @@ router.post('/products', adminAuth, async (req, res) => {
       isApiKeyExpired: req.adminSession.isApiKeyExpired()
     });
 
-    // Step 1: Fetch products from ThyroCare API
-    const response = await axios.post(`${thyrocareApiUrl}/api/productsmaster/Products`, {
-      ProductType: productType,
-      ApiKey: req.adminApiKey
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
+    // Step 1: Fetch products from ThyroCare API with retry logic
+    const responseData = await makeThyrocareRequest(async (apiKey) => {
+      const response = await axios.post(`${thyrocareApiUrl}/api/productsmaster/Products`, {
+        ProductType: productType,
+        ApiKey: apiKey
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      return response.data;
     });
 
     console.log('ThyroCare products API response received');
 
-    if (response.data.response !== 'Success') {
-      throw new Error('Invalid response from ThyroCare API: ' + (response.data.response || 'No response field'));
+    if (responseData.response !== 'Success') {
+      throw new Error('Invalid response from ThyroCare API: ' + (responseData.response || 'No response field'));
     }
 
     // Step 2: Extract products based on type
     let thyrocareProducts = [];
-    const master = response.data.master || {};
+    const master = responseData.master || {};
 
     switch (productType.toUpperCase()) {
       case 'OFFER':

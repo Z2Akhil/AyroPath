@@ -1,6 +1,7 @@
 import axios from 'axios';
 import AdminSession from '../models/AdminSession.js';
 import ThyrocareRefreshService from './thyrocareRefreshService.js';
+import { makeThyrocareRequest } from '../utils/thyrocareApiHelper.js';
 
 class ThyrocareCartService {
   constructor() {
@@ -119,37 +120,42 @@ class ThyrocareCartService {
    */
   async validateCartWithThyrocare(cartItems, options = {}) {
     try {
-      const requestBody = await this.buildThyrocareRequest(cartItems, options);
+      // Build request body WITHOUT ApiKey - the retry wrapper will add it
+      const requestBodyBase = await this.buildThyrocareRequestBase(cartItems, options);
 
-      console.log('📞 Calling Thyrocare cart validation API:', {
+      console.log('📞 Calling Thyrocare cart validation API with retry logic:', {
         url: `${this.apiUrl}/api/CartMaster/DSAViewCartDTL`,
         productCount: cartItems.length,
         options
       });
 
-      const response = await axios.post(
-        `${this.apiUrl}/api/CartMaster/DSAViewCartDTL`,
-        requestBody,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          timeout: 10000 // 10 second timeout
-        }
-      );
+      // Use makeThyrocareRequest for automatic retry on auth failure
+      const responseData = await makeThyrocareRequest(async (apiKey) => {
+        const requestBody = { ...requestBodyBase, ApiKey: apiKey };
+        const response = await axios.post(
+          `${this.apiUrl}/api/CartMaster/DSAViewCartDTL`,
+          requestBody,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            timeout: 10000 // 10 second timeout
+          }
+        );
+        return response.data;
+      });
 
       console.log('✅ Thyrocare API response:', {
-        status: response.status,
-        responseId: response.data?.respId,
-        payable: response.data?.payable,
-        margin: response.data?.margin
+        responseId: responseData?.respId,
+        payable: responseData?.payable,
+        margin: responseData?.margin
       });
 
       return {
         success: true,
-        data: response.data,
-        request: requestBody
+        data: responseData,
+        request: requestBodyBase
       };
 
     } catch (error) {
@@ -166,6 +172,61 @@ class ThyrocareCartService {
         status: error.response?.status
       };
     }
+  }
+
+  /**
+   * Build Thyrocare API request body WITHOUT ApiKey (for use with retry wrapper)
+   * @param {Array} cartItems - Array of cart items
+   * @param {Object} options - Additional options (benCount, reportType)
+   * @returns {Promise<Object>} Request body for Thyrocare API (without ApiKey)
+   */
+  async buildThyrocareRequestBase(cartItems, options = {}) {
+    const { benCount = 1, report = 1 } = options;
+
+    // Filter out items with zero or invalid prices
+    const validItems = cartItems.filter(item =>
+      item && item.sellingPrice > 0 && item.productCode
+    );
+
+    if (validItems.length === 0) {
+      throw new Error('No valid items in cart');
+    }
+
+    // Build products and rates arrays
+    const products = [];
+    const rates = [];
+
+    validItems.forEach(item => {
+      let productIdentifier = item.productCode;
+
+      // For cart payload: use name for PROFILE and POP, use code for TEST and OFFER
+      if (item.productType === 'PROFILE' || item.productType === 'POP') {
+        productIdentifier = item.name || item.productCode;
+      }
+
+      products.push(productIdentifier);
+      const rate = item.thyrocareRate || item.sellingPrice;
+      rates.push(Math.round(rate));
+    });
+
+    // Get admin mobile dynamically
+    const adminMobile = await this.getAdminMobile();
+
+    console.log('📦 Building Thyrocare request with rates:', {
+      products: products.join(','),
+      rates: rates.join(','),
+      itemRates: validItems.map(i => ({ code: i.productCode, thyrocareRate: i.thyrocareRate, sellingPrice: i.sellingPrice }))
+    });
+
+    return {
+      Products: products.join(','),
+      Rates: rates.join(','),
+      ClientType: 'PUBLIC',
+      Mobile: adminMobile,
+      BenCount: benCount.toString(),
+      Report: report.toString(),
+      Discount: ''
+    };
   }
 
   /**
