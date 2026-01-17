@@ -37,7 +37,7 @@ const AboutPage = () => {
       {/* ====== IMAGE SECTION ====== */}
       <section className="w-full bg-gray-50 py-10 px-6 text-gray-800 flex justify-center">
         <img
-          src="/labNetwork.png"
+          src="/labNetwork.webp"
           alt="Lab Network Map"
           className="rounded-lg w-full max-w-5xl object-cover shadow-md"
           loading="lazy"

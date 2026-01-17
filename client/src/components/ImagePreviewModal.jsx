@@ -7,7 +7,7 @@ const ImagePreviewModal = ({ pkg, onClose }) => {
   const imgSrc =
     pkg.imageLocation ||
     pkg.imageMaster?.[0]?.imgLocations ||
-    '/packagePic.png';
+    '/packagePic.webp';
 
   return (
     <div
@@ -32,7 +32,7 @@ const ImagePreviewModal = ({ pkg, onClose }) => {
           alt={pkg.name}
           onError={(e) => {
             e.currentTarget.onerror = null;
-            e.currentTarget.src = '/packagePic.png';
+            e.currentTarget.src = '/packagePic.webp';
           }}
           className="w-full h-auto max-h-[80vh] object-contain rounded"
         />

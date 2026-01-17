@@ -19,7 +19,7 @@ const PackageCard = ({ pkg }) => {
   } = pkg;
 
   const navigate = useNavigate();
-  const imgSrc = imageLocation || imageMaster?.[0]?.imgLocations || "/packagePic.png";
+  const imgSrc = imageLocation || imageMaster?.[0]?.imgLocations || "/packagePic.webp";
   const [previewPkg, setPreviewPkg] = useState(null);
   const priceInfo = getProductDisplayPrice(pkg);
   const { cart } = useCart();
@@ -41,7 +41,7 @@ const PackageCard = ({ pkg }) => {
           onClick={() => setPreviewPkg(pkg)}
           onError={(e) => {
             e.currentTarget.onerror = null;
-            e.currentTarget.src = "/packagePic.png";
+            e.currentTarget.src = "/packagePic.webp";
           }}
           className="w-full h-full object-cover cursor-pointer"
         />

@@ -51,8 +51,8 @@ const Logo = ({ logo, loading }) => {
       </div>
       <div className="leading-tight ">
         <img
-          src="/Thyrocare.png"
-          srcSet="/Thyrocare.png 1x, /Thyrocare.png 2x"
+          src="/Thyrocare.webp"
+          srcSet="/Thyrocare.webp 1x, /Thyrocare.webp 2x"
           alt="In association with ThyroCare"
           className="h-30 w-30 object-contain mt-1"
           loading="eager"
