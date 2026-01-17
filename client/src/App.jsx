@@ -21,6 +21,9 @@ import CartPage from './pages/CartPage';
 import OrderPage from './pages/OrderPage';
 import OrderHistory from './pages/OrderHistory';
 import VerifyEmail from './pages/VerifyEmail';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
+import RefundPolicyPage from './pages/RefundPolicyPage';
 import { OrderSuccessProvider } from './context/OrderSuccessContext';
 import { ScrollToTopProvider } from './context/ScrollToTopProvider';
 
@@ -60,6 +63,9 @@ function App() {
                             <Route path="/all-tests" element={<Navigate to="/tests" replace />} />
                             <Route path="/verify-email" element={<VerifyEmail />} />
                             <Route path="/verify-email/:token" element={<VerifyEmail />} />
+                            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                            <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+                            <Route path="/refund-policy" element={<RefundPolicyPage />} />
                             <Route path="*" element={<Navigate to="/" replace />} />
                           </Routes>
                         </Suspense>
