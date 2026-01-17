@@ -13,6 +13,7 @@ const BookOrderModal = ({ user, onClose, onSuccess }) => {
     const [packages, setPackages] = useState([]);
     const [packageSearch, setPackageSearch] = useState('');
     const [packageLoading, setPackageLoading] = useState(false);
+    const [hardCopyReport, setHardCopyReport] = useState(false);
 
     const [beneficiaries, setBeneficiaries] = useState([
         { name: user?.firstName + ' ' + (user?.lastName || ''), age: '', gender: 'Male' }
@@ -39,6 +40,8 @@ const BookOrderModal = ({ user, onClose, onSuccess }) => {
     });
     const [slots, setSlots] = useState([]);
     const [slotsLoading, setSlotsLoading] = useState(false);
+    const [checkoutPricing, setCheckoutPricing] = useState(null);
+    const [pricingLoading, setPricingLoading] = useState(false);
 
     useEffect(() => {
         fetchPackages();
@@ -104,6 +107,41 @@ const BookOrderModal = ({ user, onClose, onSuccess }) => {
         }
         setError('');
         setStep(step + 1);
+
+        // Fetch checkout pricing when entering Step 3
+        if (step + 1 === 3) {
+            fetchCheckoutPricing();
+        }
+    };
+
+    const fetchCheckoutPricing = async () => {
+        if (selectedPackages.length === 0) return;
+
+        setPricingLoading(true);
+        try {
+            // Prepare items for the cart API
+            const items = selectedPackages.map(pkg => ({
+                productCode: pkg.code || pkg.Id,
+                productType: pkg.type?.toUpperCase() || 'TEST',
+                sellingPrice: pkg.sellingPrice || pkg.price || 0,
+                thyrocareRate: pkg.thyrocareRate || pkg.b2cRate || pkg.price || 0
+            }));
+
+            const response = await axiosInstance.post('/cart/get-checkout-pricing', {
+                benCount: beneficiaries.length,
+                items: items
+            });
+
+            if (response.data.success) {
+                setCheckoutPricing(response.data);
+            }
+        } catch (err) {
+            console.error('Error fetching checkout pricing:', err);
+            // Fallback to basic calculation
+            setCheckoutPricing(null);
+        } finally {
+            setPricingLoading(false);
+        }
     };
 
     const handlePrevStep = () => {
@@ -165,13 +203,23 @@ const BookOrderModal = ({ user, onClose, onSuccess }) => {
         setError('');
 
         try {
+            // Calculate passon (totalDiscount) - use checkout pricing if available, otherwise calculate from prices
+            const passon = checkoutPricing?.totalDiscount
+                ? checkoutPricing.totalDiscount
+                : selectedPackages.reduce((sum, p) => {
+                    const original = p.originalPrice || p.thyrocareRate || p.b2cRate || p.price || 0;
+                    const selling = p.sellingPrice || p.price || 0;
+                    return sum + (original - selling);
+                }, 0) * beneficiaries.length;
+
             const payload = {
                 userId: user._id,
                 packageIds: selectedPackages.map(p => p.code || p.Id),
                 packageNames: selectedPackages.map(p => p.name),
                 packagePrices: selectedPackages.map(p => ({
                     price: p.sellingPrice || p.price || 0,
-                    originalPrice: p.originalPrice || p.price || 0,
+                    originalPrice: p.thyrocareRate || p.b2cRate || p.originalPrice || p.price || 0,
+                    thyrocareRate: p.thyrocareRate || p.b2cRate || p.price || 0
                 })),
                 beneficiaries: beneficiaries.map(b => ({
                     name: b.name,
@@ -191,7 +239,11 @@ const BookOrderModal = ({ user, onClose, onSuccess }) => {
                     slotId: appointment.slotId
                 },
                 selectedSlot: appointment.slot,
-                reports: 'N'
+                reports: hardCopyReport ? 'Y' : 'N',
+                // Pass the actual discount/passon from checkout pricing (with margin capping applied)
+                totalDiscount: passon,
+                collectionCharge: checkoutPricing?.collectionCharge || 0,
+                grandTotal: checkoutPricing?.grandTotal || null
             };
 
             const response = await orderAdminApi.bookOnBehalf(payload);
@@ -331,7 +383,7 @@ const BookOrderModal = ({ user, onClose, onSuccess }) => {
                                                     </div>
 
                                                     <span className="text-base font-black text-indigo-700">
-                                                        ₹{pkg.sellingPrice || pkg.price}
+                                                        ₹{pkg.thyrocareRate || pkg.b2cRate || pkg.price}
                                                     </span>
                                                 </div>
                                             </div>
@@ -514,6 +566,37 @@ const BookOrderModal = ({ user, onClose, onSuccess }) => {
                                                 />
                                             </div>
                                         </div>
+
+                                        {/* Hard Copy Report Option */}
+                                        <div className="mt-5 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex-1">
+                                                    <label className="block text-xs font-bold text-amber-700 uppercase mb-1">
+                                                        Hard Copy Report
+                                                    </label>
+                                                    <p className="text-[10px] text-amber-600">
+                                                        Request a physical printed copy of the test reports
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setHardCopyReport(!hardCopyReport)}
+                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${hardCopyReport ? 'bg-amber-500' : 'bg-gray-300'
+                                                        }`}
+                                                >
+                                                    <span
+                                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${hardCopyReport ? 'translate-x-6' : 'translate-x-1'
+                                                            }`}
+                                                    />
+                                                </button>
+                                            </div>
+                                            {hardCopyReport && (
+                                                <div className="mt-3 flex items-center gap-2 text-xs font-bold text-amber-800 bg-amber-100 p-2 rounded-lg">
+                                                    <Info className="h-4 w-4" />
+                                                    <span>₹75 will be charged extra for hard copy</span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -610,20 +693,81 @@ const BookOrderModal = ({ user, onClose, onSuccess }) => {
                                                 {selectedPackages.map(p => (
                                                     <div key={p.code || p.Id} className="flex justify-between items-start text-xs bg-white/5 p-2 rounded-lg">
                                                         <span className="font-bold text-indigo-100 flex-1 uppercase text-[10px] leading-relaxed">{p.name}</span>
-                                                        <span className="font-black text-indigo-300 ml-4 shrink-0">₹{p.sellingPrice || p.price}</span>
+                                                        <span className="font-black text-indigo-300 ml-4 shrink-0">₹{p.thyrocareRate || p.b2cRate || p.price}</span>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
 
-                                        <div className="flex justify-between items-end pt-4 border-t border-white/10">
-                                            <div className="space-y-1">
-                                                <span className="text-[10px] text-indigo-400 font-black uppercase">Grand Total</span>
-                                                <p className="text-sm font-bold text-indigo-200">For {beneficiaries.length} Patient(s)</p>
-                                            </div>
-                                            <span className="text-3xl font-black text-white">
-                                                ₹{selectedPackages.reduce((sum, p) => sum + (p.sellingPrice || p.price), 0)}
-                                            </span>
+                                        {/* Pricing Breakdown */}
+                                        <div className="space-y-3 pt-4 border-t border-white/10">
+                                            {pricingLoading ? (
+                                                <div className="text-center py-4">
+                                                    <div className="animate-spin h-6 w-6 border-2 border-indigo-400 border-t-transparent rounded-full mx-auto mb-2"></div>
+                                                    <p className="text-[10px] text-indigo-300 uppercase">Calculating price...</p>
+                                                </div>
+                                            ) : checkoutPricing && checkoutPricing.success ? (
+                                                <>
+                                                    <div className="flex justify-between items-center text-xs">
+                                                        <span className="text-indigo-300">Original Price ({beneficiaries.length} {beneficiaries.length === 1 ? 'person' : 'people'}):</span>
+                                                        <span className="text-white font-medium">₹{checkoutPricing.originalTotal?.toFixed(2)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center text-xs">
+                                                        <span className="text-indigo-300">Your Discount:</span>
+                                                        <span className="text-green-400 font-medium">-₹{checkoutPricing.totalDiscount?.toFixed(2)}</span>
+                                                    </div>
+                                                    {checkoutPricing.marginAdjusted && (
+                                                        <div className="text-[10px] text-amber-400 italic bg-amber-500/10 p-2 rounded-lg">
+                                                            (Discount capped at ₹{checkoutPricing.thyrocareMargin?.toFixed(2) || checkoutPricing.totalDiscount?.toFixed(2)} for {beneficiaries.length} {beneficiaries.length === 1 ? 'person' : 'people'})
+                                                        </div>
+                                                    )}
+                                                    {checkoutPricing.collectionCharge > 0 && (
+                                                        <div className="flex justify-between items-center text-xs">
+                                                            <span className="text-indigo-300">Collection Charge:</span>
+                                                            <span className="text-yellow-400">+₹{checkoutPricing.collectionCharge?.toFixed(2)}</span>
+                                                        </div>
+                                                    )}
+                                                    {hardCopyReport && (
+                                                        <div className="flex justify-between items-center text-xs">
+                                                            <span className="text-indigo-300">Hard Copy Report:</span>
+                                                            <span className="text-yellow-400">+₹75.00</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex justify-between items-end pt-3 border-t border-white/10">
+                                                        <div className="space-y-1">
+                                                            <span className="text-[10px] text-indigo-400 font-black uppercase">Grand Total</span>
+                                                            <p className="text-sm font-bold text-indigo-200">For {beneficiaries.length} Patient(s)</p>
+                                                        </div>
+                                                        <span className="text-3xl font-black text-white">
+                                                            ₹{((checkoutPricing.grandTotal || 0) + (hardCopyReport ? 75 : 0)).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    {/* Fallback calculation */}
+                                                    <div className="flex justify-between items-center text-xs">
+                                                        <span className="text-indigo-300">Estimated Price:</span>
+                                                        <span className="text-white font-medium">₹{selectedPackages.reduce((sum, p) => sum + (p.thyrocareRate || p.b2cRate || p.price || 0), 0).toFixed(2)}</span>
+                                                    </div>
+                                                    {hardCopyReport && (
+                                                        <div className="flex justify-between items-center text-xs">
+                                                            <span className="text-indigo-300">Hard Copy Report:</span>
+                                                            <span className="text-yellow-400">+₹75.00</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex justify-between items-end pt-3 border-t border-white/10">
+                                                        <div className="space-y-1">
+                                                            <span className="text-[10px] text-indigo-400 font-black uppercase">Grand Total</span>
+                                                            <p className="text-sm font-bold text-indigo-200">For {beneficiaries.length} Patient(s)</p>
+                                                        </div>
+                                                        <span className="text-3xl font-black text-white">
+                                                            ₹{(selectedPackages.reduce((sum, p) => sum + (p.thyrocareRate || p.b2cRate || p.price || 0), 0) + (hardCopyReport ? 75 : 0)).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-[10px] text-indigo-300/70 italic">*Final price may vary based on Thyrocare margin</p>
+                                                </>
+                                            )}
                                         </div>
 
                                         <div className="space-y-3 pt-4">
