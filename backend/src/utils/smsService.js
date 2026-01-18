@@ -79,11 +79,6 @@ class SMSService {
               'accept': '*/*'
             },
             timeout: 30000,
-            // Add SSL/TLS configuration for Docker
-            httpsAgent: new (require('https').Agent)({
-              rejectUnauthorized: process.env.NODE_ENV === 'production',
-              keepAlive: true
-            })
           }
         );
 
