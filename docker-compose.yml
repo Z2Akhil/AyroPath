@@ -25,6 +25,12 @@ services:
       - OTP_RATE_LIMIT_WINDOW=${OTP_RATE_LIMIT_WINDOW}
       - OTP_RATE_LIMIT_MAX=${OTP_RATE_LIMIT_MAX}
       - CLIENT_URL=${CLIENT_URL}
+      - API_RATE_LIMIT_WINDOW=${API_RATE_LIMIT_WINDOW}
+      - API_RATE_LIMIT_MAX=${API_RATE_LIMIT_MAX}
+      - MC_CUSTOMER_ID=${MC_CUSTOMER_ID}
+      - MC_EMAIL_ID=${MC_EMAIL_ID}
+      - MC_BASE64_KEY=${MC_BASE64_KEY}
+      
     networks:
       - ayropath-network
     healthcheck:
