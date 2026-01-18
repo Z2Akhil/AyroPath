@@ -56,31 +56,104 @@ class SMSService {
 
     return await this.withRetry(async () => {
       console.log('Generating Message Central auth token...');
+      console.log('API Endpoint:', `${CONFIG.BASE_URL}/auth/v1/authentication/token`);
+      console.log('Environment:', process.env.NODE_ENV || 'development');
+      console.log('Credentials present:', {
+        customerId: !!CONFIG.CUSTOMER_ID,
+        key: !!CONFIG.BASE64_KEY,
+        email: !!CONFIG.EMAIL_ID
+      });
 
-      const response = await axios.get(
-        `${CONFIG.BASE_URL}/auth/v1/authentication/token`,
-        {
-          params: {
-            customerId: CONFIG.CUSTOMER_ID,
-            key: CONFIG.BASE64_KEY,
-            scope: 'NEW',
-            country: '91',
-            email: CONFIG.EMAIL_ID
-          },
-          headers: {
-            'accept': '*/*'
-          },
-          timeout: 30000 // Increased to 15 seconds
+      try {
+        const response = await axios.get(
+          `${CONFIG.BASE_URL}/auth/v1/authentication/token`,
+          {
+            params: {
+              customerId: CONFIG.CUSTOMER_ID,
+              key: CONFIG.BASE64_KEY,
+              scope: 'NEW',
+              country: '91',
+              email: CONFIG.EMAIL_ID
+            },
+            headers: {
+              'accept': '*/*'
+            },
+            timeout: 30000,
+            // Add SSL/TLS configuration for Docker
+            httpsAgent: new (require('https').Agent)({
+              rejectUnauthorized: process.env.NODE_ENV === 'production',
+              keepAlive: true
+            })
+          }
+        );
+
+        console.log('Message Central API Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers,
+          data: response.data
+        });
+
+        // Actual response matches { status: 200, token: "..." }
+        if (response.data.status === 200 && response.data.token) {
+          const token = response.data.token;
+          console.log('Auth token generated successfully');
+          return token;
+        } else {
+          console.error('Unexpected Message Central API response format:', response.data);
+          throw new Error(`Token generation failed. Status: ${response.data.status}, Response: ${JSON.stringify(response.data)}`);
         }
-      );
-
-      // Actual response matches { status: 200, token: "..." }
-      if (response.data.status === 200 && response.data.token) {
-        const token = response.data.token;
-        console.log('Auth token generated successfully');
-        return token;
-      } else {
-        throw new Error(`Token generation failed. Status: ${response.data.status}`);
+      } catch (error) {
+        console.error('🔴 DETAILED Message Central API Error:', {
+          // Basic error info
+          name: error.name,
+          code: error.code,
+          message: error.message,
+          
+          // Network/SSL specific
+          isNetworkError: error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT',
+          isSSLError: error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' || 
+                     error.code === 'CERT_HAS_EXPIRED' || 
+                     error.code === 'SELF_SIGNED_CERT_IN_CHAIN' ||
+                     error.message?.includes('certificate') ||
+                     error.message?.includes('SSL'),
+          isTimeout: error.code === 'ECONNABORTED' || error.message?.includes('timeout'),
+          
+          // Response details (if any)
+          responseStatus: error.response?.status,
+          responseData: error.response?.data,
+          responseHeaders: error.response?.headers,
+          
+          // Request details
+          requestUrl: error.config?.url,
+          requestMethod: error.config?.method,
+          requestTimeout: error.config?.timeout,
+          requestHeaders: error.config?.headers,
+          
+          // Environment
+          nodeEnv: process.env.NODE_ENV,
+          timestamp: new Date().toISOString(),
+          
+          // Docker/Network info
+          hostname: require('os').hostname(),
+          platform: require('os').platform()
+        });
+        
+        // Also log the stack trace for debugging
+        console.error('🔴 Error stack:', error.stack);
+        
+        // Re-throw with more context
+        if (error.code === 'ENOTFOUND') {
+          throw new Error(`DNS resolution failed for Message Central API. Cannot resolve: ${CONFIG.BASE_URL}`);
+        } else if (error.code === 'ECONNREFUSED') {
+          throw new Error(`Connection refused to Message Central API. Check firewall/proxy settings.`);
+        } else if (error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' || error.code === 'CERT_HAS_EXPIRED') {
+          throw new Error(`SSL/TLS certificate verification failed for Message Central API. Docker may be missing CA certificates.`);
+        } else if (error.code === 'ECONNABORTED') {
+          throw new Error(`Message Central API request timed out after ${error.config?.timeout || 30000}ms`);
+        }
+        
+        throw new Error(`Message Central API error: ${error.message}`);
       }
     }, 'Auth token generation');
   }
@@ -184,7 +257,7 @@ class SMSService {
 
       return {
         success: false,
-        message: "Failed to send OTP via Message Central",
+        message: "Failed to send OTP",
         error: error.message
       };
     }
