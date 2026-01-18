@@ -70,7 +70,7 @@ class SMSService {
           headers: {
             'accept': '*/*'
           },
-          timeout: 15000 // Increased to 15 seconds
+          timeout: 30000 // Increased to 15 seconds
         }
       );
 
@@ -132,7 +132,7 @@ class SMSService {
               'authToken': authToken,
               'accept': '*/*'
             },
-            timeout: 15000
+            timeout: 30000
           }
         );
       }, 'OTP sending');
@@ -219,7 +219,7 @@ class SMSService {
               'authToken': authToken,
               'accept': '*/*'
             },
-            timeout: 15000
+            timeout: 30000
           }
         );
       }, 'OTP validation');
