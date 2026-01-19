@@ -32,8 +32,8 @@ const LogoSkeleton = () => (
 const LOGO_1X = './logo-120.webp';   // 120×120
 const LOGO_2X = './logo-240.webp';   // 240×240
 
-const THYRO_1X = './Thyrocare-240.webp'; // 240×82
-const THYRO_2X = './Thyrocare-480.webp'; // 480×164
+const THYRO_1X = './Thyrocare-280.webp'; // 280px width
+const THYRO_2X = './Thyrocare-480.webp'; // 480px width
 
 const Logo = ({ logo, loading }) => {
   const [imgError, setImgError] = useState(false);
@@ -66,7 +66,7 @@ const Logo = ({ logo, loading }) => {
           width="240"
           height="82"
           alt="In association with ThyroCare"
-          className="h-30 w-30 object-contain mt-1"
+          className="h-12 w-auto object-contain mt-1"
           loading="eager"
           decoding="async"
         />
