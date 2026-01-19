@@ -41,20 +41,19 @@ Sitemap: ${CANONICAL}/sitemap.xml
 router.get('/sitemap.xml', async (req, res) => {
   try {
     const staticPages = [
-      { url: '/',            priority: '1.0', changefreq: 'daily'  },
-      { url: '/packages',    priority: '0.8', changefreq: 'weekly' },
-      { url: '/tests',       priority: '0.8', changefreq: 'weekly' },
-      { url: '/offers',      priority: '0.8', changefreq: 'weekly' },
-      { url: '/about',       priority: '0.5', changefreq: 'monthly'},
+      { url: '/', priority: '1.0', changefreq: 'daily' },
+      { url: '/packages', priority: '0.8', changefreq: 'weekly' },
+      { url: '/tests', priority: '0.8', changefreq: 'weekly' },
+      { url: '/offers', priority: '0.8', changefreq: 'weekly' },
+      { url: '/about', priority: '0.5', changefreq: 'monthly' },
     ];
 
     const [profiles, offers] = await Promise.all([
-      Profile.find({ isActive: true }).select('name code updatedAt').lean(),
-      Offer .find({ isActive: true }).select('name code updatedAt').lean(),
+      Profile.find({ isActive: true }).select('name code type updatedAt').lean(),
+      Offer.find({ isActive: true }).select('name code updatedAt').lean(),
     ]);
 
-    const products = [...profiles, ...offers];
-    console.log(`📄 Sitemap: ${products.length} products (${profiles.length} profiles, ${offers.length} offers)`);
+    console.log(`📄 Sitemap: ${profiles.length} profiles, ${offers.length} offers`);
 
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
 
@@ -64,9 +63,21 @@ router.get('/sitemap.xml', async (req, res) => {
       xml += `    <changefreq>${p.changefreq}</changefreq>\n  </url>\n`;
     });
 
-    products.forEach(p => {
+    // Add profiles (packages/tests) - determine type based on product
+    profiles.forEach(p => {
       const lastmod = p.updatedAt ? new Date(p.updatedAt).toISOString().split('T')[0] : '';
-      xml += `  <url>\n    <loc>${CANONICAL}/packages/${slugify(p.name)}</loc>\n`;
+      const productType = p.type || 'PROFILE'; // Default to PROFILE for profiles
+      xml += `  <url>\n    <loc>${CANONICAL}/packages/${slugify(p.name)}/${productType}/${p.code}</loc>\n`;
+      xml += `    <priority>0.7</priority>\n`;
+      xml += `    <changefreq>weekly</changefreq>\n`;
+      if (lastmod) xml += `    <lastmod>${lastmod}</lastmod>\n`;
+      xml += '  </url>\n';
+    });
+
+    // Add offers
+    offers.forEach(p => {
+      const lastmod = p.updatedAt ? new Date(p.updatedAt).toISOString().split('T')[0] : '';
+      xml += `  <url>\n    <loc>${CANONICAL}/packages/${slugify(p.name)}/OFFER/${p.code}</loc>\n`;
       xml += `    <priority>0.7</priority>\n`;
       xml += `    <changefreq>weekly</changefreq>\n`;
       if (lastmod) xml += `    <lastmod>${lastmod}</lastmod>\n`;
