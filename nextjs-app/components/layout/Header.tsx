@@ -14,7 +14,7 @@ interface UserType {
 
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
-  { label: 'Popular Packages', href: '/packages' },
+  { label: 'Popular Packages', href: '/profiles' },
   { label: 'Offers', href: '/offers' },
   { label: 'All Tests', href: '/tests' },
   { label: 'About Us', href: '/about' },
