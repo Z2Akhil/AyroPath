@@ -1,7 +1,7 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Model } from 'mongoose';
 import { SiteSettings as SiteSettingsType } from '@/types';
 
-export interface SiteSettingsDocument extends Omit<SiteSettingsType, '_id'>, Document {}
+export interface SiteSettingsDocument extends Omit<SiteSettingsType, '_id'>, Document { }
 
 const siteSettingsSchema = new Schema<SiteSettingsDocument>(
   {
@@ -36,6 +36,6 @@ const siteSettingsSchema = new Schema<SiteSettingsDocument>(
   { timestamps: true }
 );
 
-const SiteSettings = mongoose.models.SiteSettings || mongoose.model<SiteSettingsDocument>('SiteSettings', siteSettingsSchema);
+const SiteSettings = (mongoose.models.SiteSettings as Model<SiteSettingsDocument>) || mongoose.model<SiteSettingsDocument>('SiteSettings', siteSettingsSchema);
 
 export default SiteSettings;

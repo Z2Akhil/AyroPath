@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ShoppingCart, Menu, X, User, LogOut } from 'lucide-react';
 import { useSiteSettings } from '@/providers/SiteSettingsProvider';
+import { useCart } from '@/providers/CartProvider';
 import { Logo } from '@/components/ui';
 import SearchBar from '@/components/search/SearchBar';
 
@@ -163,7 +164,8 @@ const Header = () => {
   const [authOpen, setAuthOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [user, setUser] = useState<UserType | null>(null);
-  const [cartCount, setCartCount] = useState(0);
+  const { cart } = useCart();
+  const cartCount = cart?.items?.length || 0;
   const { settings, loading } = useSiteSettings();
   const router = useRouter();
 
@@ -211,7 +213,7 @@ const Header = () => {
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <Logo logo={settings?.logo} loading={loading} />
-            
+
             <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
               <SearchBar />
             </div>
