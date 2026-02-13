@@ -2,7 +2,7 @@
 
 import { useCart } from "@/providers/CartProvider";
 import { Trash2, ShoppingCart, ArrowRight } from "lucide-react";
-import BookingForm from "@/components/BookingForm";
+import BookingForm from "@/components/booking/BookingForm";
 import { getCartPriceInfo } from "@/lib/cartUtils";
 import Link from "next/link";
 

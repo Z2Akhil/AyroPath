@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useMemo, use } from "react";
 import { AlertCircle, Home, Percent, Share2, ChevronDown, Calendar, CreditCard, CheckCircle, MapPin, Clock } from "lucide-react";
-import BookingForm from "@/components/BookingForm";
+import BookingForm from "@/components/booking/BookingForm";
 import { getProductDisplayPrice } from "@/lib/api/productApi";
 import SkeletonPackageDetailed from "@/components/skeletons/SkeletonPackageDetailed";
 import { useProducts } from "@/providers/ProductProvider";
-import SEO from "@/components/SEO";
+import SEO from "@/components/ui/SEO";
 import { slugify } from "@/lib/slugify";
 import { useCart } from "@/providers/CartProvider";
 import Link from "next/link";

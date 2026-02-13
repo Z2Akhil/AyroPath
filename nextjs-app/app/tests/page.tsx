@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import TestCard from "@/components/TestCard";
-import SkeletonTestCard from "@/components/SkeletonTestCard";
-import Pagination from "@/components/Pagination";
+import TestCard from "@/components/cards/TestCard";
+import SkeletonTestCard from "@/components/skeletons/SkeletonTestCard";
+import Pagination from "@/components/ui/Pagination";
 
 interface Test {
   code: string;

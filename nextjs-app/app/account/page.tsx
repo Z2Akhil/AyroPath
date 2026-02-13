@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { fetchUserOrders, Order } from '@/lib/api/ordersApi';
 import OrderCard from '@/components/orders/OrderCard';
-import Modal from '@/components/Modal';
+import Modal from '@/components/ui/Modal';
 
 // Dynamic import for ForgotPasswordForm to avoid SSR issues
 import dynamic from 'next/dynamic';

@@ -10,8 +10,8 @@ import { axiosInstance } from "@/lib/api/axiosInstance";
 import CartApi, { CartCheckoutPricingResponse } from "@/lib/api/cartApi";
 import { checkPincode, getAppointmentSlots, SlotData } from "@/lib/api/clientApi";
 import { getInitialFormData, saveContactInfo } from "@/lib/utils/localStorage";
-import ConfirmationDialog from "./ConfirmationDialog";
-import AuthModal from "./AuthModal";
+import ConfirmationDialog from "../ui/ConfirmationDialog";
+import AuthModal from "../ui/AuthModal";
 import { MapPin, Calendar, Clock, User as UserIcon, AlertCircle, CheckCircle2, Info, Plus, Trash2, ArrowRight } from 'lucide-react';
 
 interface BookingFormProps {

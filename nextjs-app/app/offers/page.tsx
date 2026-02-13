@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import OfferCard from "@/components/OfferCard";
-import SkeletonOfferCard from "@/components/SkeletonOfferCard";
-import Pagination from "@/components/Pagination";
+import OfferCard from "@/components/cards/OfferCard";
+import SkeletonOfferCard from "@/components/skeletons/SkeletonOfferCard";
+import Pagination from "@/components/ui/Pagination";
 
 interface Offer {
   code: string;

@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import LoginForm from './auth/LoginForm';
-import RegisterForm from './auth/RegisterForm';
-import ForgotPasswordForm from './auth/ForgotPasswordForm';
+import LoginForm from '../auth/LoginForm';
+import RegisterForm from '../auth/RegisterForm';
+import ForgotPasswordForm from '../auth/ForgotPasswordForm';
 
 interface AuthModalProps {
     onClose: () => void;

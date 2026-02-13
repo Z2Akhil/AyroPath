@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { ShoppingCart } from 'lucide-react';
 import { useCartValidation, ValidationDialogConfig } from '@/hooks/useCartValidation';
-import ConfirmationDialog from './ConfirmationDialog';
-import AuthModal from './AuthModal';
+import ConfirmationDialog from '../ui/ConfirmationDialog';
+import AuthModal from '../ui/AuthModal';
 import { useUser } from '@/providers/UserProvider';
 import { useCart } from '@/providers/CartProvider';
 import Link from 'next/link';
