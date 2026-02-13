@@ -91,8 +91,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onClose, onSwitchToLogin })
             } else {
                 setError(result.message || 'Failed to send OTP');
             }
-        } catch (err: any) {
-            setError(err.message || 'An error occurred');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
             setOtpLoading(false);
         }
@@ -114,8 +114,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onClose, onSwitchToLogin })
             } else {
                 setError(result.message || 'OTP verification failed');
             }
-        } catch (err: any) {
-            setError(err.message || 'An error occurred');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
             setLoading(false);
         }
@@ -134,8 +134,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onClose, onSwitchToLogin })
             } else {
                 setError(result.message || 'Failed to resend OTP');
             }
-        } catch (err: any) {
-            setError(err.message || 'An error occurred');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
             setOtpLoading(false);
         }
@@ -173,8 +173,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onClose, onSwitchToLogin })
             } else {
                 setError(result.message || 'Registration failed');
             }
-        } catch (err: any) {
-            setError(err.message || 'An error occurred');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
             setLoading(false);
         }

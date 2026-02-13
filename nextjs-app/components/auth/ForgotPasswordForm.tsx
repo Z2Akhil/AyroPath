@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useUser } from '@/providers/UserProvider';
 import { useToast } from '@/providers/ToastProvider';
-import { Smartphone, Lock, Eye, EyeOff, ArrowRight, RefreshCw } from 'lucide-react';
+import { ArrowRight, ArrowLeft } from 'lucide-react';
 
 interface ForgotPasswordFormProps {
     onClose: () => void;
@@ -11,113 +11,87 @@ interface ForgotPasswordFormProps {
 }
 
 const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onClose, onSwitchToLogin }) => {
-    const { forgotPassword, resetPassword } = useUser();
+    const { forgotPassword, verifyOTP, resetPassword } = useUser();
     const { success: toastSuccess, error: toastError } = useToast();
 
-    const [step, setStep] = useState(1); // 1: Request OTP, 2: Reset password
-    const [formData, setFormData] = useState({
-        mobileNumber: '',
-        otp: '',
-        newPassword: '',
-        confirmPassword: '',
-    });
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [step, setStep] = useState(1);
+    const [mobileNumber, setMobileNumber] = useState('');
+    const [otp, setOtp] = useState('');
+    const [newPassword, setNewPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const [otpLoading, setOtpLoading] = useState(false);
-    const [countdown, setCountdown] = useState(0);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        if (name === 'mobileNumber') {
-            const numericValue = value.replace(/\D/g, '').slice(0, 10);
-            setFormData(prev => ({ ...prev, [name]: numericValue }));
-            return;
-        }
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
 
     const handleRequestOTP = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.mobileNumber.trim()) {
+        if (!mobileNumber.trim()) {
             toastError('Mobile number is required');
             return;
         }
-        if (formData.mobileNumber.length !== 10) {
+        if (!/^\d{10}$/.test(mobileNumber)) {
             toastError('Please enter a valid 10-digit mobile number');
-            return;
-        }
-
-        setOtpLoading(true);
-        try {
-            const result = await forgotPassword(formData.mobileNumber);
-            if (result.success) {
-                toastSuccess("OTP sent successfully!");
-                setStep(2);
-                startCountdown();
-            } else {
-                toastError(result.message || "Failed to send OTP");
-            }
-        } catch (err: any) {
-            toastError(err.message || "An error occurred");
-        } finally {
-            setOtpLoading(false);
-        }
-    };
-
-    const startCountdown = () => {
-        setCountdown(30);
-        const timer = setInterval(() => {
-            setCountdown(prev => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-    };
-
-    const handleResendOTP = async () => {
-        if (countdown > 0) return;
-        setOtpLoading(true);
-        try {
-            const result = await forgotPassword(formData.mobileNumber);
-            if (result.success) {
-                toastSuccess("OTP resent successfully!");
-                startCountdown();
-            } else {
-                toastError(result.message || "Failed to resend OTP");
-            }
-        } catch (err: any) {
-            toastError(err.message || "An error occurred");
-        } finally {
-            setOtpLoading(false);
-        }
-    };
-
-    const handleResetPassword = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (formData.newPassword !== formData.confirmPassword) {
-            toastError('Passwords do not match');
-            return;
-        }
-        if (formData.newPassword.length < 6) {
-            toastError('Password must be at least 6 characters');
             return;
         }
 
         setLoading(true);
         try {
-            const result = await resetPassword(formData.mobileNumber, formData.otp, formData.newPassword);
+            const result = await forgotPassword(mobileNumber);
             if (result.success) {
-                toastSuccess("Password reset successful! Please login.");
+                setStep(2);
+                toastSuccess('OTP sent to your mobile number');
+            } else {
+                toastError(result.message || 'Failed to send OTP');
+            }
+        } catch (err) {
+            toastError(err instanceof Error ? err.message : "An error occurred");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyOTP = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!otp.trim()) {
+            toastError('Please enter the OTP');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const result = await verifyOTP(mobileNumber, otp, 'password_reset');
+            if (result.success) {
+                setStep(3);
+                toastSuccess('OTP verified successfully!');
+            } else {
+                toastError(result.message || 'OTP verification failed');
+            }
+        } catch (err) {
+            toastError(err instanceof Error ? err.message : "An error occurred");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResetPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newPassword.trim()) {
+            toastError('New password is required');
+            return;
+        }
+        if (newPassword.length < 6) {
+            toastError('Password must be at least 6 characters long');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const result = await resetPassword(mobileNumber, otp, newPassword);
+            if (result.success) {
+                toastSuccess('Password reset successful! Please login with your new password.');
                 onSwitchToLogin();
             } else {
-                toastError(result.message || "Failed to reset password");
+                toastError(result.message || 'Failed to reset password');
             }
-        } catch (err: any) {
-            toastError(err.message || "An error occurred");
+        } catch (err) {
+            toastError(err instanceof Error ? err.message : "An error occurred");
         } finally {
             setLoading(false);
         }
@@ -126,91 +100,124 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onClose, onSwit
     return (
         <div className="w-full max-w-md mx-auto">
             <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    {step === 1 ? 'Reset Password' : 'Create New Password'}
-                </h2>
-                <p className="text-gray-600 italic">
-                    {step === 1 ? 'Enter mobile number for OTP' : 'Enter the code sent to your mobile'}
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Reset Password</h2>
+                <p className="text-gray-600 text-sm">
+                    {step === 1 && 'Enter your mobile number to receive OTP'}
+                    {step === 2 && 'Enter the OTP sent to your mobile'}
+                    {step === 3 && 'Enter your new password'}
                 </p>
+
+                <div className="flex items-center justify-center mt-6">
+                    {[1, 2, 3].map((stepNum) => (
+                        <React.Fragment key={stepNum}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${step === stepNum ? 'bg-blue-600 text-white shadow-md' :
+                                    step > stepNum ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600'
+                                }`}>
+                                {stepNum}
+                            </div>
+                            {stepNum < 3 && (
+                                <div className={`w-10 h-1 mx-2 rounded-full ${step > stepNum ? 'bg-green-600' : 'bg-gray-200'}`} />
+                            )}
+                        </React.Fragment>
+                    ))}
+                </div>
             </div>
 
-            <form onSubmit={step === 1 ? handleRequestOTP : handleResetPassword} className="space-y-6">
-                {step === 1 ? (
-                    <>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Mobile Number *</label>
-                            <div className="relative">
-                                <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                <input
-                                    type="tel"
-                                    name="mobileNumber"
-                                    value={formData.mobileNumber}
-                                    onChange={handleChange}
-                                    placeholder="10-digit number"
-                                    className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                    required
-                                />
-                            </div>
-                        </div>
-                        <button
-                            type="submit"
-                            disabled={otpLoading}
-                            className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium disabled:opacity-50"
-                        >
-                            {otpLoading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <>Send OTP <ArrowRight className="h-4 w-4" /></>}
-                        </button>
-                    </>
-                ) : (
-                    <>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Enter OTP *</label>
+            {step === 1 && (
+                <form onSubmit={handleRequestOTP}>
+                    <div className="mb-6">
+                        <label className="block text-sm font-bold text-gray-700 mb-2">
+                            Mobile Number
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">+91</span>
                             <input
-                                type="text"
-                                name="otp"
-                                value={formData.otp}
-                                onChange={handleChange}
-                                placeholder="6-digit code"
-                                maxLength={6}
-                                className="w-full px-3 py-3 border border-gray-300 rounded-lg text-center text-xl font-mono focus:ring-2 focus:ring-blue-500 outline-none"
-                                required
+                                type="tel"
+                                value={mobileNumber}
+                                onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                placeholder="Enter your mobile number"
+                                maxLength={10}
                             />
-                            <button
-                                type="button"
-                                onClick={handleResendOTP}
-                                disabled={countdown > 0 || otpLoading}
-                                className="text-sm text-blue-600 mt-2 disabled:text-gray-400"
-                            >
-                                {countdown > 0 ? `Resend in ${countdown}s` : 'Resend OTP'}
-                            </button>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">New Password *</label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                <input
-                                    type={showPassword ? 'text' : 'password'}
-                                    name="newPassword"
-                                    value={formData.newPassword}
-                                    onChange={handleChange}
-                                    className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                    required
-                                />
-                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2">
-                                    {showPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
-                                </button>
-                            </div>
-                        </div>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-medium disabled:opacity-50"
-                        >
-                            {loading ? <RefreshCw className="h-5 w-5 animate-spin mx-auto" /> : 'Reset Password'}
-                        </button>
-                    </>
-                )}
-                <button type="button" onClick={onSwitchToLogin} className="w-full text-blue-600 text-sm font-medium">Back to Sign In</button>
-            </form>
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 
+                       text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-medium 
+                       shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> :
+                            <>Send OTP <ArrowRight className="w-4 h-4" /></>}
+                    </button>
+                </form>
+            )}
+
+            {step === 2 && (
+                <form onSubmit={handleVerifyOTP}>
+                    <div className="mb-6">
+                        <label className="block text-sm font-bold text-gray-700 mb-2">
+                            OTP
+                        </label>
+                        <input
+                            type="text"
+                            value={otp}
+                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                            placeholder="Enter 6-digit OTP"
+                            maxLength={6}
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 
+                       text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-medium 
+                       shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> :
+                            <>Verify OTP <ArrowRight className="w-4 h-4" /></>}
+                    </button>
+                </form>
+            )}
+
+            {step === 3 && (
+                <form onSubmit={handleResetPassword}>
+                    <div className="mb-6">
+                        <label className="block text-sm font-bold text-gray-700 mb-2">
+                            New Password
+                        </label>
+                        <input
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                            placeholder="Enter new password (min 6 characters)"
+                            minLength={6}
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 
+                       text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-medium 
+                       shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> :
+                            <>Reset Password <ArrowRight className="w-4 h-4" /></>}
+                    </button>
+                </form>
+            )}
+
+            <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+                <button type="button" onClick={onSwitchToLogin} className="text-blue-600 hover:text-blue-700 font-bold flex items-center justify-center gap-2 mx-auto">
+                    <ArrowLeft className="w-4 h-4" /> Back to Login
+                </button>
+            </div>
         </div>
     );
 };

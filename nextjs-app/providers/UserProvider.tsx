@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 import { User, UserContextType } from '@/types';
 import { authApi } from '@/lib/api/authApi';
 
@@ -14,36 +14,42 @@ export const useUser = () => {
     return context;
 };
 
-export const UserProvider = ({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+        return error.message;
+    }
+    return 'An error occurred';
+}
 
-    useEffect(() => {
-        const savedUser = localStorage.getItem('user');
-        if (savedUser) {
-            try {
-                setUser(JSON.parse(savedUser));
-            } catch (e) {
-                console.error('Error parsing user from localStorage', e);
+export const UserProvider = ({ children }: { children: ReactNode }) => {
+    const [user, setUser] = useState<User | null>(() => {
+        if (typeof window !== 'undefined') {
+            const savedUser = localStorage.getItem('user');
+            if (savedUser) {
+                try {
+                    return JSON.parse(savedUser);
+                } catch {
+                    return null;
+                }
             }
         }
-        setLoading(false);
-    }, []);
+        return null;
+    });
+    const [loading] = useState(false);
 
     const login = async (identifier: string, password?: string) => {
         try {
             const result = await authApi.login(identifier, password);
             if (result.success && result.user && result.token) {
-                const userWithToken = { ...result.user, authToken: result.token };
                 setUser(result.user);
                 localStorage.setItem('user', JSON.stringify(result.user));
                 localStorage.setItem('authToken', result.token);
                 return { success: true };
             }
             return { success: false, message: result.message || 'Login failed' };
-        } catch (error: any) {
+        } catch (error) {
             console.error('Login error', error);
-            return { success: false, message: error.response?.data?.message || 'Login failed' };
+            return { success: false, message: getErrorMessage(error) || 'Login failed' };
         }
     };
 
@@ -57,9 +63,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
                 return { success: true };
             }
             return { success: false, message: result.message || 'Registration failed' };
-        } catch (error: any) {
+        } catch (error) {
             console.error('Registration error', error);
-            return { success: false, message: error.response?.data?.message || 'Registration failed' };
+            return { success: false, message: getErrorMessage(error) || 'Registration failed' };
         }
     };
 
@@ -73,8 +79,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         try {
             const result = await authApi.requestOTP(mobileNumber, purpose);
             return { success: result.success, message: result.message };
-        } catch (error: any) {
-            return { success: false, message: error.response?.data?.message || 'Failed to request OTP' };
+        } catch (error) {
+            return { success: false, message: getErrorMessage(error) || 'Failed to request OTP' };
         }
     };
 
@@ -82,8 +88,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         try {
             const result = await authApi.verifyOTP(mobileNumber, otp, purpose);
             return { success: result.success, message: result.message };
-        } catch (error: any) {
-            return { success: false, message: error.response?.data?.message || 'Failed to verify OTP' };
+        } catch (error) {
+            return { success: false, message: getErrorMessage(error) || 'Failed to verify OTP' };
         }
     };
 
@@ -91,8 +97,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         try {
             const result = await authApi.forgotPassword(mobileNumber);
             return { success: result.success, message: result.message };
-        } catch (error: any) {
-            return { success: false, message: error.response?.data?.message || 'Failed to request password reset' };
+        } catch (error) {
+            return { success: false, message: getErrorMessage(error) || 'Failed to request password reset' };
         }
     };
 
@@ -100,8 +106,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         try {
             const result = await authApi.resetPassword(mobileNumber, otp, newPassword);
             return { success: result.success, message: result.message };
-        } catch (error: any) {
-            return { success: false, message: error.response?.data?.message || 'Failed to reset password' };
+        } catch (error) {
+            return { success: false, message: getErrorMessage(error) || 'Failed to reset password' };
         }
     };
 
@@ -113,8 +119,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
                 localStorage.setItem('user', JSON.stringify(result.user));
             }
             return { success: result.success, message: result.message };
-        } catch (error: any) {
-            return { success: false, message: error.response?.data?.message || 'Failed to update profile' };
+        } catch (error) {
+            return { success: false, message: getErrorMessage(error) || 'Failed to update profile' };
         }
     };
 

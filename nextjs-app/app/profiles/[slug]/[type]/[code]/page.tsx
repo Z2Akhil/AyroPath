@@ -1,13 +1,12 @@
 'use client';
 
 import { useEffect, useState, useMemo, use } from "react";
-import { AlertCircle, Home, Percent, Share2, ChevronDown, Calendar, CreditCard, CheckCircle, MapPin, Clock } from "lucide-react";
+import { AlertCircle, Home, Percent, Share2, ChevronDown, Calendar, CreditCard, CheckCircle, MapPin } from "lucide-react";
 import BookingForm from "@/components/booking/BookingForm";
 import { getProductDisplayPrice } from "@/lib/api/productApi";
 import SkeletonPackageDetailed from "@/components/skeletons/SkeletonPackageDetailed";
 import { useProducts } from "@/providers/ProductProvider";
 import SEO from "@/components/ui/SEO";
-import { slugify } from "@/lib/slugify";
 import { useCart } from "@/providers/CartProvider";
 import Link from "next/link";
 import { Product } from "@/types";
@@ -21,8 +20,8 @@ interface PageProps {
 }
 
 const PackageDetailPage = ({ params }: PageProps) => {
-    const { slug, type, code } = use(params);
-    const { allProducts, loading: productsLoading, error: productsError } = useProducts();
+    const { type, code } = use(params);
+    const { allProducts, error: productsError } = useProducts();
     const [pkg, setPkg] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -150,7 +149,7 @@ const PackageDetailPage = ({ params }: PageProps) => {
                             </div>
 
                             {/* Price Section */}
-                            <div className="bg-gradient-to-r from-blue-50 to-white rounded-2xl p-6 mb-8 border border-blue-50">
+                            <div className="bg-linear-to-r from-blue-50 to-white rounded-2xl p-6 mb-8 border border-blue-50">
                                 <div className="flex items-baseline gap-4">
                                     <span className="text-4xl font-black text-blue-700">₹{displayPrice}</span>
                                     {hasDiscount && (

@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, ReactNode } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { ShoppingCart, Menu, X, User, LogOut } from 'lucide-react';
 import { useSiteSettings } from '@/providers/SiteSettingsProvider';
 import { useCart } from '@/providers/CartProvider';
@@ -37,10 +36,9 @@ const CartIcon = ({ count }: { count: number }) => (
 interface DesktopNavProps {
   user: UserType | null;
   onLogin: () => void;
-  onLogoutConfirm: () => void;
 }
 
-const DesktopNav = ({ user, onLogin, onLogoutConfirm }: DesktopNavProps) => (
+const DesktopNav = ({ user, onLogin }: DesktopNavProps) => (
   <div className="hidden lg:flex items-center gap-4">
     {user ? (
       <div className="flex items-center gap-3">
@@ -50,13 +48,6 @@ const DesktopNav = ({ user, onLogin, onLogoutConfirm }: DesktopNavProps) => (
           </div>
           <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600">Hi, {user.name}</span>
         </Link>
-        <button
-          onClick={onLogoutConfirm}
-          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-300"
-        >
-          <LogOut size={16} />
-          <span>Logout</span>
-        </button>
       </div>
     ) : (
       <button
@@ -73,11 +64,10 @@ interface MobileDrawerProps {
   open: boolean;
   user: UserType | null;
   onLogin: () => void;
-  onLogoutConfirm: () => void;
   onClose: () => void;
 }
 
-const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose }: MobileDrawerProps) => {
+const MobileDrawer = ({ open, user, onLogin, onClose }: MobileDrawerProps) => {
   if (!open) return null;
 
   return (
@@ -113,18 +103,6 @@ const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose }: MobileD
             </button>
           </div>
 
-          {user && (
-            <div className="px-6 pb-4 border-b border-gray-100">
-              <button
-                onClick={() => { onLogoutConfirm(); onClose(); }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium"
-              >
-                <LogOut size={18} />
-                <span>Logout</span>
-              </button>
-            </div>
-          )}
-
           <nav className="flex-1 p-6 overflow-y-auto">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Navigation</p>
             <div className="space-y-2">
@@ -159,35 +137,32 @@ const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose }: MobileD
   );
 };
 
-const Header = () => {
+interface HeaderProps {
+  children?: ReactNode;
+}
+
+const Header = ({ children }: HeaderProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [authOpen, setAuthOpen] = useState(false);
-  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
-  const [user, setUser] = useState<UserType | null>(null);
+  const [user, setUser] = useState<UserType | null>(() => {
+    if (typeof window !== 'undefined') {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          return JSON.parse(storedUser);
+        } catch {
+          return null;
+        }
+      }
+    }
+    return null;
+  });
   const { cart } = useCart();
   const cartCount = cart?.items?.length || 0;
   const { settings, loading } = useSiteSettings();
-  const router = useRouter();
 
-  useEffect(() => {
-    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch {
-        setUser(null);
-      }
-    }
-  }, []);
-
-  const handleLogout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-    }
-    setLogoutConfirmOpen(false);
-    setUser(null);
-    router.push('/');
+  const handleLogin = () => {
+    // Login functionality will be implemented
+    console.log('Login clicked');
   };
 
   return (
@@ -222,8 +197,7 @@ const Header = () => {
               <CartIcon count={cartCount} />
               <DesktopNav
                 user={user}
-                onLogin={() => setAuthOpen(true)}
-                onLogoutConfirm={() => setLogoutConfirmOpen(true)}
+                onLogin={handleLogin}
               />
 
               <button
@@ -273,10 +247,11 @@ const Header = () => {
       <MobileDrawer
         open={menuOpen}
         user={user}
-        onLogin={() => setAuthOpen(true)}
-        onLogoutConfirm={() => setLogoutConfirmOpen(true)}
+        onLogin={handleLogin}
         onClose={() => setMenuOpen(false)}
       />
+
+      {children}
     </>
   );
 };

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useRef, ReactNode } from 'react';
 import { Toast, ToastContextType } from '@/types';
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -15,9 +15,11 @@ export const useToast = () => {
 
 export const ToastProvider = ({ children }: { children: ReactNode }) => {
     const [toasts, setToasts] = useState<Toast[]>([]);
+    const idCounter = useRef(0);
 
     const addToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info', duration = 5000) => {
-        const id = Date.now() + Math.random();
+        idCounter.current += 1;
+        const id = idCounter.current;
         const toast = { id, message, type, duration };
 
         setToasts(prev => [...prev, toast]);
