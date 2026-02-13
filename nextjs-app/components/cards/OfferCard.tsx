@@ -70,11 +70,12 @@ const OfferCard: React.FC<OfferCardProps> = ({ pkg }) => {
           productType={pkg.type || "OFFER"}
           productName={name}
           className="flex-1"
+          showIcon={false}
         />
 
         <Link
           href={detailPath}
-          className="bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-800 transition-colors text-sm font-medium flex-1 text-center flex items-center justify-center"
+          className="bg-blue-700 text-white px-4 py-2 rounded-xl hover:bg-blue-800 transition-all duration-300 shadow-sm active:scale-95 text-sm font-bold flex-1 text-center flex items-center justify-center"
         >
           Book
         </Link>

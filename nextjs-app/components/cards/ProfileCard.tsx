@@ -26,7 +26,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ pkg }) => {
   const detailPath = `/profiles/${slugify(name)}/${pkg.type || "PROFILE"}/${pkg.code}`;
 
   return (
-    <div className="w-full sm:max-w-sm bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full">
+    <div className="w-full sm:max-w-sm bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full">
       {/* IMAGE BLOCK */}
       <div className="relative h-48 sm:h-52 shrink-0">
         <img
@@ -111,12 +111,13 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ pkg }) => {
             productType={pkg.type || "PROFILE"}
             productName={name}
             className="flex-1"
+            showIcon={false}
           />
           <Link
             href={detailPath}
-            className="bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-800 transition-colors text-sm font-medium flex-1 text-center flex items-center justify-center"
+            className="bg-blue-700 text-white px-4 py-2 rounded-xl hover:bg-blue-800 transition-all duration-300 shadow-sm active:scale-95 text-sm font-bold flex-1 text-center flex items-center justify-center"
           >
-            Book Now
+            Book
           </Link>
         </div>
 

@@ -83,6 +83,7 @@ const TestCard: React.FC<TestCardProps> = ({ test }) => {
             productName={name}
             className="w-full sm:w-auto"
             buttonText="Add to Cart"
+            showIcon={false}
           />
 
           {/* Booked Count */}
