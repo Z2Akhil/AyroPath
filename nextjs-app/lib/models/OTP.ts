@@ -10,7 +10,7 @@ export interface OTPDocument extends Document {
     expiresAt: Date;
     attempts: number;
     isUsed: boolean;
-    provider: 'Fast2SMS' | 'MessageCentral' | 'Mock';
+    provider: 'MessageCentral';
     metadata?: any;
     createdAt: Date;
 }
@@ -65,8 +65,8 @@ const otpSchema = new Schema<OTPDocument, IOTPModel>({
     },
     provider: {
         type: String,
-        enum: ["Fast2SMS", "MessageCentral", "Mock"],
-        default: "Fast2SMS",
+        enum: ["MessageCentral"],
+        default: "MessageCentral",
     },
     metadata: {
         type: Schema.Types.Mixed,
@@ -87,7 +87,7 @@ otpSchema.pre("save", async function (this: OTPDocument) {
 otpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 otpSchema.index({ mobileNumber: 1, purpose: 1, isUsed: 1 });
 otpSchema.index({ email: 1, purpose: 1, isUsed: 1 });
-otpSchema.index({ verificationId: 1 });
+// verificationId index is defined by backend model to avoid duplicate index warning
 
 const OTP = (mongoose.models.OTP as IOTPModel) || mongoose.model<OTPDocument, IOTPModel>("OTP", otpSchema);
 

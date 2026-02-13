@@ -20,6 +20,11 @@ const ForgotPasswordForm = dynamic(() => import('@/components/auth/ForgotPasswor
 export default function AccountPage() {
     const { user, updateProfile, loading: userLoading } = useUser();
     const router = useRouter();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
@@ -147,7 +152,8 @@ export default function AccountPage() {
         order.status && !["DONE", "REPORTED", "CANCELLED", "FAILED", "COMPLETED"].includes(order.status.toUpperCase())
     );
 
-    if (userLoading) {
+    // Prevent hydration mismatch by showing loading state until mounted
+    if (!mounted || userLoading) {
         return (
             <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
                 <Loader className="animate-spin text-blue-600 h-10 w-10" />

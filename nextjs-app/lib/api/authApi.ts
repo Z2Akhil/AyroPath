@@ -6,7 +6,7 @@ export interface AuthResponse {
     message?: string;
     user?: User;
     token?: string;
-    data?: any;
+    data?: unknown;
 }
 
 export const authApi = {

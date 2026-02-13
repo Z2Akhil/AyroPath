@@ -1,25 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db/mongoose';
 import OTP from '@/lib/models/OTP';
+import SMSService from '@/lib/services/smsService';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { mobileNumber, email, otp, purpose = 'verification' } = body;
+    const { mobileNumber, otp, purpose = 'verification', verificationId } = body;
 
-    if ((!mobileNumber && !email) || !otp) {
+    if (!mobileNumber || !otp) {
       return NextResponse.json(
-        { success: false, message: 'Mobile number/email and OTP are required' },
+        { success: false, message: 'Mobile number and OTP are required' },
         { status: 400 }
       );
     }
 
     await connectToDatabase();
 
-    const query = mobileNumber ? { mobileNumber, purpose } : { email, purpose };
-
     const otpRecord = await OTP.findOne({
-      ...query,
+      mobileNumber,
+      purpose,
       isUsed: false,
       expiresAt: { $gt: new Date() },
     }).sort({ createdAt: -1 });
@@ -38,19 +38,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (otpRecord.otp !== otp) {
-      otpRecord.attempts += 1;
-      await otpRecord.save();
-      return NextResponse.json({ success: false, message: 'Invalid OTP' }, { status: 400 });
+    // Always use MessageCentral validation
+    const actualVerificationId = verificationId || otpRecord.verificationId;
+
+    if (!actualVerificationId) {
+      return NextResponse.json(
+        { success: false, message: 'Verification ID not found' },
+        { status: 400 }
+      );
     }
 
+    const validationResult = await SMSService.validateOTP(actualVerificationId, otp);
+
+    if (!validationResult.success) {
+      otpRecord.attempts += 1;
+      await otpRecord.save();
+
+      return NextResponse.json({
+        success: false,
+        message: validationResult.message,
+        errorCode: validationResult.errorCode
+      }, { status: 400 });
+    }
+
+    // MessageCentral validation successful
     otpRecord.isUsed = true;
     await otpRecord.save();
 
-    return NextResponse.json({ success: true, message: 'OTP verified successfully' });
-  } catch {
+    return NextResponse.json({
+      success: true,
+      message: 'OTP verified successfully',
+      provider: 'MessageCentral'
+    });
+  } catch (error) {
+    console.error('OTP verification error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to verify OTP';
     return NextResponse.json(
-      { success: false, message: 'Failed to verify OTP' },
+      { success: false, message },
       { status: 500 }
     );
   }

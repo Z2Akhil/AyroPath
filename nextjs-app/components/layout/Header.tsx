@@ -1,16 +1,15 @@
 'use client';
 
-import { useState, ReactNode } from 'react';
+import { useState, useEffect, ReactNode } from 'react';
 import Link from 'next/link';
-import { ShoppingCart, Menu, X, User, LogOut } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ShoppingCart, Menu, X, User, LogOut, ChevronDown, Settings } from 'lucide-react';
 import { useSiteSettings } from '@/providers/SiteSettingsProvider';
 import { useCart } from '@/providers/CartProvider';
+import { useAuthModal } from '@/providers/AuthModalProvider';
+import { useUser } from '@/providers/UserProvider';
 import { Logo } from '@/components/ui';
 import SearchBar from '@/components/search/SearchBar';
-
-interface UserType {
-  name: string;
-}
 
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
@@ -34,40 +33,85 @@ const CartIcon = ({ count }: { count: number }) => (
 );
 
 interface DesktopNavProps {
-  user: UserType | null;
+  user: { firstName: string; lastName: string } | null;
   onLogin: () => void;
+  onLogout: () => void;
 }
 
-const DesktopNav = ({ user, onLogin }: DesktopNavProps) => (
-  <div className="hidden lg:flex items-center gap-4">
-    {user ? (
-      <div className="flex items-center gap-3">
-        <Link href="/account" className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer group">
-          <div className="w-8 h-8 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-            <User className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600">Hi, {user.name}</span>
-        </Link>
-      </div>
-    ) : (
-      <button
-        onClick={onLogin}
-        className="px-6 py-2.5 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-full hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-      >
-        Login
-      </button>
-    )}
-  </div>
-);
+const DesktopNav = ({ user, onLogin, onLogout }: DesktopNavProps) => {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const router = useRouter();
+
+  const handleLogoutClick = () => {
+    onLogout();
+    setIsDropdownOpen(false);
+  };
+
+  return (
+    <div className="hidden lg:flex items-center gap-4">
+      {user ? (
+        <div className="relative">
+          <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer group"
+          >
+            <div className="w-8 h-8 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+              <User className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600">
+              Hi, {user.firstName}
+            </span>
+            <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {isDropdownOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setIsDropdownOpen(false)}
+              />
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 animate-fade-in">
+                <Link
+                  href="/account"
+                  onClick={() => setIsDropdownOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                >
+                  <Settings className="w-4 h-4" />
+                  Account
+                </Link>
+                <div className="border-t border-gray-100 my-1" />
+                <button
+                  onClick={handleLogoutClick}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors text-left"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+        <button
+          onClick={onLogin}
+          className="px-6 py-2.5 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-full hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+        >
+          Login
+        </button>
+      )}
+    </div>
+  );
+};
 
 interface MobileDrawerProps {
   open: boolean;
-  user: UserType | null;
+  user: { firstName: string; lastName: string } | null;
   onLogin: () => void;
+  onLogout: () => void;
   onClose: () => void;
 }
 
-const MobileDrawer = ({ open, user, onLogin, onClose }: MobileDrawerProps) => {
+const MobileDrawer = ({ open, user, onLogin, onLogout, onClose }: MobileDrawerProps) => {
   if (!open) return null;
 
   return (
@@ -80,15 +124,12 @@ const MobileDrawer = ({ open, user, onLogin, onClose }: MobileDrawerProps) => {
         <div className="flex flex-col h-full">
           <div className="p-6 border-b border-gray-100 flex items-center justify-between">
             {user ? (
-              <Link href="/account" onClick={onClose} className="flex items-center gap-3">
+              <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
                   <User className="w-6 h-6 text-white" />
                 </div>
-                <div>
-                  <p className="font-semibold text-gray-900">Welcome, {user.name}</p>
-                  <p className="text-sm text-gray-500">Manage your account</p>
-                </div>
-              </Link>
+                <p className="font-semibold text-gray-900">Hi, {user.firstName}</p>
+              </div>
             ) : (
               <button
                 onClick={() => { onLogin(); onClose(); }}
@@ -117,13 +158,28 @@ const MobileDrawer = ({ open, user, onLogin, onClose }: MobileDrawerProps) => {
                 </Link>
               ))}
               {user && (
-                <Link
-                  href="/account"
-                  onClick={onClose}
-                  className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
-                >
-                  My Orders
-                </Link>
+                <>
+                  <Link
+                    href="/account"
+                    onClick={onClose}
+                    className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
+                  >
+                    My Orders
+                  </Link>
+                  <Link
+                    href="/account"
+                    onClick={onClose}
+                    className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
+                  >
+                    My Account
+                  </Link>
+                  <button
+                    onClick={() => { onLogout(); onClose(); }}
+                    className="w-full text-left block px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 font-medium"
+                  >
+                    Logout
+                  </button>
+                </>
               )}
             </div>
           </nav>
@@ -143,27 +199,27 @@ interface HeaderProps {
 
 const Header = ({ children }: HeaderProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [user, setUser] = useState<UserType | null>(() => {
-    if (typeof window !== 'undefined') {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        try {
-          return JSON.parse(storedUser);
-        } catch {
-          return null;
-        }
-      }
-    }
-    return null;
-  });
+  const [mounted, setMounted] = useState(false);
+  const { user, logout } = useUser();
   const { cart } = useCart();
   const cartCount = cart?.items?.length || 0;
   const { settings, loading } = useSiteSettings();
+  const { openAuth } = useAuthModal();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogin = () => {
-    // Login functionality will be implemented
-    console.log('Login clicked');
+    openAuth('login');
   };
+
+  const handleLogout = () => {
+    logout();
+  };
+
+  // Prevent hydration mismatch by not rendering user-dependent content until mounted
+  const showUserNav = mounted;
 
   return (
     <>
@@ -195,10 +251,15 @@ const Header = ({ children }: HeaderProps) => {
 
             <div className="flex items-center gap-4">
               <CartIcon count={cartCount} />
-              <DesktopNav
-                user={user}
-                onLogin={handleLogin}
-              />
+              {showUserNav ? (
+                <DesktopNav
+                  user={user}
+                  onLogin={handleLogin}
+                  onLogout={handleLogout}
+                />
+              ) : (
+                <div className="hidden lg:block w-[100px]" />
+              )}
 
               <button
                 onClick={() => setMenuOpen(true)}
@@ -248,6 +309,7 @@ const Header = ({ children }: HeaderProps) => {
         open={menuOpen}
         user={user}
         onLogin={handleLogin}
+        onLogout={handleLogout}
         onClose={() => setMenuOpen(false)}
       />
 

@@ -43,9 +43,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose, onSwitchToRegister, onFo
             setError('');
             toastSuccess("Verification email sent! Please check your inbox.");
             setShowVerificationModal(false);
-        } catch (err: any) {
+        } catch (err) {
             console.error(err);
-            setError(err.response?.data?.message || "Failed to send email");
+            const message = err instanceof Error ? err.message : "Failed to send email";
+            setError(message);
         } finally {
             setResendLoading(false);
         }
@@ -64,12 +65,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose, onSwitchToRegister, onFo
             } else {
                 setError(result.message || "Login failed");
             }
-        } catch (err: any) {
-            if (err.response?.data?.code === 'EMAIL_NOT_VERIFIED') {
-                setVerificationNeeded({ email: err.response.data.email });
+        } catch (err) {
+            if (err instanceof Error && err.message.includes('EMAIL_NOT_VERIFIED')) {
+                setVerificationNeeded({ email: formData.identifier });
                 setShowVerificationModal(true);
             } else {
-                setError(err.message || "Login failed");
+                setError(err instanceof Error ? err.message : "Login failed");
             }
         } finally {
             setLoading(false);

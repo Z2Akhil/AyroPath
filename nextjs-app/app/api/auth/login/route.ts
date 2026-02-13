@@ -1,62 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db/mongoose';
 import User from '@/lib/models/User';
-import OTP from '@/lib/models/OTP';
 import jwt from 'jsonwebtoken';
+import validator from 'validator';
 
 export async function POST(req: NextRequest) {
     try {
         await connectToDatabase();
 
-        const { firstName, lastName, mobileNumber, password, email } = await req.json();
+        const { identifier, password } = await req.json();
 
-        if (!firstName || !lastName || !mobileNumber || !password) {
+        if (!identifier || !password) {
             return NextResponse.json({
                 success: false,
-                message: 'All fields are required (firstName, lastName, mobileNumber, password)'
+                message: 'Mobile number/email and password are required'
             }, { status: 400 });
         }
 
-        if (password.length < 6) {
+        const isMobileNumber = validator.isMobilePhone(identifier, 'any', { strictMode: false });
+        const isEmail = validator.isEmail(identifier);
+
+        if (!isMobileNumber && !isEmail) {
             return NextResponse.json({
                 success: false,
-                message: 'Password must be at least 6 characters long'
+                message: 'Please enter a valid mobile number or email address'
             }, { status: 400 });
         }
 
-        const user = await User.findOne({ mobileNumber });
+        const query: { mobileNumber?: string; email?: string; isVerified: boolean } = { isVerified: true };
+        if (isMobileNumber) {
+            query.mobileNumber = identifier;
+        } else {
+            query.email = identifier.toLowerCase();
+        }
 
-        if (!user) {
+        const user = await User.findOne(query).select('+password');
+
+        if (!user || !user.isActive) {
             return NextResponse.json({
                 success: false,
-                message: 'Mobile number not verified. Please verify OTP first.'
+                message: 'Invalid credentials'
+            }, { status: 401 });
+        }
+
+        if (!user.password) {
+            return NextResponse.json({
+                success: false,
+                message: 'Please login with your social account or complete registration'
             }, { status: 400 });
         }
 
-        if (user.isVerified && user.password) {
+        const isPasswordValid = await user.comparePassword(password);
+
+        if (!isPasswordValid) {
             return NextResponse.json({
                 success: false,
-                message: 'User with this mobile number already exists.'
-            }, { status: 400 });
+                message: 'Invalid credentials'
+            }, { status: 401 });
         }
-
-        user.firstName = firstName;
-        user.lastName = lastName;
-        user.password = password;
-        user.updatedAt = new Date();
-
-        if (email) {
-            const emailExists = await User.findOne({ email });
-            if (emailExists && emailExists._id.toString() !== user._id.toString()) {
-                return NextResponse.json({
-                    success: false,
-                    message: 'Email is already in use by another account'
-                }, { status: 400 });
-            }
-            user.email = email;
-        }
-
-        await user.save();
 
         const token = jwt.sign(
             { id: user._id },
@@ -66,21 +67,21 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            message: 'Registration completed successfully',
+            message: 'Login successful',
             token,
             user: {
                 id: user._id,
                 firstName: user.firstName,
                 lastName: user.lastName,
                 mobileNumber: user.mobileNumber,
-                isVerified: user.isVerified,
                 email: user.email,
+                isVerified: user.isVerified,
                 emailVerified: user.emailVerified
             }
         });
 
     } catch (error) {
-        console.error('Registration error:', error);
+        console.error('Login error:', error);
         const message = error instanceof Error ? error.message : 'Internal server error';
         return NextResponse.json({
             success: false,

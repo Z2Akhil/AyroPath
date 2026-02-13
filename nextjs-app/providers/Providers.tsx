@@ -7,6 +7,7 @@ import { CartProvider } from './CartProvider';
 import { OrderSuccessProvider } from './OrderSuccessProvider';
 import { SiteSettingsProvider } from './SiteSettingsProvider';
 import { ToastProvider } from './ToastProvider';
+import { AuthModalProvider } from './AuthModalProvider';
 import { ToastContainer } from '@/components/ui/Toast';
 
 export function ClientProviders({ children }: { children: ReactNode }) {
@@ -14,14 +15,16 @@ export function ClientProviders({ children }: { children: ReactNode }) {
         <ToastProvider>
             <SiteSettingsProvider>
                 <UserProvider>
-                    <ProductProvider>
-                        <CartProvider>
-                            <OrderSuccessProvider>
-                                {children}
-                                <ToastContainer />
-                            </OrderSuccessProvider>
-                        </CartProvider>
-                    </ProductProvider>
+                    <AuthModalProvider>
+                        <ProductProvider>
+                            <CartProvider>
+                                <OrderSuccessProvider>
+                                    {children}
+                                    <ToastContainer />
+                                </OrderSuccessProvider>
+                            </CartProvider>
+                        </ProductProvider>
+                    </AuthModalProvider>
                 </UserProvider>
             </SiteSettingsProvider>
         </ToastProvider>
