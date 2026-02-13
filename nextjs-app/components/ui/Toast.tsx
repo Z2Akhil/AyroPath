@@ -5,7 +5,7 @@ import { useToast } from '@/providers/ToastProvider';
 import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react';
 import { Toast as ToastType } from '@/types';
 
-const Toast = ({ toast }: { toast: ToastType }) => {
+export const Toast = ({ toast }: { toast: ToastType }) => {
     const { removeToast } = useToast();
     const [isExiting, setIsExiting] = useState(false);
 

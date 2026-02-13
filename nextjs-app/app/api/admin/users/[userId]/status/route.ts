@@ -1,0 +1,62 @@
+import { NextRequest, NextResponse } from 'next/server';
+import dbConnect from '@/lib/db/mongoose';
+import User from '@/lib/models/User';
+import AdminActivity from '@/lib/models/AdminActivity';
+import { withAdminAuth } from '@/lib/auth';
+
+export async function PATCH(
+    req: NextRequest,
+    { params }: { params: { userId: string } }
+) {
+    return withAdminAuth(req, async (req, session) => {
+        const startTime = Date.now();
+        const { userId } = params;
+        const { isActive } = await req.json();
+
+        if (typeof isActive !== 'boolean') {
+            return NextResponse.json({ success: false, error: 'isActive must be a boolean value' }, { status: 400 });
+        }
+
+        try {
+            await dbConnect();
+
+            const oldUser = await User.findById(userId).select('-password');
+            if (!oldUser) {
+                return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
+            }
+
+            const updatedUser = await User.findByIdAndUpdate(
+                userId,
+                { isActive, updatedAt: new Date() },
+                { new: true }
+            ).select('-password');
+
+            const responseTime = Date.now() - startTime;
+
+            await AdminActivity.logActivity({
+                adminId: session.adminId._id,
+                sessionId: session._id,
+                action: 'USERS_UPDATE',
+                description: `Admin ${session.adminId.name} changed status of user ${oldUser.email || userId} to ${isActive ? 'Active' : 'Inactive'}`,
+                resource: 'users',
+                resourceId: userId,
+                endpoint: `/api/admin/users/${userId}/status`,
+                method: 'PATCH',
+                statusCode: 200,
+                responseTime,
+                metadata: { userId, oldStatus: oldUser.isActive, newStatus: isActive }
+            });
+
+            return NextResponse.json({
+                success: true,
+                message: `User ${isActive ? 'activated' : 'deactivated'} successfully`,
+                user: updatedUser,
+                responseTime
+            });
+
+        } catch (error: any) {
+            console.error('Toggle user status error:', error);
+            return NextResponse.json({ success: false, error: 'Failed to update user status' }, { status: 500 });
+        }
+    });
+}

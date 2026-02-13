@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import Admin from './Admin';
 
 export interface AdminActivityDocument extends Document {
     adminId: mongoose.Types.ObjectId;
