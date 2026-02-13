@@ -1,14 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ShoppingCart, Menu, X, User, LogOut } from 'lucide-react';
 import { useSiteSettings } from '@/providers/SiteSettingsProvider';
-import { useAuth } from '@/providers/AuthProvider';
-import { useToast } from '@/providers/ToastProvider';
+import { useCart } from '@/providers/CartProvider';
 import { Logo } from '@/components/ui';
 import SearchBar from '@/components/search/SearchBar';
+
+interface UserType {
+  name: string;
+}
 
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
@@ -31,40 +34,16 @@ const CartIcon = ({ count }: { count: number }) => (
   </Link>
 );
 
-const DesktopNav = () => {
-  const { user, isAuthenticated, logout } = useAuth();
-  const { success } = useToast();
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+interface DesktopNavProps {
+  user: UserType | null;
+  onLogin: () => void;
+  onLogoutConfirm: () => void;
+}
 
-  const handleLogout = () => {
-    logout();
-    success('You have been logged out successfully');
-    setShowLogoutConfirm(false);
-  };
-
-  if (showLogoutConfirm) {
-    return (
-      <div className="hidden lg:flex items-center gap-3">
-        <span className="text-sm text-gray-600">Logout?</span>
-        <button
-          onClick={handleLogout}
-          className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
-        >
-          Yes
-        </button>
-        <button
-          onClick={() => setShowLogoutConfirm(false)}
-          className="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors"
-        >
-          No
-        </button>
-      </div>
-    );
-  }
-
-  if (isAuthenticated && user) {
-    return (
-      <div className="hidden lg:flex items-center gap-3">
+const DesktopNav = ({ user, onLogin, onLogoutConfirm }: DesktopNavProps) => (
+  <div className="hidden lg:flex items-center gap-4">
+    {user ? (
+      <div className="flex items-center gap-3">
         <Link href="/account" className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer group">
           <div className="w-8 h-8 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
             <User className="w-4 h-4 text-white" />
@@ -72,46 +51,45 @@ const DesktopNav = () => {
           <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600">Hi, {user.name}</span>
         </Link>
         <button
-          onClick={() => setShowLogoutConfirm(true)}
+          onClick={onLogoutConfirm}
           className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-300"
         >
           <LogOut size={16} />
           <span>Logout</span>
         </button>
       </div>
-    );
-  }
+    ) : (
+      <button
+        onClick={onLogin}
+        className="px-6 py-2.5 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-full hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+      >
+        Login
+      </button>
+    )}
+  </div>
+);
 
-  return (
-    <Link
-      href="/login"
-      className="hidden lg:block px-6 py-2.5 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-full hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-    >
-      Login
-    </Link>
-  );
-};
+interface MobileDrawerProps {
+  open: boolean;
+  user: UserType | null;
+  onLogin: () => void;
+  onLogoutConfirm: () => void;
+  onClose: () => void;
+}
 
-const MobileDrawer = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
-  const { user, isAuthenticated, logout } = useAuth();
-  const { success } = useToast();
-  const router = useRouter();
-
-  const handleLogout = () => {
-    logout();
-    success('Logged out successfully');
-    onClose();
-  };
-
+const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose }: MobileDrawerProps) => {
   if (!open) return null;
 
   return (
     <>
-      <div onClick={onClose} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" />
+      <div
+        onClick={onClose}
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 animate-fade-in"
+      />
       <div className="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 animate-slide-in-right">
         <div className="flex flex-col h-full">
           <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-            {isAuthenticated && user ? (
+            {user ? (
               <Link href="/account" onClick={onClose} className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
                   <User className="w-6 h-6 text-white" />
@@ -122,13 +100,12 @@ const MobileDrawer = ({ open, onClose }: { open: boolean; onClose: () => void })
                 </div>
               </Link>
             ) : (
-              <Link
-                href="/login"
-                onClick={onClose}
+              <button
+                onClick={() => { onLogin(); onClose(); }}
                 className="px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium shadow-lg"
               >
                 Login to Your Account
-              </Link>
+              </button>
             )}
 
             <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
@@ -136,10 +113,10 @@ const MobileDrawer = ({ open, onClose }: { open: boolean; onClose: () => void })
             </button>
           </div>
 
-          {isAuthenticated && (
+          {user && (
             <div className="px-6 pb-4 border-b border-gray-100">
               <button
-                onClick={handleLogout}
+                onClick={() => { onLogoutConfirm(); onClose(); }}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium"
               >
                 <LogOut size={18} />
@@ -161,7 +138,7 @@ const MobileDrawer = ({ open, onClose }: { open: boolean; onClose: () => void })
                   {label}
                 </Link>
               ))}
-              {isAuthenticated && (
+              {user && (
                 <Link
                   href="/account"
                   onClick={onClose}
@@ -184,14 +161,48 @@ const MobileDrawer = ({ open, onClose }: { open: boolean; onClose: () => void })
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const [user, setUser] = useState<UserType | null>(null);
+  const { cart } = useCart();
+  const cartCount = cart?.items?.length || 0;
   const { settings, loading } = useSiteSettings();
+  const router = useRouter();
+
+  useEffect(() => {
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch {
+        setUser(null);
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+    }
+    setLogoutConfirmOpen(false);
+    setUser(null);
+    router.push('/');
+  };
 
   return (
     <>
       <style jsx global>{`
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
         @keyframes slide-in-right {
           from { transform: translateX(100%); }
           to { transform: translateX(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
         }
         .animate-slide-in-right {
           animation: slide-in-right 0.3s ease-out;
@@ -202,14 +213,18 @@ const Header = () => {
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <Logo logo={settings?.logo} loading={loading} />
-            
+
             <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
               <SearchBar />
             </div>
 
             <div className="flex items-center gap-4">
-              <CartIcon count={0} />
-              <DesktopNav />
+              <CartIcon count={cartCount} />
+              <DesktopNav
+                user={user}
+                onLogin={() => setAuthOpen(true)}
+                onLogoutConfirm={() => setLogoutConfirmOpen(true)}
+              />
 
               <button
                 onClick={() => setMenuOpen(true)}
@@ -255,7 +270,13 @@ const Header = () => {
         <SearchBar />
       </div>
 
-      <MobileDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <MobileDrawer
+        open={menuOpen}
+        user={user}
+        onLogin={() => setAuthOpen(true)}
+        onLogoutConfirm={() => setLogoutConfirmOpen(true)}
+        onClose={() => setMenuOpen(false)}
+      />
     </>
   );
 };

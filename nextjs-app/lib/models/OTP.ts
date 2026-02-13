@@ -1,63 +1,94 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Model } from 'mongoose';
 import validator from 'validator';
 
-export interface IOTP extends Document {
-  mobileNumber?: string;
-  email?: string;
-  otp: string;
-  verificationId?: string;
-  purpose: 'verification' | 'forgot_password' | 'email_verification' | 'forgot_password_email';
-  expiresAt: Date;
-  attempts: number;
-  isUsed: boolean;
-  provider: 'Fast2SMS' | 'MessageCentral' | 'Mock' | 'Email';
-  metadata: Record<string, unknown>;
-  createdAt: Date;
+export interface OTPDocument extends Document {
+    mobileNumber?: string;
+    email?: string;
+    otp: string;
+    verificationId?: string;
+    purpose: 'verification' | 'forgot_password' | 'email_verification' | 'forgot_password_email';
+    expiresAt: Date;
+    attempts: number;
+    isUsed: boolean;
+    provider: 'Fast2SMS' | 'MessageCentral' | 'Mock';
+    metadata?: any;
+    createdAt: Date;
 }
 
-const otpSchema = new Schema<IOTP>(
-  {
+export interface IOTPModel extends Model<OTPDocument> { }
+
+const otpSchema = new Schema<OTPDocument, IOTPModel>({
     mobileNumber: {
-      type: String,
-      validate: {
-        validator: (v: string) => !v || validator.isMobilePhone(v, 'any', { strictMode: false }),
-        message: 'Invalid mobile number',
-      },
+        type: String,
+        validate: {
+            validator: function (v: string) {
+                if (!v) return true;
+                return validator.isMobilePhone(v, "any", { strictMode: false });
+            },
+            message: "Invalid mobile number",
+        },
     },
     email: {
-      type: String,
-      validate: {
-        validator: (v: string) => !v || validator.isEmail(v),
-        message: 'Invalid email address',
-      },
+        type: String,
+        validate: {
+            validator: function (v: string) {
+                if (!v) return true;
+                return validator.isEmail(v);
+            },
+            message: "Invalid email address",
+        },
     },
-    otp: { type: String, required: true },
-    verificationId: { type: String, sparse: true },
+    otp: {
+        type: String,
+        required: true,
+    },
+    verificationId: {
+        type: String,
+        sparse: true,
+    },
     purpose: {
-      type: String,
-      enum: ['verification', 'forgot_password', 'email_verification', 'forgot_password_email'],
-      required: true,
+        type: String,
+        enum: ["verification", "forgot_password", "email_verification", "forgot_password_email"],
+        required: true,
     },
-    expiresAt: { type: Date, required: true },
-    attempts: { type: Number, default: 0 },
-    isUsed: { type: Boolean, default: false },
+    expiresAt: {
+        type: Date,
+        required: true,
+    },
+    attempts: {
+        type: Number,
+        default: 0,
+    },
+    isUsed: {
+        type: Boolean,
+        default: false,
+    },
     provider: {
-      type: String,
-      enum: ['Fast2SMS', 'MessageCentral', 'Mock', 'Email'],
-      default: 'Mock',
+        type: String,
+        enum: ["Fast2SMS", "MessageCentral", "Mock"],
+        default: "Fast2SMS",
     },
-    metadata: { type: Schema.Types.Mixed, default: {} },
-  },
-  { timestamps: true }
-);
+    metadata: {
+        type: Schema.Types.Mixed,
+        default: {},
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    },
+});
 
-otpSchema.pre('save', function () {
-  if (!this.mobileNumber && !this.email) {
-    throw new Error('Either mobileNumber or email is required');
-  }
+otpSchema.pre("save", async function (this: OTPDocument) {
+    if (!this.mobileNumber && !this.email) {
+        throw new Error("Either mobileNumber or email is required");
+    }
 });
 
 otpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+otpSchema.index({ mobileNumber: 1, purpose: 1, isUsed: 1 });
+otpSchema.index({ email: 1, purpose: 1, isUsed: 1 });
+otpSchema.index({ verificationId: 1 });
 
-const OTP = mongoose.models.OTP || mongoose.model<IOTP>('OTP', otpSchema);
+const OTP = (mongoose.models.OTP as IOTPModel) || mongoose.model<OTPDocument, IOTPModel>("OTP", otpSchema);
+
 export default OTP;

@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { getProductDisplayPrice } from "@/lib/productUtils";
 import { slugify } from "@/lib/slugify";
+import AddToCartWithValidation from "./AddToCartWithValidation";
 
 interface OfferCardProps {
   pkg: any;
@@ -17,7 +18,7 @@ const OfferCard: React.FC<OfferCardProps> = ({ pkg }) => {
     childs.slice(0, 3).map((c: any) => c.name).join(", ") +
     (childs.length > 3 ? "..." : "");
 
-  const detailPath = `/packages/${slugify(name)}/${pkg.type || "OFFER"}/${pkg.code}`;
+  const detailPath = `/profiles/${slugify(name)}/${pkg.type || "OFFER"}/${pkg.code}`;
 
   return (
     <div className="bg-white shadow-lg rounded-xl p-5 max-w-sm w-full flex flex-col justify-between hover:shadow-xl transition relative">
@@ -62,11 +63,14 @@ const OfferCard: React.FC<OfferCardProps> = ({ pkg }) => {
         )}
       </div>
 
-     {/* Buttons row */}
+      {/* Buttons row */}
       <div className="flex gap-2 mb-3">
-        <button className="bg-gray-200 text-black px-3 py-2 rounded-md hover:bg-gray-300 transition-colors text-sm font-medium flex-1">
-          Add to Cart
-        </button>
+        <AddToCartWithValidation
+          productCode={pkg.code}
+          productType={pkg.type || "OFFER"}
+          productName={name}
+          className="flex-1"
+        />
 
         <Link
           href={detailPath}

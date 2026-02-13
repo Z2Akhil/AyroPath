@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { getProductDisplayPrice } from "@/lib/productUtils";
+import { getProductDisplayPrice, getImageUrl } from "@/lib/productUtils";
 import { slugify } from "@/lib/slugify";
 import { useState } from "react";
+import AddToCartWithValidation from "./AddToCartWithValidation";
 
 interface ProfileCardProps {
   pkg: any;
@@ -17,14 +18,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ pkg }) => {
     category,
     specimenType,
     fasting,
-    imageLocation,
-    imageMaster = [],
   } = pkg;
 
-  const imgSrc = imageLocation || imageMaster?.[0]?.imgLocations || "/packagePic.webp";
+  const imgSrc = getImageUrl(pkg);
   const priceInfo = getProductDisplayPrice(pkg);
 
-  const detailPath = `/packages/${slugify(name)}/${pkg.type || "PROFILE"}/${pkg.code}`;
+  const detailPath = `/profiles/${slugify(name)}/${pkg.type || "PROFILE"}/${pkg.code}`;
 
   return (
     <div className="w-full sm:max-w-sm bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full">
@@ -107,9 +106,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ pkg }) => {
         </div>
 
         <div className="flex gap-2 mb-3">
-          <button className="bg-gray-200 text-gray-800 border border-gray-300 px-3 py-2 rounded-md hover:bg-gray-300 transition-colors text-sm font-medium flex-1">
-            Add to Cart
-          </button>
+          <AddToCartWithValidation
+            productCode={pkg.code}
+            productType={pkg.type || "PROFILE"}
+            productName={name}
+            className="flex-1"
+          />
           <Link
             href={detailPath}
             className="bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-800 transition-colors text-sm font-medium flex-1 text-center flex items-center justify-center"

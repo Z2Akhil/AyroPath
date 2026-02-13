@@ -27,3 +27,19 @@ export const getProductDisplayPrice = (product: any) => {
     discountAmount,
   };
 };
+
+export const getImageUrl = (product: any) => {
+  if (!product) return "/packagePic.webp";
+
+  const imageLocation = product.imageLocation || product.imageMaster?.[0]?.imgLocations;
+  if (!imageLocation) return "/packagePic.webp";
+
+  // If it's already a full URL or a root-relative path that exists in public
+  if (imageLocation.startsWith("http") || imageLocation.startsWith("/")) {
+    return imageLocation;
+  }
+
+  // Otherwise prefix with backend URL
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+  return `${apiBase}/${imageLocation}`;
+};

@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-const baseURL = typeof window !== 'undefined'
-  ? '/api'
-  : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const baseURL = process.env.NEXT_PUBLIC_API_URL
+  ? `${process.env.NEXT_PUBLIC_API_URL}/api`
+  : 'http://localhost:3000/api';
 
 export const axiosInstance = axios.create({
   baseURL,
@@ -39,7 +39,7 @@ axiosInstance.interceptors.response.use(
       localStorage.removeItem('user');
       localStorage.setItem('sessionExpired', 'true');
       window.location.reload();
-      return new Promise(() => {});
+      return new Promise(() => { });
     }
     return Promise.reject(error);
   }

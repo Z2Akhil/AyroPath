@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { getProductDisplayPrice } from "@/lib/productUtils";
+import AddToCartWithValidation from "./AddToCartWithValidation";
 
 interface TestCardProps {
   test: any;
@@ -75,10 +76,14 @@ const TestCard: React.FC<TestCardProps> = ({ test }) => {
 
       {/* Action Section */}
       <div className="mt-auto pt-4 border-t border-gray-100">
-        <div className="flex flex-col items-end gap-2 sm:gap-3">
-          <button className="px-4 sm:px-5 py-2 bg-green-600 text-white font-medium text-xs sm:text-sm rounded-md hover:bg-green-700 transition-colors shadow-sm whitespace-nowrap">
-            Add to Cart
-          </button>
+        <div className="flex flex-col items-end gap-2 sm:gap-3 w-full">
+          <AddToCartWithValidation
+            productCode={code}
+            productType={test.type || "TEST"}
+            productName={name}
+            className="w-full sm:w-auto"
+            buttonText="Add to Cart"
+          />
 
           {/* Booked Count */}
           {bookedCount && parseInt(bookedCount) > 0 && (

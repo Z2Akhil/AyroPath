@@ -55,7 +55,7 @@ const SearchBar = () => {
   const handleSelect = (item: Product) => {
     setShowDropdown(false);
     const type = item.type || 'PROFILE';
-    router.push(`/packages/${slugify(item.name)}/${type}/${item.code}`);
+    router.push(`/profiles/${slugify(item.name)}/${type}/${item.code}`);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

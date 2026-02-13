@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ProfileCard from "@/components/ProfileCard";
-import SkeletonProfileCard from "@/components/SkeletonProfileCard";
-import Pagination from "@/components/Pagination";
+import ProfileCard from '@/components/cards/ProfileCard';
+import SkeletonProfileCard from "@/components/skeletons/SkeletonProfileCard";
+import Pagination from "@/components/ui/Pagination";
 
 interface Package {
   code: string;
@@ -72,7 +72,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ limit }) => {
   if (error) {
     return <div className="text-center py-20 text-red-500">{error}</div>;
   }
-  
+
   const totalItems = packages.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
