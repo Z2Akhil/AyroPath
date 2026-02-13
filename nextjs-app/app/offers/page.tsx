@@ -29,7 +29,7 @@ const OfferPage: React.FC<OfferPageProps> = ({ limit }) => {
     const fetchOffers = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/client/products?type=OFFER`);
+        const response = await fetch('/api/products?type=OFFER');
         if (!response.ok) {
           throw new Error('Failed to fetch offers');
         }

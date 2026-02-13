@@ -12,20 +12,20 @@ const AboutPage = () => {
         </div>
 
         <p className="text-gray-700 text-base sm:text-lg leading-relaxed text-justify">
-          Ayropath Technologies Limited stands as India's foremost automated
+          Ayropath Technologies Limited stands as India&apos;s foremost automated
           laboratory, renowned for its unwavering commitment to quality and
           affordability in diagnostic services. In collaboration with
           <span className="font-semibold"> Thyrocare Technologies Limited</span>,
-          one of India's most advanced and reputed automated laboratories,
+          one of India&apos;s most advanced and reputed automated laboratories,
           Ayropath ensures that every test meets the highest standards of
           precision, reliability, and global quality.
           <br />
           <br />
-          By leveraging Thyrocare's NABL and CAP-accredited laboratory network
-          along with Ayropath's innovation-driven digital systems, efficient
+          By leveraging Thyrocare&apos;s NABL and CAP-accredited laboratory network
+          along with Ayropath&apos;s innovation-driven digital systems, efficient
           logistics, and customer-first approach, we deliver fast, dependable,
           and affordable diagnostic solutions across India. Offering a
-          comprehensive test profile menu and rapid turnaround times, Ayropath's
+          comprehensive test profile menu and rapid turnaround times, Ayropath&apos;s
           focus on preventive care and cost-effective solutions sets new
           industry benchmarks.
           <br />

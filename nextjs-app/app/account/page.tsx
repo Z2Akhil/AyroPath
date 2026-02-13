@@ -121,8 +121,9 @@ export default function AccountPage() {
             } else {
                 setProfileError(result.message || 'Failed to update profile.');
             }
-        } catch (err: any) {
-            setProfileError(err.message || 'Failed to update profile.');
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to update profile.';
+            setProfileError(message);
         } finally {
             setIsSavingProfile(false);
         }

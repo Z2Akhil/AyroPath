@@ -22,14 +22,18 @@ export async function PUT(req: NextRequest) {
             try {
                 updatedProduct = await Test.updateCustomPricing(code, discount);
                 found = true;
-            } catch (e) { }
+            } catch {
+                // Not found in Test, continue
+            }
 
             // Try Profile model
             if (!found) {
                 try {
                     updatedProduct = await Profile.updateCustomPricing(code, discount);
                     found = true;
-                } catch (e) { }
+                } catch {
+                    // Not found in Profile, continue
+                }
             }
 
             // Try Offer model
@@ -37,7 +41,9 @@ export async function PUT(req: NextRequest) {
                 try {
                     updatedProduct = await Offer.updateCustomPricing(code, discount);
                     found = true;
-                } catch (e) { }
+                } catch {
+                    // Not found in Offer
+                }
             }
 
             if (!found) {
@@ -56,8 +62,9 @@ export async function PUT(req: NextRequest) {
 
             return NextResponse.json({ success: true, product: updatedProduct });
 
-        } catch (error: any) {
-            return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            return NextResponse.json({ success: false, error: message }, { status: 500 });
         }
     });
 }

@@ -34,7 +34,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ limit }) => {
     const fetchPackages = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/client/products?type=PROFILE`);
+        const response = await fetch('/api/products?type=PROFILE');
         if (!response.ok) {
           throw new Error('Failed to fetch packages');
         }

@@ -7,6 +7,12 @@ import Profile from '@/lib/models/Profile';
 import Offer from '@/lib/models/Offer';
 import { ThyrocareService } from '@/lib/services/thyrocare';
 
+interface ThyrocareProduct {
+    code: string;
+    type: string;
+    [key: string]: unknown;
+}
+
 export async function POST(req: NextRequest) {
     return withAdminAuth(req, async (req, session) => {
         const startTime = Date.now();
@@ -31,7 +37,7 @@ export async function POST(req: NextRequest) {
                 throw new Error('Thyrocare API error: ' + responseData.response);
             }
 
-            let thyrocareProducts = [];
+            let thyrocareProducts: ThyrocareProduct[] = [];
             const master = responseData.master || {};
             const type = productType.toUpperCase();
 
@@ -42,16 +48,16 @@ export async function POST(req: NextRequest) {
                 thyrocareProducts = [...(master.offer || []), ...(master.tests || []), ...(master.profile || [])];
             }
 
-            const allProductCodes = new Set(thyrocareProducts.map((p: any) => p.code).filter(Boolean));
+            const allProductCodes = new Set(thyrocareProducts.map((p) => p.code).filter(Boolean));
 
             const combinedProducts = [];
             for (const tp of thyrocareProducts) {
                 try {
-                    let model: any = Test;
+                    let model: typeof Test | typeof Profile | typeof Offer = Test;
                     if (tp.type === 'PROFILE' || tp.type === 'POP') model = Profile;
                     else if (tp.type === 'OFFER') model = Offer;
 
-                    const product = await model.findOrCreateFromThyroCare(tp);
+                    const product = await (model as typeof Test).findOrCreateFromThyroCare(tp);
                     if (!product.isActive) {
                         product.isActive = true;
                         await product.save();
@@ -60,29 +66,22 @@ export async function POST(req: NextRequest) {
                     const combinedData = product.getCombinedData();
                     combinedData.isInThyrocare = true;
                     combinedProducts.push(combinedData);
-                } catch (err) {
-                    console.error(`Error syncing product ${tp.code}:`, err);
+                } catch {
+                    console.error(`Error syncing product ${tp.code}`);
                 }
             }
 
-            // Step 5: Handle orphaned products (in DB but not in ThyroCare)
-            const orphanedProducts = [];
-            const modelsToCheck = [];
-            if (type === 'ALL') {
-                modelsToCheck.push({ model: Test, type: 'TEST' });
-                modelsToCheck.push({ model: Profile, type: 'PROFILE' });
-                modelsToCheck.push({ model: Offer, type: 'OFFER' });
-            } else if (type === 'TEST') modelsToCheck.push({ model: Test, type: 'TEST' });
-            else if (type === 'PROFILE') modelsToCheck.push({ model: Profile, type: 'PROFILE' });
-            else if (type === 'OFFER') modelsToCheck.push({ model: Offer, type: 'OFFER' });
+            // Handle orphaned products (in DB but not in ThyroCare)
+            const orphanedProducts: Record<string, unknown>[] = [];
+            const codesArray = allProductCodes.size > 0 ? Array.from(allProductCodes) : null;
 
-            for (const { model, type: mType } of modelsToCheck) {
-                const query: any = { type: mType };
-                if (allProductCodes.size > 0) {
-                    query.code = { $nin: Array.from(allProductCodes) };
-                }
-
-                const orphaned = await model.find(query);
+            const handleOrphaned = async (model: typeof Test | typeof Profile | typeof Offer, mType: string) => {
+                const filter = {
+                    type: mType,
+                    ...(codesArray && { code: { $nin: codesArray } })
+                };
+                // @ts-expect-error - Mongoose query filter type complexity
+                const orphaned = await model.find(filter);
                 for (const product of orphaned) {
                     if (product.isActive) {
                         product.isActive = false;
@@ -92,7 +91,15 @@ export async function POST(req: NextRequest) {
                     combinedData.isInThyrocare = false;
                     orphanedProducts.push(combinedData);
                 }
-            }
+            };
+
+            if (type === 'ALL') {
+                await handleOrphaned(Test, 'TEST');
+                await handleOrphaned(Profile, 'PROFILE');
+                await handleOrphaned(Offer, 'OFFER');
+            } else if (type === 'TEST') await handleOrphaned(Test, 'TEST');
+            else if (type === 'PROFILE') await handleOrphaned(Profile, 'PROFILE');
+            else if (type === 'OFFER') await handleOrphaned(Offer, 'OFFER');
 
             const allProducts = [...combinedProducts, ...orphanedProducts];
 
@@ -121,9 +128,10 @@ export async function POST(req: NextRequest) {
                 }
             });
 
-        } catch (error: any) {
+        } catch (error) {
             console.error('Migration API Error:', error);
-            return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            return NextResponse.json({ success: false, error: message }, { status: 500 });
         }
     });
 }

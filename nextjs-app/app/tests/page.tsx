@@ -31,7 +31,7 @@ const TestPage: React.FC<TestPageProps> = ({ limit }) => {
     const fetchTests = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/client/products?type=TESTS`);
+        const response = await fetch('/api/products?type=TESTS');
         if (!response.ok) {
           throw new Error('Failed to fetch tests');
         }

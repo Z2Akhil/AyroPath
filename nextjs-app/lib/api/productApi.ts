@@ -1,4 +1,3 @@
-import { axiosInstance } from "./axiosInstance";
 import { Product } from "@/types";
 
 export interface GetProductsResponse {
@@ -10,21 +9,22 @@ export interface GetProductsResponse {
 export const getProductsFromBackend = async (productType: string, options: { limit?: number; skip?: number } = {}): Promise<GetProductsResponse> => {
     try {
         const { limit, skip } = options;
-        let url = `/client/products?type=${productType}`;
+        let url = `/api/products?type=${productType}`;
 
         if (limit) url += `&limit=${limit}`;
         if (skip) url += `&skip=${skip}`;
 
-        const response = await axiosInstance.get(url);
-
-        if (response.data.success) {
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.success) {
             return {
-                products: response.data.products || [],
-                totalCount: response.data.totalCount || 0,
-                hasMore: response.data.hasMore || false
+                products: data.products || [],
+                totalCount: data.totalCount || 0,
+                hasMore: data.hasMore || false
             };
         } else {
-            console.warn("⚠️ Unexpected API response:", response.data);
+            console.warn("⚠️ Unexpected API response:", data);
             return { products: [], totalCount: 0, hasMore: false };
         }
     } catch (error) {
@@ -35,12 +35,13 @@ export const getProductsFromBackend = async (productType: string, options: { lim
 
 export const getProductByCode = async (code: string): Promise<Product | null> => {
     try {
-        const response = await axiosInstance.get(`/client/products/${code}`);
+        const response = await fetch(`/api/products/${code}`);
+        const data = await response.json();
 
-        if (response.data.success) {
-            return response.data.product || null;
+        if (data.success) {
+            return data.product || null;
         } else {
-            console.warn("⚠️ Product not found:", response.data);
+            console.warn("⚠️ Product not found:", data);
             return null;
         }
     } catch (error) {

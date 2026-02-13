@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     await otpRecord.save();
 
     return NextResponse.json({ success: true, message: 'OTP verified successfully' });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, message: 'Failed to verify OTP' },
       { status: 500 }
