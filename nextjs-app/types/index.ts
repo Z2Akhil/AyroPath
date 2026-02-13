@@ -49,6 +49,7 @@ export interface UserContextType {
   verifyOTP: (mobileNumber: string, otp: string, purpose?: string) => Promise<{ success: boolean; message?: string }>;
   forgotPassword: (mobileNumber: string) => Promise<{ success: boolean; message?: string }>;
   resetPassword: (mobileNumber: string, otp: string, newPassword?: string) => Promise<{ success: boolean; message?: string }>;
+  updateProfile: (data: Partial<User>) => Promise<{ success: boolean; message?: string }>;
 }
 
 export interface CartItem {

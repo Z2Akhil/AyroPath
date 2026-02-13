@@ -105,6 +105,19 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const updateProfile = async (data: Partial<import('@/types').User>) => {
+        try {
+            const result = await authApi.updateProfile(data);
+            if (result.success && result.user) {
+                setUser(result.user);
+                localStorage.setItem('user', JSON.stringify(result.user));
+            }
+            return { success: result.success, message: result.message };
+        } catch (error: any) {
+            return { success: false, message: error.response?.data?.message || 'Failed to update profile' };
+        }
+    };
+
     const value: UserContextType = {
         user,
         loading,
@@ -115,6 +128,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         verifyOTP,
         forgotPassword,
         resetPassword,
+        updateProfile,
     };
 
     return (
