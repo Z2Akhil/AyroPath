@@ -3,104 +3,153 @@ import { adminAuth } from '@/lib/auth';
 import connectDB from '@/lib/db/mongoose';
 import Order from '@/lib/models/Order';
 import User from '@/lib/models/User';
-import Test from '@/lib/models/Test';
+import AdminActivity from '@/lib/models/AdminActivity';
 
 export async function GET(req: NextRequest) {
+    const startTime = Date.now();
     const auth = await adminAuth(req);
 
     if (!auth.authenticated) {
         return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
     }
 
+    // Extract IP address and User-Agent for logging
+    const ipAddress = req.headers.get('x-forwarded-for') || 'unknown';
+    const userAgent = req.headers.get('user-agent') || '';
+
     try {
         await connectDB();
 
         const searchParams = req.nextUrl.searchParams;
-        const range = searchParams.get('range') || '30d';
+        const startDate = searchParams.get('startDate');
+        const endDate = searchParams.get('endDate');
 
-        const now = new Date();
-        let startDate = new Date();
+        console.log('Fetching analytics overview for admin:', auth.admin.name, { startDate, endDate });
 
-        switch (range) {
-            case '7d': startDate.setDate(now.getDate() - 7); break;
-            case '30d': startDate.setDate(now.getDate() - 30); break;
-            case '90d': startDate.setDate(now.getDate() - 90); break;
-            case '12m': startDate.setFullYear(now.getFullYear() - 1); break;
-            default: startDate.setDate(now.getDate() - 30);
+        // Date range filter
+        const dateFilter: any = {};
+        if (startDate) {
+            dateFilter.$gte = new Date(startDate);
+        }
+        if (endDate) {
+            dateFilter.$lte = new Date(endDate);
         }
 
-        // Comparison period (previous same-length period)
-        const periodMs = now.getTime() - startDate.getTime();
-        const compareStartDate = new Date(startDate.getTime() - periodMs);
+        // Get order analytics
+        const orderMatch: any = {};
+        if (startDate || endDate) {
+            orderMatch.createdAt = dateFilter;
+        }
 
-        // Fetch metrics for current and comparison periods
         const [
-            currentRevenue,
-            prevRevenue,
-            currentOrders,
-            prevOrders,
-            currentUsers,
-            prevUsers,
-            activeTests
+            totalOrders,
+            totalRevenue,
+            pendingOrders,
+            createdOrders,
+            completedOrders,
+            failedOrders,
+            cancelledOrders,
+            totalUsers,
+            newUsers
         ] = await Promise.all([
-            // Current Revenue
+            // Order counts
+            Order.countDocuments(orderMatch),
             Order.aggregate([
-                { $match: { 'payment.status': 'PAID', createdAt: { $gte: startDate } } },
-                { $group: { _id: null, total: { $sum: '$payment.amount' } } }
-            ]),
-            // Previous Revenue
-            Order.aggregate([
-                { $match: { 'payment.status': 'PAID', createdAt: { $gte: compareStartDate, $lt: startDate } } },
-                { $group: { _id: null, total: { $sum: '$payment.amount' } } }
-            ]),
-            // Current Orders
-            Order.countDocuments({ createdAt: { $gte: startDate } }),
-            // Previous Orders
-            Order.countDocuments({ createdAt: { $gte: compareStartDate, $lt: startDate } }),
-            // Current Users
-            User.countDocuments({ createdAt: { $gte: startDate } }),
-            // Previous Users
-            User.countDocuments({ createdAt: { $gte: compareStartDate, $lt: startDate } }),
-            // Active Tests
-            Test.countDocuments({ isActive: true })
+                { $match: orderMatch },
+                { $group: { _id: null, total: { $sum: '$package.price' } } }
+            ]).then(result => result[0]?.total || 0),
+            Order.countDocuments({ ...orderMatch, status: 'PENDING' }),
+            Order.countDocuments({ ...orderMatch, status: 'CREATED' }),
+            Order.countDocuments({ ...orderMatch, status: 'COMPLETED' }),
+            Order.countDocuments({ ...orderMatch, status: 'FAILED' }),
+            Order.countDocuments({ ...orderMatch, status: 'CANCELLED' }),
+
+            // User counts
+            User.countDocuments(),
+            User.countDocuments(startDate || endDate ? { createdAt: dateFilter } : {})
         ]);
 
-        const curRev = currentRevenue[0]?.total || 0;
-        const preRev = prevRevenue[0]?.total || 0;
+        // Calculate conversion rate
+        const conversionRate = totalUsers > 0 ? (totalOrders / totalUsers * 100).toFixed(1) : '0';
 
-        const calculateChange = (current: number, previous: number) => {
-            if (previous === 0) return current > 0 ? 100 : 0;
-            return parseFloat(((current - previous) / previous * 100).toFixed(1));
+        // Get Thyrocare status counts
+        const thyrocareStatusCounts = {
+            YET_TO_ASSIGN: await Order.countDocuments({ ...orderMatch, 'thyrocare.status': 'YET TO ASSIGN' }),
+            ASSIGNED: await Order.countDocuments({ ...orderMatch, 'thyrocare.status': 'ASSIGNED' }),
+            ACCEPTED: await Order.countDocuments({ ...orderMatch, 'thyrocare.status': 'ACCEPTED' }),
+            SERVICED: await Order.countDocuments({ ...orderMatch, 'thyrocare.status': 'SERVICED' }),
+            DONE: await Order.countDocuments({ ...orderMatch, 'thyrocare.status': 'DONE' }),
+            FAILED: await Order.countDocuments({ ...orderMatch, 'thyrocare.status': 'FAILED' })
         };
+
+        // Calculate average order value
+        const avgOrderValue = totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(2) : '0';
+
+        await AdminActivity.logActivity({
+            adminId: auth.admin._id,
+            sessionId: auth.session._id,
+            action: 'ANALYTICS_FETCH',
+            description: `Admin ${auth.admin.name} fetched analytics overview`,
+            resource: 'analytics',
+            endpoint: '/api/admin/analytics/overview',
+            method: 'GET',
+            ipAddress: ipAddress,
+            userAgent: userAgent,
+            statusCode: 200,
+            responseTime: Date.now() - startTime,
+            metadata: {
+                startDate,
+                endDate,
+                totalOrders,
+                totalRevenue
+            }
+        });
 
         return NextResponse.json({
             success: true,
             overview: {
-                totalRevenue: {
-                    value: curRev,
-                    change: calculateChange(curRev, preRev),
-                    trend: curRev >= preRev ? 'up' : 'down'
+                metrics: {
+                    totalOrders,
+                    totalRevenue,
+                    avgOrderValue: parseFloat(avgOrderValue),
+                    totalUsers,
+                    newUsers,
+                    conversionRate: parseFloat(conversionRate),
+                    activeUsers: totalOrders > 0 ? totalOrders : 0 // Simplified active users
                 },
-                totalOrders: {
-                    value: currentOrders,
-                    change: calculateChange(currentOrders, prevOrders),
-                    trend: currentOrders >= prevOrders ? 'up' : 'down'
+                orderStatus: {
+                    PENDING: pendingOrders,
+                    CREATED: createdOrders,
+                    COMPLETED: completedOrders,
+                    FAILED: failedOrders,
+                    CANCELLED: cancelledOrders
                 },
-                newUsers: {
-                    value: currentUsers,
-                    change: calculateChange(currentUsers, prevUsers),
-                    trend: currentUsers >= prevUsers ? 'up' : 'down'
-                },
-                activeServices: {
-                    value: activeTests,
-                    change: 0, // Not really a time-series growth metric in the same sense
-                    trend: 'up'
-                }
+                thyrocareStatus: thyrocareStatusCounts
             }
         });
 
     } catch (error: any) {
-        console.error('Analytics Overview Error:', error);
-        return NextResponse.json({ success: false, error: 'Failed to fetch analytics overview' }, { status: 500 });
+        const responseTime = Date.now() - startTime;
+        console.error('Analytics overview fetch error:', error);
+
+        await AdminActivity.logActivity({
+            adminId: auth.admin._id,
+            sessionId: auth.session._id,
+            action: 'ERROR',
+            description: `Failed to fetch analytics overview: ${error.message}`,
+            resource: 'analytics',
+            endpoint: '/api/admin/analytics/overview',
+            method: 'GET',
+            ipAddress: ipAddress,
+            userAgent: userAgent,
+            statusCode: 500,
+            responseTime: responseTime,
+            errorMessage: error.message
+        });
+
+        return NextResponse.json({
+            success: false,
+            error: 'Failed to fetch analytics overview'
+        }, { status: 500 });
     }
 }

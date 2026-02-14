@@ -3,98 +3,159 @@ import { adminAuth } from '@/lib/auth';
 import connectDB from '@/lib/db/mongoose';
 import Order from '@/lib/models/Order';
 import User from '@/lib/models/User';
+import AdminActivity from '@/lib/models/AdminActivity';
 
 export async function GET(req: NextRequest) {
+    const startTime = Date.now();
     const auth = await adminAuth(req);
 
     if (!auth.authenticated) {
         return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
     }
 
+    // Extract IP address and User-Agent for logging
+    const ipAddress = req.headers.get('x-forwarded-for') || 'unknown';
+    const userAgent = req.headers.get('user-agent') || '';
+
     try {
         await connectDB();
 
         const searchParams = req.nextUrl.searchParams;
-        const range = searchParams.get('range') || '30d';
+        const period = searchParams.get('period') || 'daily';
+        const startDateParam = searchParams.get('startDate');
+        const endDateParam = searchParams.get('endDate');
 
-        const now = new Date();
-        now.setHours(23, 59, 59, 999);
-        let startDate = new Date();
+        console.log('Fetching analytics trends for admin:', auth.admin.name, { period, startDate: startDateParam, endDate: endDateParam });
 
-        switch (range) {
-            case '7d': startDate.setDate(now.getDate() - 7); break;
-            case '30d': startDate.setDate(now.getDate() - 30); break;
-            case '90d': startDate.setDate(now.getDate() - 90); break;
-            case '12m': startDate.setFullYear(now.getFullYear() - 1); break;
-            default: startDate.setDate(now.getDate() - 30);
+        // Default date range: last 30 days
+        const defaultEndDate = new Date();
+        const defaultStartDate = new Date();
+        defaultStartDate.setDate(defaultStartDate.getDate() - 30);
+
+        const dateFilter = {
+            $gte: startDateParam ? new Date(startDateParam) : defaultStartDate,
+            $lte: endDateParam ? new Date(endDateParam) : defaultEndDate
+        };
+
+        // Determine date format for grouping
+        let dateFormat;
+        switch (period) {
+            case 'daily':
+                dateFormat = { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } };
+                break;
+            case 'weekly':
+                dateFormat = { $dateToString: { format: '%Y-%W', date: '$createdAt' } };
+                break;
+            case 'monthly':
+                dateFormat = { $dateToString: { format: '%Y-%m', date: '$createdAt' } };
+                break;
+            default:
+                dateFormat = { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } };
         }
-        startDate.setHours(0, 0, 0, 0);
 
-        // Fetch data for trends
-        const [revenueTrends, orderTrends, userTrends] = await Promise.all([
-            // Revenue Trends
-            Order.aggregate([
-                { $match: { 'payment.status': 'PAID', createdAt: { $gte: startDate } } },
-                {
-                    $group: {
-                        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-                        value: { $sum: '$payment.amount' }
-                    }
-                },
-                { $sort: { _id: 1 } }
-            ]),
-            // Order Trends
-            Order.aggregate([
-                { $match: { createdAt: { $gte: startDate } } },
-                {
-                    $group: {
-                        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-                        value: { $sum: 1 }
-                    }
-                },
-                { $sort: { _id: 1 } }
-            ]),
-            // User Trends
-            User.aggregate([
-                { $match: { createdAt: { $gte: startDate } } },
-                {
-                    $group: {
-                        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-                        value: { $sum: 1 }
-                    }
-                },
-                { $sort: { _id: 1 } }
-            ])
+        // Get order trends
+        const orderTrends = await Order.aggregate([
+            {
+                $match: {
+                    createdAt: dateFilter
+                }
+            },
+            {
+                $group: {
+                    _id: dateFormat,
+                    date: { $first: '$createdAt' },
+                    orderCount: { $sum: 1 },
+                    revenue: { $sum: '$package.price' }
+                }
+            },
+            {
+                $sort: { _id: 1 }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    date: '$_id',
+                    orderCount: 1,
+                    revenue: 1
+                }
+            }
         ]);
 
-        // Helper to fill missing dates with 0
-        const fillDates = (data: any[], start: Date, end: Date) => {
-            const result = [];
-            const current = new Date(start);
-            const dataMap = new Map(data.map(item => [item._id, item.value]));
-
-            while (current <= end) {
-                const dateStr = current.toISOString().split('T')[0];
-                result.push({
-                    date: dateStr,
-                    value: dataMap.get(dateStr) || 0
-                });
-                current.setDate(current.getDate() + 1);
+        // Get user signup trends
+        const userTrends = await User.aggregate([
+            {
+                $match: {
+                    createdAt: dateFilter
+                }
+            },
+            {
+                $group: {
+                    _id: dateFormat,
+                    date: { $first: '$createdAt' },
+                    userCount: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { _id: 1 }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    date: '$_id',
+                    userCount: 1
+                }
             }
-            return result;
-        };
+        ]);
+
+        await AdminActivity.logActivity({
+            adminId: auth.admin._id,
+            sessionId: auth.session._id,
+            action: 'ANALYTICS_TRENDS_FETCH',
+            description: `Admin ${auth.admin.name} fetched analytics trends`,
+            resource: 'analytics',
+            endpoint: '/api/admin/analytics/trends',
+            method: 'GET',
+            ipAddress: ipAddress,
+            userAgent: userAgent,
+            statusCode: 200,
+            responseTime: Date.now() - startTime,
+            metadata: {
+                period,
+                startDate: dateFilter.$gte,
+                endDate: dateFilter.$lte
+            }
+        });
 
         return NextResponse.json({
             success: true,
             trends: {
-                revenue: fillDates(revenueTrends, startDate, now),
-                orders: fillDates(orderTrends, startDate, now),
-                users: fillDates(userTrends, startDate, now)
+                orderTrends,
+                userTrends
             }
         });
 
     } catch (error: any) {
-        console.error('Analytics Trends Error:', error);
-        return NextResponse.json({ success: false, error: 'Failed to fetch analytics trends' }, { status: 500 });
+        const responseTime = Date.now() - startTime;
+        console.error('Analytics trends fetch error:', error);
+
+        await AdminActivity.logActivity({
+            adminId: auth.admin._id,
+            sessionId: auth.session._id,
+            action: 'ERROR',
+            description: `Failed to fetch analytics trends: ${error.message}`,
+            resource: 'analytics',
+            endpoint: '/api/admin/analytics/trends',
+            method: 'GET',
+            ipAddress: ipAddress,
+            userAgent: userAgent,
+            statusCode: 500,
+            responseTime: responseTime,
+            errorMessage: error.message
+        });
+
+        return NextResponse.json({
+            success: false,
+            error: 'Failed to fetch analytics trends'
+        }, { status: 500 });
     }
 }
