@@ -8,7 +8,7 @@ ENV VITE_TARGET_URL=$VITE_TARGET_URL
 
 COPY package*.json ./
 
-RUN npm ci && npm audit fix && npm clean cache --force
+RUN npm ci && npm audit fix && npm cache clean --force
 
 COPY . .
 
