@@ -43,9 +43,9 @@ const UserSelector: React.FC<UserSelectorProps> = ({
             return;
         }
 
-        const isSelected = selectedUsers.some(u => u.id === user.id);
+        const isSelected = selectedUsers.some(u => u._id === user._id);
         if (isSelected) {
-            setSelectedUsers(selectedUsers.filter(u => u.id !== user.id));
+            setSelectedUsers(selectedUsers.filter(u => u._id !== user._id));
         } else {
             setSelectedUsers([...selectedUsers, user]);
         }
@@ -55,7 +55,7 @@ const UserSelector: React.FC<UserSelectorProps> = ({
         if (selectionMode === 'single') return;
         const newSelected = [...selectedUsers];
         filteredUsers.forEach(user => {
-            if (!newSelected.some(u => u.id === user.id)) {
+            if (!newSelected.some(u => u._id === user._id)) {
                 newSelected.push(user);
             }
         });
@@ -63,8 +63,8 @@ const UserSelector: React.FC<UserSelectorProps> = ({
     };
 
     const deselectAllFiltered = () => {
-        const filteredIds = new Set(filteredUsers.map(u => u.id));
-        setSelectedUsers(selectedUsers.filter(u => !filteredIds.has(u.id)));
+        const filteredIds = new Set(filteredUsers.map(u => u._id));
+        setSelectedUsers(selectedUsers.filter(u => !filteredIds.has(u._id)));
     };
 
     const handleAllUsersMode = () => {
@@ -164,10 +164,10 @@ const UserSelector: React.FC<UserSelectorProps> = ({
                     </div>
                 ) : (
                     filteredUsers.map((user) => {
-                        const isSelected = selectedUsers.some(u => u.id === user.id);
+                        const isSelected = selectedUsers.some(u => u._id === user._id);
                         return (
                             <button
-                                key={user.id}
+                                key={user._id}
                                 onClick={() => toggleUser(user)}
                                 className={`w-full group text-left p-4 rounded-[20px] transition-all duration-300 border-2 ${isSelected
                                     ? 'bg-blue-50/50 border-blue-500 shadow-lg shadow-blue-500/5'

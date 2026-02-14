@@ -231,7 +231,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             }
 
             // Fallback: local-only removal (for guests or if backend failed)
-            let updatedCart = { ...cart };
+            const updatedCart = { ...cart };
             const itemToRemove = updatedCart.items.find(
                 item => item.productCode === productCode && item.productType === productType
             );
@@ -268,7 +268,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setLoading(true);
 
         try {
-            let updatedCart = { ...cart };
+            const updatedCart = { ...cart };
             const item = updatedCart.items.find(
                 item => item.productCode === productCode && item.productType === productType
             );

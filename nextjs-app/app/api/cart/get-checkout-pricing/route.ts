@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     const userId = req.headers.get('x-user-id');
     const guestSessionId = req.headers.get('x-guest-session-id');
 
-    let itemsToPrice: ProductDetails[] = [];
+    const itemsToPrice: ProductDetails[] = [];
 
     if (directItems && directItems.length > 0) {
       for (const item of directItems) {

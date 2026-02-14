@@ -6,18 +6,23 @@ import Admin from './Admin';
 export interface INotification extends Document {
     subject: string;
     content: string;
-    emailType: 'promotional' | 'transactional';
+    emailType: 'promotional' | 'informational';
     recipients: Array<{
         userId: mongoose.Types.ObjectId;
-        status: 'pending' | 'delivered' | 'failed';
+        email: string;  // Added email field like old implementation
+        status: 'pending' | 'sent' | 'failed';  // Changed 'delivered' to 'sent' to match old schema
         error?: string;
         sentAt?: Date;
     }>;
-    status: 'pending' | 'completed' | 'failed';
+    status: 'draft' | 'sending' | 'completed' | 'failed';  // Match old schema
+    totalRecipients: number;  // Added to match old schema
+    sentCount: number;  // Added to match old schema
     recipientCount: number;
     deliveredCount: number;
     failedCount: number;
     createdBy: mongoose.Types.ObjectId;
+    startedAt?: Date;  // Added to match old schema
+    completedAt?: Date;  // Added to match old schema
     createdAt: Date;
     updatedAt: Date;
 }
@@ -27,28 +32,33 @@ const NotificationSchema: Schema = new Schema({
     content: { type: String, required: true },
     emailType: {
         type: String,
-        enum: ['promotional', 'transactional'],
+        enum: ['promotional', 'informational'],  // Changed 'transactional' to 'informational'
         default: 'promotional'
     },
     recipients: [{
         userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+        email: { type: String, required: true, lowercase: true },  // Added email field
         status: {
             type: String,
-            enum: ['pending', 'delivered', 'failed'],
+            enum: ['pending', 'sent', 'failed'],  // Changed 'delivered' to 'sent'
             default: 'pending'
         },
-        error: { type: String },
-        sentAt: { type: Date }
+        error: { type: String, default: null },
+        sentAt: { type: Date, default: null }
     }],
     status: {
         type: String,
-        enum: ['pending', 'completed', 'failed'],
-        default: 'pending'
+        enum: ['draft', 'sending', 'completed', 'failed'],  // Added 'draft' and 'sending'
+        default: 'draft'
     },
+    totalRecipients: { type: Number, required: true, min: 1 },  // Added
+    sentCount: { type: Number, default: 0 },  // Added
     recipientCount: { type: Number, default: 0 },
     deliveredCount: { type: Number, default: 0 },
     failedCount: { type: Number, default: 0 },
-    createdBy: { type: Schema.Types.ObjectId, ref: 'Admin', required: true }
+    createdBy: { type: Schema.Types.ObjectId, ref: 'Admin', required: true },
+    startedAt: { type: Date, default: null },  // Added
+    completedAt: { type: Date, default: null }  // Added
 }, {
     timestamps: true
 });

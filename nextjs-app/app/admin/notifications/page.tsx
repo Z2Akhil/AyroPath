@@ -56,7 +56,15 @@ const NotificationsPage = () => {
     }, [activeTab]);
 
     const handleSendNotification = async () => {
-        if (!subject.trim() || selectedUsers.length === 0) return;
+        // Add validation for content as well
+        if (!subject.trim() || !content.trim() || selectedUsers.length === 0) {
+            console.error('❌ Frontend validation failed:', {
+                hasSubject: !!subject.trim(),
+                hasContent: !!content.trim(),
+                selectedCount: selectedUsers.length
+            });
+            return;
+        }
 
         try {
             setSending(true);
@@ -69,6 +77,13 @@ const NotificationsPage = () => {
                 emailType,
                 userIds: selectedUsers.map(user => user._id)
             };
+
+            console.log('📤 Frontend sending notification:', {
+                subject: notificationData.subject.substring(0, 30),
+                content: notificationData.content.substring(0, 30),
+                emailType: notificationData.emailType,
+                userIdsCount: notificationData.userIds.length
+            });
 
             const response = await adminNotificationApi.sendNotification(notificationData);
 
@@ -114,8 +129,8 @@ const NotificationsPage = () => {
                     <button
                         onClick={() => setActiveTab('compose')}
                         className={`flex-1 flex items-center justify-center gap-2.5 py-3 rounded-[14px] text-sm font-bold transition-all duration-300 ${activeTab === 'compose'
-                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
-                                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
+                            : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                             }`}
                     >
                         <Send className={`h-4 w-4 ${activeTab === 'compose' ? '' : 'text-gray-400'}`} />
@@ -124,8 +139,8 @@ const NotificationsPage = () => {
                     <button
                         onClick={() => setActiveTab('history')}
                         className={`flex-1 flex items-center justify-center gap-2.5 py-3 rounded-[14px] text-sm font-bold transition-all duration-300 ${activeTab === 'history'
-                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
-                                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
+                            : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                             }`}
                     >
                         <History className={`h-4 w-4 ${activeTab === 'history' ? '' : 'text-gray-400'}`} />
@@ -206,7 +221,7 @@ const NotificationsPage = () => {
                             <div className="mt-8">
                                 <button
                                     onClick={handleSendNotification}
-                                    disabled={sending || selectedUsers.length === 0 || !subject.trim()}
+                                    disabled={sending || selectedUsers.length === 0 || !subject.trim() || !content.trim()}
                                     className="w-full flex items-center justify-center gap-3 py-4 bg-gray-900 text-white rounded-2xl font-extrabold text-base hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-xl shadow-gray-400/20 active:scale-[0.98]"
                                 >
                                     {sending ? (

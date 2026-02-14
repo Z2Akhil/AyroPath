@@ -61,8 +61,44 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { subject, content, emailType, userIds } = body;
 
-        if (!subject || !content || !userIds || !Array.isArray(userIds) || userIds.length === 0) {
-            return NextResponse.json({ success: false, error: 'Subject, content, and at least one recipient are required' }, { status: 400 });
+        // Debug logging to identify the issue
+        console.log('📧 Notification POST Request:', {
+            subject: subject ? `"${subject.substring(0, 30)}..."` : 'MISSING',
+            content: content ? `"${content.substring(0, 30)}..."` : 'MISSING',
+            emailType: emailType || 'MISSING',
+            userIdsCount: userIds?.length || 0,
+            userIdsIsArray: Array.isArray(userIds)
+        });
+
+        // Validate required fields with detailed error messages
+        if (!subject || subject.trim() === '') {
+            console.error('❌ Validation failed: Subject is missing or empty');
+            return NextResponse.json({ success: false, error: 'Subject is required' }, { status: 400 });
+        }
+
+        if (!content || content.trim() === '') {
+            console.error('❌ Validation failed: Content is missing or empty');
+            return NextResponse.json({ success: false, error: 'Message content is required' }, { status: 400 });
+        }
+
+        if (!userIds || !Array.isArray(userIds)) {
+            console.error('❌ Validation failed: userIds is not an array:', userIds);
+            return NextResponse.json({ success: false, error: 'Recipients must be an array' }, { status: 400 });
+        }
+
+        if (userIds.length === 0) {
+            console.error('❌ Validation failed: userIds array is empty');
+            return NextResponse.json({ success: false, error: 'At least one recipient is required' }, { status: 400 });
+        }
+
+        // Get users with their emails
+        const users = await User.find({
+            _id: { $in: userIds },
+            email: { $exists: true, $ne: null }
+        }).select('_id email firstName lastName');
+
+        if (users.length === 0) {
+            return NextResponse.json({ success: false, error: 'No valid users found with email addresses' }, { status: 400 });
         }
 
         // Create the notification record
@@ -70,34 +106,90 @@ export async function POST(req: NextRequest) {
             subject,
             content,
             emailType: emailType || 'promotional',
-            recipients: userIds.map(id => ({
-                userId: id,
+            recipients: users.map(user => ({
+                userId: user._id,
+                email: user.email,
                 status: 'pending'
             })),
-            recipientCount: userIds.length,
+            totalRecipients: users.length,
+            recipientCount: users.length,
             createdBy: auth.admin._id,
-            status: 'pending'
+            status: 'sending',
+            startedAt: new Date()
         });
 
         await notification.save();
 
-        // Simulate sending process (in a real app, this would be a background job)
-        // Here we'll just mark them as delivered for demonstration in the new UI
-        setTimeout(async () => {
-            try {
-                await connectDB();
-                await Notification.findByIdAndUpdate(notification._id, {
-                    $set: {
-                        'recipients.$[].status': 'delivered',
-                        'recipients.$[].sentAt': new Date(),
-                        deliveredCount: userIds.length,
-                        status: 'completed'
-                    }
-                });
-            } catch (err) {
-                console.error('Async send simulation error:', err);
+        // Actually send emails using the email service
+        const emailService = (await import('@/lib/services/emailService')).default;
+
+        const sendResults = await Promise.allSettled(
+            users.map(async (user) => {
+                const userFullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User';
+                const result = await emailService.sendNotificationEmail(
+                    user.email as string,
+                    subject,
+                    content,
+                    emailType || 'promotional',
+                    { firstName: user.firstName || 'User', name: userFullName }
+                );
+                return {
+                    userId: user._id,
+                    email: user.email,
+                    success: result.success,
+                    messageId: result.messageId,
+                    error: result.error
+                };
+            })
+        );
+
+        // Process results and update recipients
+        let sentCount = 0;
+        let failedCount = 0;
+        const updatedRecipients = notification.recipients.map((recipient: any) => {
+            const resultIndex = users.findIndex(u => u._id.toString() === recipient.userId.toString());
+            if (resultIndex === -1) return recipient;
+
+            const sendResult = sendResults[resultIndex];
+            if (sendResult.status === 'fulfilled' && sendResult.value.success) {
+                sentCount++;
+                return {
+                    ...recipient.toObject(),
+                    status: 'sent',
+                    sentAt: new Date(),
+                    messageId: sendResult.value.messageId
+                };
+            } else {
+                failedCount++;
+                const errorMsg = sendResult.status === 'rejected'
+                    ? sendResult.reason?.message
+                    : sendResult.value?.error;
+                return {
+                    ...recipient.toObject(),
+                    status: 'failed',
+                    error: errorMsg || 'Unknown error'
+                };
             }
-        }, 2000);
+        });
+
+        // Determine final notification status
+        let finalStatus: 'completed' | 'partial' | 'failed';
+        if (sentCount === users.length) {
+            finalStatus = 'completed';
+        } else if (sentCount > 0) {
+            finalStatus = 'partial';
+        } else {
+            finalStatus = 'failed';
+        }
+
+        // Update the notification with results
+        notification.recipients = updatedRecipients as any;
+        notification.sentCount = sentCount;
+        notification.deliveredCount = sentCount; // Assuming sent = delivered for now
+        notification.failedCount = failedCount;
+        notification.status = finalStatus;
+        notification.completedAt = new Date();
+        await notification.save();
 
         const responseTime = Date.now() - startTime;
 
@@ -106,20 +198,36 @@ export async function POST(req: NextRequest) {
             adminId: auth.admin._id,
             sessionId: auth.session._id,
             action: 'NOTIFICATIONS_SEND',
-            description: `Sent ${emailType || 'promotional'} notification: "${subject}" to ${userIds.length} users`,
+            description: `Sent ${emailType || 'promotional'} notification: "${subject}" to ${users.length} users (${sentCount} successful, ${failedCount} failed)`,
             resource: 'notifications',
             resourceId: notification._id,
             endpoint: '/api/admin/notifications',
             method: 'POST',
             statusCode: 201,
             responseTime,
-            metadata: { subject, recipientCount: userIds.length }
+            metadata: {
+                subject,
+                recipientCount: users.length,
+                sentCount,
+                failedCount,
+                status: finalStatus
+            }
         });
 
         return NextResponse.json({
             success: true,
-            message: 'Notification queued for delivery',
-            notificationId: notification._id
+            message: sentCount === users.length
+                ? `Notification sent successfully to all ${sentCount} recipients`
+                : sentCount > 0
+                    ? `Notification partially sent: ${sentCount} succeeded, ${failedCount} failed`
+                    : `Failed to send notification to all ${failedCount} recipients`,
+            notificationId: notification._id,
+            stats: {
+                total: users.length,
+                sent: sentCount,
+                failed: failedCount,
+                status: finalStatus
+            }
         }, { status: 201 });
 
     } catch (error: any) {
@@ -127,3 +235,4 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: 'Failed to send notification' }, { status: 500 });
     }
 }
+
