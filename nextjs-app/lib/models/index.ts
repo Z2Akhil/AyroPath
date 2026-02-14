@@ -1,0 +1,31 @@
+import Admin from './Admin';
+import AdminActivity from './AdminActivity';
+import AdminSession from './AdminSession';
+import Cart from './Cart';
+import Notification from './Notification';
+import OTP from './OTP';
+import Offer from './Offer';
+import Order from './Order';
+import Profile from './Profile';
+import SMSHistory from './SMSHistory';
+import SiteSettings from './SiteSettings';
+import Test from './Test';
+import User from './User';
+
+const models = {
+    Admin,
+    AdminActivity,
+    AdminSession,
+    Cart,
+    Notification,
+    OTP,
+    Offer,
+    Order,
+    Profile,
+    SMSHistory,
+    SiteSettings,
+    Test,
+    User,
+};
+
+export default models;

@@ -1,5 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import Admin from './Admin';
+import AdminSession from './AdminSession';
+
 
 export interface AdminActivityDocument extends Document {
     adminId: mongoose.Types.ObjectId;

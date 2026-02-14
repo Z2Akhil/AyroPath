@@ -1,4 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import User from './User';
+import Admin from './Admin';
+
 
 export interface INotification extends Document {
     subject: string;

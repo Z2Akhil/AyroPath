@@ -1,4 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import User from './User';
+import Admin from './Admin';
+
 
 export interface IOrderBeneficiary {
     name: string;

@@ -1,5 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import { SiteSettings as SiteSettingsType } from '@/types';
+import Admin from './Admin';
+
 
 export interface SiteSettingsDocument extends Omit<SiteSettingsType, '_id'>, Document { }
 
