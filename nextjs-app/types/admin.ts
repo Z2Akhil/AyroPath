@@ -37,9 +37,14 @@ export interface CustomerUser {
     mobileNumber: string;
     isActive: boolean;
     emailVerified?: boolean;
+    address?: string;
+    city?: string;
+    state?: string;
+    isVerified?: boolean;
     createdAt: string;
     updatedAt: string;
 }
+
 
 export interface UserPagination {
     totalCount: number;

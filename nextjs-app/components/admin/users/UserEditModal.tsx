@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, AlertCircle, User, Mail, CheckCircle } from 'lucide-react';
+import { X, Save, AlertCircle, User, Mail, CheckCircle, MapPin } from 'lucide-react';
+
 import { CustomerUser } from '@/types/admin';
 
 interface UserEditModalProps {
@@ -16,9 +17,14 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ user, onClose, onSave, lo
         lastName: '',
         email: '',
         mobileNumber: '',
+        address: '',
+        city: '',
+        state: '',
         isActive: true,
+        isVerified: false,
         emailVerified: false,
     });
+
 
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -38,9 +44,14 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ user, onClose, onSave, lo
                 lastName: user.lastName || '',
                 email: user.email || '',
                 mobileNumber: user.mobileNumber || '',
+                address: user.address || '',
+                city: user.city || '',
+                state: user.state || '',
                 isActive: user.isActive !== undefined ? user.isActive : true,
+                isVerified: user.isVerified !== undefined ? user.isVerified : false,
                 emailVerified: user.emailVerified !== undefined ? user.emailVerified : false,
             });
+
         }
     }, [user]);
 
@@ -224,6 +235,60 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ user, onClose, onSave, lo
                             </div>
                         </div>
 
+                        {/* Address Information */}
+                        <div>
+                            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                <MapPin className="h-5 w-5 text-blue-600" />
+                                Address Information
+                            </h4>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Address
+                                    </label>
+                                    <textarea
+                                        name="address"
+                                        value={formData.address}
+                                        onChange={handleChange}
+                                        rows={2}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                        disabled={loading}
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            City
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="city"
+                                            value={formData.city}
+                                            onChange={handleChange}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                            disabled={loading}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            State
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="state"
+                                            value={formData.state}
+                                            onChange={handleChange}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                            disabled={loading}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Account Status */}
                         <div>
                             <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -247,6 +312,22 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ user, onClose, onSave, lo
                                     </label>
                                 </div>
 
+                                <div className="flex items-center" title="Overall account verification status">
+                                    <input
+                                        type="checkbox"
+                                        id="isVerified"
+                                        name="isVerified"
+                                        checked={formData.isVerified}
+                                        onChange={handleChange}
+                                        className="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 transition-all duration-200"
+                                        disabled={loading}
+                                    />
+                                    <label htmlFor="isVerified" className="ml-3 text-sm font-medium text-gray-700 cursor-pointer">
+                                        Account Verified
+                                    </label>
+                                </div>
+
+
                                 <div className="flex items-center" title="Email verification status">
                                     <input
                                         type="checkbox"
@@ -263,6 +344,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ user, onClose, onSave, lo
                                 </div>
                             </div>
                         </div>
+
 
                         {/* User ID Display */}
                         <div className="pt-4 border-t">

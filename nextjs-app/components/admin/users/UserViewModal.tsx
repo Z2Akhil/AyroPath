@@ -89,7 +89,13 @@ const UserViewModal: React.FC<UserViewModalProps> = ({ user, onClose }) => {
                                 {user.emailVerified && (
                                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                                         <CheckCircle className="h-3 w-3 mr-1" />
-                                        Verified
+                                        Email Verified
+                                    </span>
+                                )}
+                                {user.isVerified && (
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                                        <CheckCircle className="h-3 w-3 mr-1" />
+                                        Account Verified
                                     </span>
                                 )}
                             </div>
@@ -150,6 +156,32 @@ const UserViewModal: React.FC<UserViewModalProps> = ({ user, onClose }) => {
                             </div>
                         </div>
 
+                        {/* Address Information */}
+                        <div className="md:col-span-2 space-y-4 mt-2">
+                            <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">Address Information</h4>
+
+                            <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                                <div className="flex items-start gap-3">
+                                    <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-600">Address</p>
+                                        <p className="text-gray-900 font-medium whitespace-pre-wrap">{user.address || 'Not provided'}</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-600">City</p>
+                                        <p className="text-gray-900 font-medium">{user.city || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-600">State</p>
+                                        <p className="text-gray-900 font-medium">{user.state || 'N/A'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Additional Information */}
                         <div className="md:col-span-2 space-y-4">
                             <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">Additional Status</h4>
@@ -159,6 +191,13 @@ const UserViewModal: React.FC<UserViewModalProps> = ({ user, onClose }) => {
                                     <p className="text-sm font-medium text-gray-600">Email Verified</p>
                                     <p className="text-gray-900 font-semibold">
                                         {user.emailVerified ? 'Yes' : 'No'}
+                                    </p>
+                                </div>
+
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                    <p className="text-sm font-medium text-gray-600">Account Verified</p>
+                                    <p className="text-gray-900 font-semibold">
+                                        {user.isVerified ? 'Yes' : 'No'}
                                     </p>
                                 </div>
 
@@ -173,10 +212,8 @@ const UserViewModal: React.FC<UserViewModalProps> = ({ user, onClose }) => {
                     </div>
 
                     {/* User ID */}
-                    <div className="mt-8 pt-6 border-t">
-                        <p className="text-sm text-gray-600">
-                            User ID: <span className="font-mono text-gray-900 bg-gray-100 px-2 py-0.5 rounded">{user._id}</span>
-                        </p>
+                    <div className="mt-8 pt-6 border-t font-mono text-xs text-gray-400">
+                        User ID: <span className="text-gray-600">{user._id}</span>
                     </div>
                 </div>
 
