@@ -6,11 +6,11 @@ import { withAdminAuth } from '@/lib/auth';
 
 export async function PATCH(
     req: NextRequest,
-    { params }: { params: { userId: string } }
+    { params }: { params: Promise<{ userId: string }> }
 ) {
     return withAdminAuth(req, async (req, session) => {
         const startTime = Date.now();
-        const { userId } = params;
+        const { userId } = await params;
         const { isActive } = await req.json();
 
         if (typeof isActive !== 'boolean') {

@@ -1,0 +1,74 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { adminAuth } from '@/lib/auth';
+import connectDB from '@/lib/db/mongoose';
+import Notification from '@/lib/models/Notification';
+
+export async function GET(req: NextRequest) {
+    const auth = await adminAuth(req);
+
+    if (!auth.authenticated) {
+        return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
+    }
+
+    try {
+        await connectDB();
+
+        // Aggregate stats from the Notification model
+        const stats = await Notification.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    totalSent: { $sum: '$recipientCount' },
+                    totalDelivered: { $sum: '$deliveredCount' },
+                    totalFailed: { $sum: '$failedCount' },
+                    totalNotifications: { $sum: 1 }
+                }
+            }
+        ]);
+
+        const result = stats[0] || {
+            totalSent: 0,
+            totalDelivered: 0,
+            totalFailed: 0,
+            totalNotifications: 0
+        };
+
+        const successRate = result.totalSent > 0
+            ? ((result.totalDelivered / result.totalSent) * 100).toFixed(1) + '%'
+            : '0%';
+
+        // Get monthly trend (last 6 months)
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+        const monthlyTrend = await Notification.aggregate([
+            { $match: { createdAt: { $gte: sixMonthsAgo } } },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+                    count: { $sum: '$recipientCount' }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+
+        return NextResponse.json({
+            success: true,
+            stats: {
+                totalEmailsSent: result.totalSent,
+                delivered: result.totalDelivered,
+                failed: result.totalFailed,
+                successRate,
+                totalCampaigns: result.totalNotifications,
+                monthlyTrend: monthlyTrend.map(t => ({
+                    month: t._id,
+                    count: t.count
+                }))
+            }
+        });
+
+    } catch (error: any) {
+        console.error('Fetch Notification Stats Error:', error);
+        return NextResponse.json({ success: false, error: 'Failed to fetch notification stats' }, { status: 500 });
+    }
+}

@@ -6,10 +6,10 @@ const THYROCARE_BASE_URL = process.env.THYROCARE_API_URL || 'https://velso.thyro
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { pincode: string } }
+    { params }: { params: Promise<{ pincode: string }> }
 ) {
     try {
-        const { pincode } = params;
+        const { pincode } = await params;
 
         if (!pincode) {
             return NextResponse.json({ success: false, error: 'Pincode is required' }, { status: 400 });

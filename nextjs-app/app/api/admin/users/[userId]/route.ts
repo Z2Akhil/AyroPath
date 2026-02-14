@@ -7,11 +7,11 @@ import validator from 'validator';
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { userId: string } }
+    { params }: { params: Promise<{ userId: string }> }
 ) {
     return withAdminAuth(req, async (req, session) => {
         const startTime = Date.now();
-        const { userId } = params;
+        const { userId } = await params;
 
         try {
             await dbConnect();
@@ -48,11 +48,11 @@ export async function GET(
 
 export async function PUT(
     req: NextRequest,
-    { params }: { params: { userId: string } }
+    { params }: { params: Promise<{ userId: string }> }
 ) {
     return withAdminAuth(req, async (req, session) => {
         const startTime = Date.now();
-        const { userId } = params;
+        const { userId } = await params;
         const updateData = await req.json();
 
         try {

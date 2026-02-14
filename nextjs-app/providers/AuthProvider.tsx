@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import * as authApi from '@/lib/api/authApi';
+import { authApi } from '@/lib/api/authApi';
 
 interface User {
   id: string;
@@ -47,12 +47,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const initAuth = () => {
       const token = localStorage.getItem('authToken');
       const savedUser = localStorage.getItem('user');
-      
+
       if (token && savedUser) {
         try {
           const parsed = JSON.parse(savedUser);
           const payload = JSON.parse(atob(token.split('.')[1]));
-          
+
           if (payload.exp && payload.exp > Date.now() / 1000) {
             setUser(parsed);
           } else {
@@ -66,17 +66,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       setLoading(false);
     };
-    
+
     initAuth();
   }, []);
 
   const login = async (identifier: string, password: string) => {
     const response = await authApi.login(identifier, password);
-    if (response.success && response.token) {
+    if (response.success && response.token && response.user) {
       const userData = {
         ...response.user,
-        name: `${response.user.firstName} ${response.user.lastName}`.trim(),
-      };
+        id: (response.user as any).id || (response.user as any)._id || '',
+        name: `${response.user.firstName || ''} ${response.user.lastName || ''}`.trim(),
+      } as User;
       localStorage.setItem('authToken', response.token);
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
@@ -92,12 +93,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     email?: string;
     password: string;
   }) => {
-    const response = await authApi.register(data);
-    if (response.success && response.token) {
+    const response = await authApi.register(data.firstName, data.lastName, data.mobileNumber, data.password, data.email);
+    if (response.success && response.token && response.user) {
       const userData = {
         ...response.user,
-        name: `${response.user.firstName} ${response.user.lastName}`.trim(),
-      };
+        id: (response.user as any).id || (response.user as any)._id || '',
+        name: `${response.user.firstName || ''} ${response.user.lastName || ''}`.trim(),
+      } as User;
       localStorage.setItem('authToken', response.token);
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
@@ -114,11 +116,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const requestOTP = async (mobileNumber?: string, email?: string) => {
-    return await authApi.requestOTP(mobileNumber, email);
+    const res = await authApi.requestOTP(mobileNumber || '', email || '');
+    return {
+      success: res.success,
+      message: res.message || '',
+      otp: (res as any).otp
+    };
   };
 
   const verifyOTP = async (otp: string, mobileNumber?: string, email?: string) => {
-    return await authApi.verifyOTP(otp, mobileNumber, email);
+    const res = await authApi.verifyOTP(mobileNumber || '', otp, email || '');
+    return {
+      success: res.success,
+      message: res.message || ''
+    };
   };
 
   return (

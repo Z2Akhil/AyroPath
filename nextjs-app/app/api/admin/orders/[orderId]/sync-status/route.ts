@@ -6,7 +6,7 @@ import AdminActivity from '@/lib/models/AdminActivity';
 
 export async function POST(
     req: NextRequest,
-    { params }: { params: { orderId: string } }
+    { params }: { params: Promise<{ orderId: string }> }
 ) {
     const startTime = Date.now();
     const auth = await adminAuth(req);
@@ -17,7 +17,7 @@ export async function POST(
 
     try {
         await connectDB();
-        const { orderId } = params;
+        const { orderId } = await params;
 
         const result: any = await OrderStatusSyncService.syncOrderStatus(orderId);
 

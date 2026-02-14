@@ -4,11 +4,11 @@ import Profile from '@/lib/models/Profile';
 import Test from '@/lib/models/Test';
 import Offer from '@/lib/models/Offer';
 
-export async function GET(request: NextRequest, { params }: { params: { code: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ code: string }> }) {
   try {
     await connectToDatabase();
 
-    const { code } = params;
+    const { code } = await params;
 
     if (!code) {
       return NextResponse.json(

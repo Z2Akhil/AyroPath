@@ -21,11 +21,11 @@ const getUserFromToken = async (token: string | null) => {
 };
 
 // PUT /api/cart/items/[productCode] - Update item quantity
-export async function PUT(req: NextRequest, { params }: { params: { productCode: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ productCode: string }> }) {
   try {
     await connectToDatabase();
 
-    const { productCode } = params;
+    const { productCode } = await params;
     const body = await req.json();
     const { productType, quantity } = body;
 
@@ -65,11 +65,11 @@ export async function PUT(req: NextRequest, { params }: { params: { productCode:
 }
 
 // DELETE /api/cart/items/[productCode] - Remove item from cart
-export async function DELETE(req: NextRequest, { params }: { params: { productCode: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ productCode: string }> }) {
   try {
     await connectToDatabase();
 
-    const { productCode } = params;
+    const { productCode } = await params;
     const body = await req.json();
     const { productType } = body;
 

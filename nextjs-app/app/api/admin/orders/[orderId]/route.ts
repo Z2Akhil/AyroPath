@@ -6,7 +6,7 @@ import AdminActivity from '@/lib/models/AdminActivity';
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { orderId: string } }
+    { params }: { params: Promise<{ orderId: string }> }
 ) {
     const startTime = Date.now();
     const auth = await adminAuth(req);
@@ -17,7 +17,7 @@ export async function GET(
 
     try {
         await connectDB();
-        const { orderId } = params;
+        const { orderId } = await params;
 
         const order = await Order.findOne({ orderId })
             .populate('userId', 'firstName lastName email mobileNumber')
@@ -54,7 +54,7 @@ export async function GET(
 
 export async function PUT(
     req: NextRequest,
-    { params }: { params: { orderId: string } }
+    { params }: { params: Promise<{ orderId: string }> }
 ) {
     const startTime = Date.now();
     const auth = await adminAuth(req);
@@ -65,7 +65,7 @@ export async function PUT(
 
     try {
         await connectDB();
-        const { orderId } = params;
+        const { orderId } = await params;
         const updates = await req.json();
 
         const order = await Order.findOne({ orderId });
