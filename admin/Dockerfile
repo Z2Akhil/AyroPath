@@ -1,33 +1,34 @@
-# Admin Dockerfile
-FROM node:22-alpine
+FROM node:22-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+ARG VITE_TARGET_URL
 
-# Install dependencies
-RUN npm install
-
-# Copy source code
-COPY . .
-
-ARG VITE_TARGET_URL=
 ENV VITE_TARGET_URL=$VITE_TARGET_URL
 
-# Build the application
+COPY package*.json ./
+
+RUN npm ci && npm audit fix && npm cache clean --force
+
+COPY . .
+
 RUN npm run build
 
-# Install serve for static file serving
-RUN npm install -g serve
+FROM node:22-alpine
 
-# Expose port
+RUN apk --no-cache add curl && npm install -g serve
+
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+
+WORKDIR /app
+
+COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+
+USER nodejs
+
 EXPOSE 5174
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:5174/ || exit 1
 
-# Serve static build files directly
 CMD ["serve", "-s", "dist", "-l", "5174"]

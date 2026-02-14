@@ -1,24 +1,27 @@
-# Backend Dockerfile
-FROM node:22-alpine
+FROM node:22-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+RUN npm ci --only=production && npm audit fix --production && npm cache clean --force
 
-# Copy source code
-COPY . .
+FROM node:22-alpine
 
-# Expose port
+RUN apk --no-cache add curl
+
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+
+WORKDIR /app 
+
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+
+COPY --chown=nodejs:nodejs . .
+
+USER nodejs
+
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/ || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD curl -f http://localhost:3000/health || exit 1
 
-# Start the application
 CMD ["npm", "start"]
