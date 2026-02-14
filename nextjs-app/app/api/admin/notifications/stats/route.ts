@@ -18,10 +18,23 @@ export async function GET(req: NextRequest) {
             {
                 $group: {
                     _id: null,
-                    totalSent: { $sum: '$recipientCount' },
+                    // Use max to ensure totalSent is at least sum of outcomes
+                    unfilteredTotalSent: { $sum: '$recipientCount' },
+                    actualOutcomes: { $sum: { $add: ['$deliveredCount', '$failedCount'] } },
                     totalDelivered: { $sum: '$deliveredCount' },
                     totalFailed: { $sum: '$failedCount' },
                     totalNotifications: { $sum: 1 }
+                }
+            },
+            {
+                $project: {
+                    totalSent: { $max: ['$unfilteredTotalSent', '$actualOutcomes'] },
+                    totalDelivered: 1,
+                    totalFailed: 1,
+                    totalPending: {
+                        $max: [0, { $subtract: ['$unfilteredTotalSent', '$actualOutcomes'] }]
+                    },
+                    totalNotifications: 1
                 }
             }
         ]);
@@ -30,12 +43,13 @@ export async function GET(req: NextRequest) {
             totalSent: 0,
             totalDelivered: 0,
             totalFailed: 0,
+            totalPending: 0,
             totalNotifications: 0
         };
 
         const successRate = result.totalSent > 0
-            ? ((result.totalDelivered / result.totalSent) * 100).toFixed(1) + '%'
-            : '0%';
+            ? ((result.totalDelivered / result.totalSent) * 100).toFixed(1)
+            : '0';
 
         // Get monthly trend (last 6 months)
         const sixMonthsAgo = new Date();
@@ -55,9 +69,10 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({
             success: true,
             stats: {
-                totalEmailsSent: result.totalSent,
+                totalSent: result.totalSent,
                 delivered: result.totalDelivered,
                 failed: result.totalFailed,
+                pending: result.totalPending,
                 successRate,
                 totalCampaigns: result.totalNotifications,
                 monthlyTrend: monthlyTrend.map(t => ({

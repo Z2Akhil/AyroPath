@@ -16,23 +16,34 @@ export async function GET(req: NextRequest) {
         await connectDB();
 
         const { searchParams } = new URL(req.url);
+        const status = searchParams.get('status');
+        const search = searchParams.get('search');
+
+        const query: any = {};
+        if (status && status !== 'all') {
+            query.status = status;
+        }
+        if (search) {
+            query.subject = { $regex: search, $options: 'i' };
+        }
+
         const page = parseInt(searchParams.get('page') || '1');
         const limit = parseInt(searchParams.get('limit') || '10');
         const skip = (page - 1) * limit;
 
         const [notifications, total] = await Promise.all([
-            Notification.find()
+            Notification.find(query)
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit)
                 .populate('createdBy', 'name')
                 .lean(),
-            Notification.countDocuments()
+            Notification.countDocuments(query)
         ]);
 
         return NextResponse.json({
             success: true,
-            data: notifications,
+            notifications,
             pagination: {
                 total,
                 page,

@@ -124,14 +124,14 @@ const NotificationHistory = () => {
                         />
                     </div>
 
-                    <div className="flex items-center bg-white border border-gray-100 rounded-xl p-1 shadow-sm">
-                        {['all', 'completed', 'pending'].map((status) => (
+                    <div className="flex items-center bg-white border border-gray-100 rounded-xl p-0.5 shadow-sm overflow-x-auto">
+                        {['all', 'completed', 'pending', 'failed'].map((status) => (
                             <button
                                 key={status}
                                 onClick={() => setStatusFilter(status)}
-                                className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-all duration-200 ${statusFilter === status
-                                        ? 'bg-blue-600 text-white'
-                                        : 'text-gray-400 hover:text-gray-600'
+                                className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-all duration-200 whitespace-nowrap ${statusFilter === status
+                                    ? 'bg-blue-600 text-white'
+                                    : 'text-gray-400 hover:text-gray-600'
                                     }`}
                             >
                                 {status}
