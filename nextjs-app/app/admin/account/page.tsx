@@ -19,7 +19,7 @@ const AccountPage = () => {
     const { user, logout } = useAdminAuth();
 
     const adminProfile = {
-        name: user?.username || 'System Administrator',
+        name: user?.adminProfile?.name || 'System Administrator',
         email: user?.adminProfile?.email || 'admin@ayropath.com',
         mobile: user?.adminProfile?.mobile || 'Not provided',
         userType: user?.adminProfile?.userType || 'NSA',
