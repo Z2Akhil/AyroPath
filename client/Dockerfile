@@ -16,7 +16,9 @@ RUN npm run build
 
 FROM node:22-alpine
 
-RUN apk --no-cache add curl && npm install -g serve
+RUN sed -i 's|https://dl-cdn.alpinelinux.org|http://dl-cdn.alpinelinux.org|g' /etc/apk/repositories && \
+    apk --no-cache add curl && \
+    npm install -g serve
 
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
