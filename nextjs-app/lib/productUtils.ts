@@ -31,15 +31,46 @@ export const getProductDisplayPrice = (product: any) => {
 export const getImageUrl = (product: any) => {
   if (!product) return "/packagePic.webp";
 
-  const imageLocation = product.imageLocation || product.imageMaster?.[0]?.imgLocations;
-  if (!imageLocation) return "/packagePic.webp";
+  // Get raw path from various possible fields
+  let rawPath = product.imageLocation || product.thyrocareData?.imageLocation ||
+    product.imageMaster?.[0]?.imgLocations ||
+    product.thyrocareData?.imageMaster?.[0]?.imgLocations;
 
-  // If it's already a full URL or a root-relative path that exists in public
-  if (imageLocation.startsWith("http") || imageLocation.startsWith("/")) {
-    return imageLocation;
+
+
+  if (!rawPath) return "/packagePic.webp";
+
+  // Handle string paths
+  if (typeof rawPath !== 'string') return "/packagePic.webp";
+
+  // If it's a Thyrocare URL
+  if (rawPath.includes("thyrocare.com")) {
+    // Force HTTPS for mixed content issues and encode spaces
+    let secureUrl = rawPath.replace(/^http:\/\//, "https://");
+    return encodeURI(secureUrl);
   }
 
-  // Otherwise prefix with backend URL
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-  return `${apiBase}/${imageLocation}`;
+  // If it's already a full URL
+  if (rawPath.startsWith("http")) {
+    return encodeURI(rawPath);
+  }
+
+  // If it's a root-relative path that exists in public
+  if (rawPath.startsWith("/") && !rawPath.startsWith("/uploads")) {
+    return rawPath;
+  }
+
+  // Remove leading slash for safe concatenation
+  const cleanPath = rawPath.startsWith("/") ? rawPath.slice(1) : rawPath;
+
+  // Otherwise prefix with backend URL or use relative path
+  // If NEXT_PUBLIC_API_URL is missing, we use root-relative path which is safer in Next.js
+  const apiBase = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiBase) {
+    return `/${cleanPath}`;
+  }
+
+  return `${apiBase}/${cleanPath}`;
 };
+
+

@@ -5,6 +5,7 @@ import { getProductDisplayPrice, getImageUrl } from "@/lib/productUtils";
 import { slugify } from "@/lib/slugify";
 import { useState } from "react";
 import AddToCartWithValidation from "./AddToCartWithValidation";
+import ImagePreviewModal from "../common/ImagePreviewModal";
 
 interface ProfileCardProps {
   pkg: any;
@@ -23,6 +24,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ pkg }) => {
   const imgSrc = getImageUrl(pkg);
   const priceInfo = getProductDisplayPrice(pkg);
 
+  const [showPreview, setShowPreview] = useState(false);
+
   const detailPath = `/profiles/${slugify(name)}/${pkg.type || "PROFILE"}/${pkg.code}`;
 
   return (
@@ -33,11 +36,13 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ pkg }) => {
           src={imgSrc}
           alt={name}
           loading="lazy"
+          onClick={() => setShowPreview(true)}
+          referrerPolicy="no-referrer"
           onError={(e) => {
             e.currentTarget.onerror = null;
             e.currentTarget.src = "/packagePic.webp";
           }}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-500"
         />
 
         {/* Chevron – detail link */}
@@ -129,6 +134,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ pkg }) => {
           </ul>
         </div>
       </div>
+
+      {showPreview && (
+        <ImagePreviewModal
+          imgSrc={imgSrc}
+          name={name}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
     </div>
   );
 };
