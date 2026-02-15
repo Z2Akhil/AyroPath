@@ -715,8 +715,8 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
                                         <div className="space-y-4">
                                             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">Cart Contents</p>
                                             <div className="space-y-2.5 max-h-[150px] overflow-y-auto pr-3 custom-scrollbar-light">
-                                                {selectedPackages.map(p => (
-                                                    <div key={`cart-item-${p.code || p._id}`} className="flex justify-between items-center text-xs bg-white/5 p-3 rounded-2xl hover:bg-white/10 transition-colors">
+                                                {selectedPackages.map((p, index) => (
+                                                    <div key={`cart-item-${p.code || p._id}-${index}`} className="flex justify-between items-center text-xs bg-white/5 p-3 rounded-2xl hover:bg-white/10 transition-colors">
                                                         <span className="font-black text-indigo-50 uppercase truncate max-w-[180px]">{p.name}</span>
                                                         <span className="font-black text-indigo-300 ml-4 shrink-0">₹{p.thyrocareRate || p.price}</span>
                                                     </div>

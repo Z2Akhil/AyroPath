@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
         if (limitNum) testQuery.limit(limitNum);
         const tests = await testQuery;
         products = tests.map((test) => test.getCombinedData());
+        products = Array.from(new Map(products.map(p => [(p as any).code, p])).values());
         break;
 
       case 'PROFILE':
@@ -38,6 +39,7 @@ export async function GET(request: NextRequest) {
         if (limitNum) profileQuery.limit(limitNum);
         const profiles = await profileQuery;
         products = profiles.map((profile) => profile.getCombinedData());
+        products = Array.from(new Map(products.map(p => [(p as any).code, p])).values());
         break;
 
       case 'OFFER':
@@ -46,6 +48,7 @@ export async function GET(request: NextRequest) {
         if (limitNum) offerQuery.limit(limitNum);
         const offers = await offerQuery;
         products = offers.map((offer) => offer.getCombinedData());
+        products = Array.from(new Map(products.map(p => [(p as any).code, p])).values());
         break;
 
       case 'ALL':
@@ -67,6 +70,10 @@ export async function GET(request: NextRequest) {
             ...allProfiles.map((profile) => profile.getCombinedData()),
             ...allTests.map((test) => test.getCombinedData())
           ];
+
+          // Deduplicate by code to avoid UI key issues
+          products = Array.from(new Map(products.map(p => [(p as any).code, p])).values());
+          totalCount = products.length; // Update totalCount after deduplication for the paginated case as well
         } else {
           const [allTests, allProfiles, allOffers] = await Promise.all([
             Test.find({ isActive: true }),
@@ -79,6 +86,9 @@ export async function GET(request: NextRequest) {
             ...allProfiles.map((profile) => profile.getCombinedData()),
             ...allTests.map((test) => test.getCombinedData())
           ];
+
+          // Deduplicate by code to avoid UI key issues
+          products = Array.from(new Map(products.map(p => [(p as any).code, p])).values());
           totalCount = products.length;
         }
         break;

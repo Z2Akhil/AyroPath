@@ -2,12 +2,6 @@ import mongoose from 'mongoose';
 import '@/lib/models'; // Register all models
 
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/aryopath';
-
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable');
-}
-
 interface Cached {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
@@ -23,9 +17,15 @@ if (!cached) {
 }
 
 async function connectToDatabase(): Promise<typeof mongoose> {
+  const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/aryopath';
+
   if (cached.conn) {
     return cached.conn;
   }
+
+  console.log('🔌 Connecting to MongoDB...');
+  console.log('📝 URI Source:', process.env.MONGODB_URI ? 'Environment Variable' : 'Default Fallback');
+  console.log('🌐 Host:', MONGODB_URI.split('@').pop());
 
   if (!cached.promise) {
     const opts = {
