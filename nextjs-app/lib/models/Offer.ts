@@ -138,7 +138,24 @@ const OfferSchema = new Schema<IOffer, IOfferModel>(
 OfferSchema.index({ type: 1, isActive: 1 });
 OfferSchema.index({ 'thyrocareData.category': 1 });
 
-OfferSchema.methods.getCombinedData = function() {
+// Pre-save hook to auto-calculate selling price
+OfferSchema.pre('save', async function () {
+  if (this.isModified('customPricing.discount')) {
+    const thyrocareRate = this.thyrocareData?.rate?.offerRate || 0;
+    const thyrocareMargin = this.thyrocareData?.margin || 0;
+    const discount = this.customPricing.discount || 0;
+
+    // Validate discount doesn't exceed margin
+    if (discount > thyrocareMargin) {
+      throw new Error(`Discount cannot exceed ThyroCare margin of ${thyrocareMargin}`);
+    }
+
+    this.customPricing.sellingPrice = thyrocareRate - discount;
+    this.customPricing.isCustomized = discount > 0;
+  }
+});
+
+OfferSchema.methods.getCombinedData = function () {
   const thyrocareRate = this.thyrocareData?.rate?.offerRate || 0;
   const thyrocareMargin = this.thyrocareData?.margin || 0;
   const discount = this.customPricing?.discount || 0;
@@ -172,39 +189,118 @@ OfferSchema.methods.getCombinedData = function() {
   };
 };
 
-OfferSchema.statics.updateCustomPricing = async function(code: string, discount: number) {
+OfferSchema.statics.updateCustomPricing = async function (code: string, discount: number) {
   const offer = await this.findOne({ code });
   if (!offer) {
     throw new Error('Offer not found');
   }
-  
+
   offer.customPricing.discount = discount;
   await offer.save();
-  
+
   return offer.getCombinedData();
 };
 
-OfferSchema.statics.findOrCreateFromThyroCare = async function(data: Record<string, unknown>) {
-  const code = String(data.code);
-  const name = String(data.name);
-  const type = String(data.type);
-  
-  let offer = await this.findOne({ code });
-  
-  if (!offer) {
-    offer = new this({
-      code,
-      name,
-      type,
-      thyrocareData: data
+OfferSchema.statics.findOrCreateFromThyroCare = async function (data: Record<string, any>) {
+  try {
+    const code = String(data.code);
+
+    let offer = await this.findOne({ code });
+
+    // Clean up and validate the thyrocare data before saving
+    const cleanedThyrocareData = { ...data };
+
+    // Convert string numbers to actual numbers for numeric fields
+    const numericFields = ['testCount', 'benMin', 'benMax', 'benMultiple', 'hcrInclude', 'bookedCount', 'margin'];
+    numericFields.forEach(field => {
+      if (cleanedThyrocareData[field] !== undefined && cleanedThyrocareData[field] !== null) {
+        const value = cleanedThyrocareData[field];
+        if (typeof value === 'string' && value.trim() !== '') {
+          cleanedThyrocareData[field] = Number(value);
+        } else if (value === '' || value === null) {
+          cleanedThyrocareData[field] = 0;
+        }
+      }
     });
-  } else {
-    offer.thyrocareData = data as IOffer['thyrocareData'];
-    offer.lastSynced = new Date();
+
+    // Handle rate object - convert string numbers to actual numbers
+    if (cleanedThyrocareData.rate) {
+      const rateNumericFields = ['b2B', 'b2C', 'offerRate', 'payAmt', 'payAmt1'];
+      rateNumericFields.forEach(field => {
+        if (cleanedThyrocareData.rate[field] !== undefined && cleanedThyrocareData.rate[field] !== null) {
+          const value = cleanedThyrocareData.rate[field];
+          if (typeof value === 'string' && value.trim() !== '') {
+            cleanedThyrocareData.rate[field] = Number(value);
+          } else if (value === '' || value === null) {
+            cleanedThyrocareData.rate[field] = 0;
+          }
+        }
+      });
+
+      cleanedThyrocareData.rate = {
+        b2B: cleanedThyrocareData.rate.b2B || 0,
+        b2C: cleanedThyrocareData.rate.b2C || 0,
+        offerRate: cleanedThyrocareData.rate.offerRate || 0,
+        id: cleanedThyrocareData.rate.id || '',
+        payAmt: cleanedThyrocareData.rate.payAmt || 0,
+        payAmt1: cleanedThyrocareData.rate.payAmt1 || 0
+      };
+    }
+
+    // Handle childs array - ensure it's properly formatted and validated
+    if (cleanedThyrocareData.childs) {
+      // Handle case where childs is a JSON string instead of array
+      if (typeof cleanedThyrocareData.childs === 'string') {
+        try {
+          cleanedThyrocareData.childs = JSON.parse(cleanedThyrocareData.childs);
+        } catch (parseError) {
+          try {
+            let fixedChildsString = cleanedThyrocareData.childs
+              .replace(/\\n/g, '')
+              .replace(/\\'/g, '"')
+              .replace(/(\w+):/g, '"$1":')
+              .replace(/,(\s*})/g, '$1');
+
+            cleanedThyrocareData.childs = JSON.parse(fixedChildsString);
+          } catch (secondParseError) {
+            console.error('Failed to parse childs:', secondParseError);
+            cleanedThyrocareData.childs = [];
+          }
+        }
+      }
+
+      if (Array.isArray(cleanedThyrocareData.childs)) {
+        cleanedThyrocareData.childs = cleanedThyrocareData.childs.map(child => ({
+          name: child?.name || '',
+          code: child?.code || '',
+          groupName: child?.groupName || '',
+          type: child?.type || ''
+        }));
+      } else {
+        cleanedThyrocareData.childs = [];
+      }
+    } else {
+      cleanedThyrocareData.childs = [];
+    }
+
+    if (!offer) {
+      offer = new this({
+        code: cleanedThyrocareData.code,
+        name: cleanedThyrocareData.name,
+        type: cleanedThyrocareData.type || 'OFFER',
+        thyrocareData: cleanedThyrocareData
+      });
+    } else {
+      offer.thyrocareData = cleanedThyrocareData as IOffer['thyrocareData'];
+      offer.lastSynced = new Date();
+    }
+
+    await offer.save();
+    return offer;
+  } catch (error) {
+    console.error('Error in Offer.findOrCreateFromThyroCare:', error);
+    throw error;
   }
-  
-  await offer.save();
-  return offer;
 };
 
 export default (mongoose.models.Offer as IOfferModel) || mongoose.model<IOffer, IOfferModel>('Offer', OfferSchema);

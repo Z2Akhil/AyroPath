@@ -48,10 +48,15 @@ export async function POST(req: NextRequest) {
                 thyrocareProducts = [...(master.offer || []), ...(master.tests || []), ...(master.profile || [])];
             }
 
-            const allProductCodes = new Set(thyrocareProducts.map((p) => p.code).filter(Boolean));
+            // Deduplicate products by code to avoid redundant processing and UI key issues
+            const uniqueThyrocareProducts = Array.from(
+                new Map(thyrocareProducts.map(p => [p.code, p])).values()
+            );
+
+            const allProductCodes = new Set(uniqueThyrocareProducts.map((p) => p.code).filter(Boolean));
 
             const combinedProducts = [];
-            for (const tp of thyrocareProducts) {
+            for (const tp of uniqueThyrocareProducts) {
                 try {
                     let model: typeof Test | typeof Profile | typeof Offer = Test;
                     if (tp.type === 'PROFILE' || tp.type === 'POP') model = Profile;

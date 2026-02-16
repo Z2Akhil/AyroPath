@@ -138,7 +138,24 @@ const ProfileSchema = new Schema<IProfile, IProfileModel>(
 ProfileSchema.index({ type: 1, isActive: 1 });
 ProfileSchema.index({ 'thyrocareData.category': 1 });
 
-ProfileSchema.methods.getCombinedData = function() {
+// Pre-save hook to auto-calculate selling price
+ProfileSchema.pre('save', async function () {
+  if (this.isModified('customPricing.discount')) {
+    const thyrocareRate = this.thyrocareData?.rate?.b2C || 0;
+    const thyrocareMargin = this.thyrocareData?.margin || 0;
+    const discount = this.customPricing.discount || 0;
+
+    // Validate discount doesn't exceed margin
+    if (discount > thyrocareMargin) {
+      throw new Error(`Discount cannot exceed ThyroCare margin of ${thyrocareMargin}`);
+    }
+
+    this.customPricing.sellingPrice = thyrocareRate - discount;
+    this.customPricing.isCustomized = discount > 0;
+  }
+});
+
+ProfileSchema.methods.getCombinedData = function () {
   const thyrocareRate = this.thyrocareData?.rate?.b2C || 0;
   const thyrocareMargin = this.thyrocareData?.margin || 0;
   const discount = this.customPricing?.discount || 0;
@@ -172,39 +189,118 @@ ProfileSchema.methods.getCombinedData = function() {
   };
 };
 
-ProfileSchema.statics.updateCustomPricing = async function(code: string, discount: number) {
+ProfileSchema.statics.updateCustomPricing = async function (code: string, discount: number) {
   const profile = await this.findOne({ code });
   if (!profile) {
     throw new Error('Profile not found');
   }
-  
+
   profile.customPricing.discount = discount;
   await profile.save();
-  
+
   return profile.getCombinedData();
 };
 
-ProfileSchema.statics.findOrCreateFromThyroCare = async function(data: Record<string, unknown>) {
-  const code = String(data.code);
-  const name = String(data.name);
-  const type = String(data.type);
-  
-  let profile = await this.findOne({ code });
-  
-  if (!profile) {
-    profile = new this({
-      code,
-      name,
-      type,
-      thyrocareData: data
+ProfileSchema.statics.findOrCreateFromThyroCare = async function (data: Record<string, any>) {
+  try {
+    const code = String(data.code);
+
+    let profile = await this.findOne({ code });
+
+    // Clean up and validate the thyrocare data before saving
+    const cleanedThyrocareData = { ...data };
+
+    // Convert string numbers to actual numbers for numeric fields
+    const numericFields = ['testCount', 'benMin', 'benMax', 'benMultiple', 'hcrInclude', 'bookedCount', 'margin'];
+    numericFields.forEach(field => {
+      if (cleanedThyrocareData[field] !== undefined && cleanedThyrocareData[field] !== null) {
+        const value = cleanedThyrocareData[field];
+        if (typeof value === 'string' && value.trim() !== '') {
+          cleanedThyrocareData[field] = Number(value);
+        } else if (value === '' || value === null) {
+          cleanedThyrocareData[field] = 0;
+        }
+      }
     });
-  } else {
-    profile.thyrocareData = data as IProfile['thyrocareData'];
-    profile.lastSynced = new Date();
+
+    // Handle rate object - convert string numbers to actual numbers
+    if (cleanedThyrocareData.rate) {
+      const rateNumericFields = ['b2B', 'b2C', 'offerRate', 'payAmt', 'payAmt1'];
+      rateNumericFields.forEach(field => {
+        if (cleanedThyrocareData.rate[field] !== undefined && cleanedThyrocareData.rate[field] !== null) {
+          const value = cleanedThyrocareData.rate[field];
+          if (typeof value === 'string' && value.trim() !== '') {
+            cleanedThyrocareData.rate[field] = Number(value);
+          } else if (value === '' || value === null) {
+            cleanedThyrocareData.rate[field] = 0;
+          }
+        }
+      });
+
+      cleanedThyrocareData.rate = {
+        b2B: cleanedThyrocareData.rate.b2B || 0,
+        b2C: cleanedThyrocareData.rate.b2C || 0,
+        offerRate: cleanedThyrocareData.rate.offerRate || 0,
+        id: cleanedThyrocareData.rate.id || '',
+        payAmt: cleanedThyrocareData.rate.payAmt || 0,
+        payAmt1: cleanedThyrocareData.rate.payAmt1 || 0
+      };
+    }
+
+    // Handle childs array - ensure it's properly formatted and validated
+    if (cleanedThyrocareData.childs) {
+      // Handle case where childs is a JSON string instead of array
+      if (typeof cleanedThyrocareData.childs === 'string') {
+        try {
+          cleanedThyrocareData.childs = JSON.parse(cleanedThyrocareData.childs);
+        } catch (parseError) {
+          try {
+            let fixedChildsString = cleanedThyrocareData.childs
+              .replace(/\\n/g, '')
+              .replace(/\\'/g, '"')
+              .replace(/(\w+):/g, '"$1":')
+              .replace(/,(\s*})/g, '$1');
+
+            cleanedThyrocareData.childs = JSON.parse(fixedChildsString);
+          } catch (secondParseError) {
+            console.error('Failed to parse childs:', secondParseError);
+            cleanedThyrocareData.childs = [];
+          }
+        }
+      }
+
+      if (Array.isArray(cleanedThyrocareData.childs)) {
+        cleanedThyrocareData.childs = cleanedThyrocareData.childs.map(child => ({
+          name: child?.name || '',
+          code: child?.code || '',
+          groupName: child?.groupName || '',
+          type: child?.type || ''
+        }));
+      } else {
+        cleanedThyrocareData.childs = [];
+      }
+    } else {
+      cleanedThyrocareData.childs = [];
+    }
+
+    if (!profile) {
+      profile = new this({
+        code: cleanedThyrocareData.code,
+        name: cleanedThyrocareData.name,
+        type: cleanedThyrocareData.type || 'PROFILE',
+        thyrocareData: cleanedThyrocareData
+      });
+    } else {
+      profile.thyrocareData = cleanedThyrocareData as IProfile['thyrocareData'];
+      profile.lastSynced = new Date();
+    }
+
+    await profile.save();
+    return profile;
+  } catch (error) {
+    console.error('Error in Profile.findOrCreateFromThyroCare:', error);
+    throw error;
   }
-  
-  await profile.save();
-  return profile;
 };
 
 export default (mongoose.models.Profile as IProfileModel) || mongoose.model<IProfile, IProfileModel>('Profile', ProfileSchema);
