@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, ReactNode } from 'react';
+import OrderSuccessCard from '@/components/booking/OrderSuccessCard';
 
 interface OrderSuccessContextType {
     isOrderSuccess: boolean;
@@ -36,6 +37,14 @@ export const OrderSuccessProvider = ({ children }: { children: ReactNode }) => {
     return (
         <OrderSuccessContext.Provider value={{ isOrderSuccess, orderData, showSuccessCard, hideSuccessCard }}>
             {children}
+            {isOrderSuccess && orderData && (
+                <OrderSuccessCard
+                    orderId={orderData.orderId}
+                    packageName={orderData.packageName}
+                    amount={orderData.amount}
+                    onClose={hideSuccessCard}
+                />
+            )}
         </OrderSuccessContext.Provider>
     );
 };
