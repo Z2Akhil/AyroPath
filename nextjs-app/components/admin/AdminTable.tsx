@@ -59,15 +59,7 @@ const AdminTable: React.FC<AdminTableProps> = ({ data, onDataUpdate }) => {
         setCurrentPage(1);
     }, [searchTerm, sortOption]);
 
-    if (!localData || localData.length === 0)
-        return (
-            <div className="flex flex-col items-center justify-center p-12 bg-white rounded-2xl shadow-sm border border-gray-100 mt-4">
-                <AlertCircle className="w-12 h-12 text-gray-300 mb-4" />
-                <p className="text-gray-500 font-medium">No data available.</p>
-            </div>
-        );
-
-    const hideCategory = localData[0]?.type === "OFFER";
+    const hideCategory = localData.length > 0 && localData[0]?.type === "OFFER";
 
     const headings = [
         "ID",
@@ -223,6 +215,14 @@ const AdminTable: React.FC<AdminTableProps> = ({ data, onDataUpdate }) => {
         const start = (currentPage - 1) * itemsPerPage;
         return filteredData.slice(start, start + itemsPerPage);
     }, [filteredData, currentPage, itemsPerPage]);
+
+    if (!localData || localData.length === 0)
+        return (
+            <div className="flex flex-col items-center justify-center p-12 bg-white rounded-2xl shadow-sm border border-gray-100 mt-4">
+                <AlertCircle className="w-12 h-12 text-gray-300 mb-4" />
+                <p className="text-gray-500 font-medium">No data available.</p>
+            </div>
+        );
 
     return (
         <div className="flex flex-col h-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mt-6">
