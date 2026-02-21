@@ -241,13 +241,22 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
 
         try {
             setLoading(true);
+
+            const finalAmount = checkoutPricing?.grandTotal
+                ? (checkoutPricing.grandTotal + (wantHardcopy ? 75 : 0))
+                : ((priceInfo.displayPrice * numPersons) + (wantHardcopy ? 75 : 0));
+
+            const totalOriginalPrice = checkoutPricing?.originalTotal || (priceInfo.originalPrice * numPersons);
+            const totalDiscountAmount = checkoutPricing?.totalDiscount || ((priceInfo.originalPrice - priceInfo.displayPrice) * numPersons);
+
             const orderData = {
                 packageId: pkgId,
                 packageName: pkgNames.join(", "),
-                packagePrice: priceInfo.displayPrice,
-                originalPrice: priceInfo.originalPrice,
+                packagePrice: priceInfo.displayPrice, // Unit price
+                totalAmount: finalAmount, // Total price including persons and charges
+                originalPrice: totalOriginalPrice,
                 discountPercentage: priceInfo.discountPercentage,
-                discountAmount: priceInfo.discountAmount,
+                discountAmount: totalDiscountAmount,
                 beneficiaries: selectedBeneficiaries,
                 contactInfo: {
                     ...contactInfo,
@@ -272,15 +281,10 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                     saveContactInfo(contactInfo);
                 }
 
-                // Success feedback
-                const finalAmount = checkoutPricing?.grandTotal
-                    ? (checkoutPricing.grandTotal + (wantHardcopy ? 75 : 0)).toFixed(2)
-                    : ((priceInfo.displayPrice * numPersons) + (wantHardcopy ? 75 : 0)).toFixed(2);
-
                 showSuccessCard({
                     orderId: result.data.orderId,
                     packageName: pkgNames.join(", "),
-                    amount: finalAmount
+                    amount: finalAmount.toFixed(2)
                 });
 
                 toastSuccess("Order placed successfully!");

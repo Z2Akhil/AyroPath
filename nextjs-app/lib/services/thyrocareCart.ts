@@ -44,16 +44,16 @@ export class ThyrocareCartService {
 
   static async getAdminMobile(): Promise<string> {
     const activeSession = await AdminSession.findOne({ isActive: true }).populate<{ adminId: { mobile?: string } }>('adminId');
-    
+
     if (activeSession?.adminId?.mobile) {
       return activeSession.adminId.mobile;
     }
-    
+
     const fallbackMobile = process.env.THYROCARE_USERNAME;
     if (!fallbackMobile) {
       throw new Error('No active admin session and THYROCARE_USERNAME not configured');
     }
-    
+
     return fallbackMobile;
   }
 
@@ -128,13 +128,22 @@ export class ThyrocareCartService {
     const { benCount = 1 } = options;
 
     if (!thyrocareResult.success || !thyrocareResult.data) {
-      const ourTotal = cartItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
-      const hasCollectionCharge = ourTotal > 0 && ourTotal < this.MINIMUM_ORDER;
-      const collectionCharge = hasCollectionCharge ? this.COLLECTION_CHARGE : 0;
+      console.log('⚠️ Using local prices (Thyrocare validation failed)');
+      const ourTotal = cartItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0) * benCount;
+      const COLLECTION_CHARGE = 200;
+      const MINIMUM_ORDER = 300;
+
+      let collectionCharge = 0;
+      let hasCollectionCharge = false;
+
+      if (ourTotal > 0 && ourTotal < MINIMUM_ORDER) {
+        collectionCharge = COLLECTION_CHARGE;
+        hasCollectionCharge = true;
+      }
 
       return {
         success: true,
-        adjustedItems: cartItems,
+        adjustedItems: cartItems.map(i => ({ ...i, marginAdjusted: false })),
         collectionCharge,
         hasCollectionCharge,
         breakdown: {
@@ -150,35 +159,79 @@ export class ThyrocareCartService {
     const thyrocarePayable = parseFloat(thyrocareData.payable || '0');
     const thyrocareMargin = parseFloat(thyrocareData.margin || '0');
 
-    const originalTotal = cartItems.reduce((sum, item) => sum + (item.originalPrice * item.quantity * benCount), 0);
-    const totalAdminDiscount = cartItems.reduce((sum, item) => sum + ((item.discount || 0) * item.quantity * benCount), 0);
+    // Sent Total (The basis on which Thyrocare calculates margin)
+    const sentTotal = cartItems.reduce((sum, item) => sum + ((item.thyrocareRate || item.sellingPrice) * item.quantity), 0);
+    const ourTotalSelling = cartItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
 
-    const discountRatio = totalAdminDiscount > thyrocareMargin && thyrocareMargin > 0
-      ? thyrocareMargin / totalAdminDiscount
-      : 1;
+    const currentPasson = Math.max(0, sentTotal - ourTotalSelling) * benCount;
+    const thyrocareProductCost = Math.max(0, (sentTotal * benCount) - thyrocareMargin);
 
-    const marginAdjusted = discountRatio < 1;
+    const COLLECTION_CHARGE = 200;
+    const MINIMUM_ORDER = 300;
 
-    const adjustedItems = cartItems.map(item => {
-      const adminDiscount = item.discount || 0;
-      const applicableDiscount = Math.round(adminDiscount * discountRatio);
-      const finalPrice = item.originalPrice - applicableDiscount;
+    let collectionCharge = 0;
+    let hasCollectionCharge = false;
+
+    if (Math.abs(thyrocarePayable - thyrocareProductCost - COLLECTION_CHARGE) <= 10) {
+      collectionCharge = COLLECTION_CHARGE;
+      hasCollectionCharge = true;
+    } else if (thyrocareProductCost < MINIMUM_ORDER && thyrocarePayable >= MINIMUM_ORDER) {
+      collectionCharge = COLLECTION_CHARGE;
+      hasCollectionCharge = true;
+    }
+
+    if (currentPasson <= thyrocareMargin) {
+      return {
+        success: true,
+        adjustedItems: cartItems.map(i => ({ ...i, marginAdjusted: false })),
+        collectionCharge,
+        hasCollectionCharge,
+        breakdown: {
+          productTotal: ourTotalSelling * benCount,
+          collectionCharge,
+          grandTotal: (ourTotalSelling * benCount) + collectionCharge
+        },
+        thyrocareResponse: thyrocareData,
+        message: 'Full discount applied'
+      };
+    }
+
+    const targetTotalPerBen = thyrocareProductCost / benCount;
+    const adjustmentRatio = ourTotalSelling > 0 ? targetTotalPerBen / ourTotalSelling : 1;
+
+    let adjustedItems = cartItems.map(item => {
+      let newSellingPrice = Math.round(item.sellingPrice * adjustmentRatio);
+
+      if (newSellingPrice > item.originalPrice) {
+        newSellingPrice = item.originalPrice;
+      }
 
       return {
         ...item,
-        discount: applicableDiscount,
-        sellingPrice: finalPrice,
-        totalPrice: finalPrice * item.quantity * benCount,
-        marginAdjusted: applicableDiscount < adminDiscount
+        sellingPrice: newSellingPrice,
+        discount: Math.max(0, item.originalPrice - newSellingPrice),
+        marginAdjusted: true
       };
     });
 
-    const finalTotal = adjustedItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity * benCount), 0);
-    const totalDiscount = originalTotal - finalTotal;
+    let currentTotal = adjustedItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
+    let diff = Math.round(targetTotalPerBen - currentTotal);
 
-    const hasCollectionCharge = finalTotal < this.MINIMUM_ORDER;
-    const collectionCharge = hasCollectionCharge ? this.COLLECTION_CHARGE : 0;
-    const grandTotal = finalTotal + collectionCharge;
+    if (diff !== 0) {
+      for (let i = 0; i < adjustedItems.length && diff !== 0; i++) {
+        const item = adjustedItems[i];
+        const adjustment = diff > 0 ? 1 : -1;
+        const potentialPrice = item.sellingPrice + adjustment;
+
+        if (potentialPrice >= 0 && potentialPrice <= item.originalPrice) {
+          adjustedItems[i].sellingPrice = potentialPrice;
+          adjustedItems[i].discount = Math.max(0, item.originalPrice - potentialPrice);
+          diff -= (adjustment * item.quantity);
+        }
+      }
+    }
+
+    const finalProductTotal = adjustedItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0) * benCount;
 
     return {
       success: true,
@@ -186,12 +239,12 @@ export class ThyrocareCartService {
       collectionCharge,
       hasCollectionCharge,
       breakdown: {
-        productTotal: finalTotal,
+        productTotal: finalProductTotal,
         collectionCharge,
-        grandTotal
+        grandTotal: finalProductTotal + collectionCharge
       },
       thyrocareResponse: thyrocareData,
-      message: marginAdjusted ? 'Discount adjusted based on beneficiaries' : 'Full discount applied'
+      message: 'Discount adjusted based on beneficiaries'
     };
   }
 
@@ -217,7 +270,7 @@ export class ThyrocareCartService {
       };
     } catch (error) {
       console.error('Cart validation error:', error);
-      
+
       const ourTotal = cartItems.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
       const hasCollectionCharge = ourTotal > 0 && ourTotal < this.MINIMUM_ORDER;
       const collectionCharge = hasCollectionCharge ? this.COLLECTION_CHARGE : 0;

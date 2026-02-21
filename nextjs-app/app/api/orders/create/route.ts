@@ -105,6 +105,7 @@ export async function POST(req: NextRequest) {
             packageId,
             packageName,
             packagePrice,
+            totalAmount,
             originalPrice,
             discountPercentage,
             discountAmount,
@@ -116,7 +117,7 @@ export async function POST(req: NextRequest) {
         } = await req.json();
 
         // Validate required fields
-        if (!packageId || !packageName || !packagePrice || !beneficiaries || !contactInfo || !appointment) {
+        if (!packageId || !packageName || !totalAmount || !beneficiaries || !contactInfo || !appointment) {
             return NextResponse.json(
                 { success: false, message: 'Missing required fields' },
                 { status: 400 }
@@ -173,7 +174,7 @@ export async function POST(req: NextRequest) {
             },
             reportsHardcopy: reports,
             payment: {
-                amount: packagePrice,
+                amount: totalAmount,
                 type: 'POSTPAID'
             },
             source: 'Ayropath'

@@ -38,7 +38,10 @@ interface CartResponse {
   [key: string]: unknown;
 }
 
-function getErrorMessage(error: unknown): string {
+function getErrorMessage(error: any): string {
+  if (error.response?.data?.message) {
+    return error.response.data.message;
+  }
   if (error instanceof Error) {
     return error.message;
   }
