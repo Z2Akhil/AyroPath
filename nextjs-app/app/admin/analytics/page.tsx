@@ -18,7 +18,7 @@ import {
 
 const AnalyticsPage = () => {
     const [loading, setLoading] = useState(true);
-    const [trendsLoading, setTrendsLoading] = useState(false);
+    const [trendsLoading, setTrendsLoading] = useState(true); // true = show skeleton while initial fetch runs
     const [error, setError] = useState('');
 
     // Analytics data states
@@ -142,14 +142,12 @@ const AnalyticsPage = () => {
 
         } catch (err) {
             console.error('Error fetching analytics trends:', err);
-
-            // Use mock data as fallback
-            const mockData = generateMockData();
-            setTrendsData(mockData.trends);
+            // On error, set empty data so charts show the empty state properly
+            setTrendsData({ orderTrends: [], userTrends: [] });
         } finally {
             setTrendsLoading(false);
         }
-    }, [generateMockData]);
+    }, []);
 
     // Handle date range change
     const handleDateChange = (startDate: string, endDate: string) => {
@@ -157,6 +155,7 @@ const AnalyticsPage = () => {
         fetchAnalyticsOverview(startDate, endDate);
         fetchAnalyticsTrends(startDate, endDate);
     };
+
 
     // Prepare order status data for pie chart
     const orderStatusData = overviewData?.orderStatus ?

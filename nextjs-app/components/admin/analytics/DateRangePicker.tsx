@@ -10,7 +10,7 @@ interface DateRangePickerProps {
 
 const DateRangePicker: React.FC<DateRangePickerProps> = ({ onDateChange, loading = false }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [selectedRange, setSelectedRange] = useState('Last 30 Days');
+    const [selectedRange, setSelectedRange] = useState('Last Year');
     const [customDates, setCustomDates] = useState({
         startDate: '',
         endDate: ''
@@ -45,6 +45,15 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ onDateChange, loading
             }
         },
         {
+            label: 'Last Year', getValue: () => {
+                const end = new Date().toISOString().split('T')[0];
+                const d = new Date();
+                d.setFullYear(d.getFullYear() - 1);
+                const start = d.toISOString().split('T')[0];
+                return { start, end };
+            }
+        },
+        {
             label: 'This Month', getValue: () => {
                 const now = new Date();
                 const end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
@@ -72,14 +81,14 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ onDateChange, loading
         }
     };
 
-    // Initial load
+    // Initial load — fire with the default 'Last Year' range
     useEffect(() => {
-        const defaultRange = ranges.find(r => r.label === 'Last 30 Days');
+        const defaultRange = ranges.find(r => r.label === 'Last Year');
         if (defaultRange) {
             const { start, end } = defaultRange.getValue();
             onDateChange(start, end);
         }
-    }, []);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <div className="relative">

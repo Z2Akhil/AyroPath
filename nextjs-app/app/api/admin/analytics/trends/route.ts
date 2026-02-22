@@ -27,19 +27,24 @@ export async function GET(req: NextRequest) {
 
         console.log('Fetching analytics trends for admin:', auth.admin.name, { period, startDate: startDateParam, endDate: endDateParam });
 
-        // Default date range: last 30 days
+        // Default date range: last 365 days (so the chart always shows meaningful data)
         const defaultEndDate = new Date();
         const defaultStartDate = new Date();
-        defaultStartDate.setDate(defaultStartDate.getDate() - 30);
+        defaultStartDate.setFullYear(defaultStartDate.getFullYear() - 1);
+
+        const hasCustomDateFilter = !!(startDateParam || endDateParam);
 
         const dateFilter = {
             $gte: startDateParam ? new Date(startDateParam) : defaultStartDate,
             $lte: endDateParam ? new Date(endDateParam) : defaultEndDate
         };
 
+        // Auto-switch to monthly grouping for full-year default to keep chart readable
+        const effectivePeriod = (!hasCustomDateFilter && period === 'daily') ? 'monthly' : period;
+
         // Determine date format for grouping
         let dateFormat;
-        switch (period) {
+        switch (effectivePeriod) {
             case 'daily':
                 dateFormat = { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } };
                 break;

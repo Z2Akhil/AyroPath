@@ -43,26 +43,6 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
     const renderChart = () => {
-        if (loading) {
-            return (
-                <div className="flex items-center justify-center h-full">
-                    <div className="animate-pulse w-full">
-                        <div className="h-64 bg-gray-100 rounded-xl w-full"></div>
-                    </div>
-                </div>
-            );
-        }
-
-        if (!data || data.length === 0) {
-            return (
-                <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                        <p className="text-gray-500 font-medium">No data available for the selected period</p>
-                    </div>
-                </div>
-            );
-        }
-
         switch (type) {
             case 'line':
                 return (
@@ -260,10 +240,32 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
                     <h3 className="text-lg font-bold text-gray-900">{title}</h3>
                 </div>
             )}
-            <div style={{ height: `${height}px`, width: '100%' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                    {renderChart()}
-                </ResponsiveContainer>
+            <div style={{ height: `${height}px`, width: '100%' }} className="relative">
+                {/* Loading skeleton — outside ResponsiveContainer so height is correct */}
+                {loading ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="animate-pulse w-full px-4">
+                            <div className="h-full bg-gray-100 rounded-xl w-full" style={{ height: `${height - 32}px` }}></div>
+                        </div>
+                    </div>
+                ) : (!data || data.length === 0) ? (
+                    /* Empty state — centered in the plot area */
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gray-400">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="4" y="32" width="6" height="12" rx="2" fill="currentColor" opacity="0.2" />
+                            <rect x="14" y="20" width="6" height="24" rx="2" fill="currentColor" opacity="0.2" />
+                            <rect x="24" y="26" width="6" height="18" rx="2" fill="currentColor" opacity="0.2" />
+                            <rect x="34" y="14" width="6" height="30" rx="2" fill="currentColor" opacity="0.2" />
+                            <line x1="4" y1="44" x2="44" y2="44" stroke="currentColor" strokeWidth="2" opacity="0.3" />
+                        </svg>
+                        <p className="text-sm font-medium">No data for this period</p>
+                        <p className="text-xs text-gray-300">Try selecting a wider date range</p>
+                    </div>
+                ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                        {renderChart()}
+                    </ResponsiveContainer>
+                )}
             </div>
         </div>
     );
