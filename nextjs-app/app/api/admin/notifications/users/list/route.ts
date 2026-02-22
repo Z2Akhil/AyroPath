@@ -19,8 +19,8 @@ export async function GET(req: NextRequest) {
         const search = searchParams.get('search') || '';
         const skip = (page - 1) * limit;
 
-        // Build query
-        const query: any = { isActive: true }; // Only show active users by default
+        // Build query — only include users with a valid email (required for notifications)
+        const query: any = { isActive: true, email: { $exists: true, $ne: null, $nin: [''] } };
         if (search) {
             query.$or = [
                 { firstName: { $regex: search, $options: 'i' } },

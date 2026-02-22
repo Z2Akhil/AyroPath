@@ -90,6 +90,8 @@ export interface AdminOrder {
         name: string;
         price: number;
         originalPrice?: number;
+        discountAmount?: number;
+        discountPercentage?: number;
     };
     beneficiaries: OrderBeneficiary[];
     contactInfo: {

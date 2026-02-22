@@ -83,9 +83,9 @@ const OrderAccordion: React.FC<OrderAccordionProps> = ({
         }
     };
 
-    const formatDate = (dateString?: string) => {
+    const formatDate = (dateString?: string | Date) => {
         if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleString('en-IN', {
+        return new Date(dateString as string).toLocaleString('en-IN', {
             dateStyle: 'medium',
             timeStyle: 'medium'
         });
@@ -182,75 +182,135 @@ const OrderAccordion: React.FC<OrderAccordionProps> = ({
                             </button>
                         )}
                     </div>
+                    {refreshError && <p className="text-red-500 text-xs mt-1">{refreshError}</p>}
+                    {refreshSuccess && <p className="text-green-500 text-xs mt-1">Synced!</p>}
                 </td>
             </tr>
 
             {isExpanded && (
                 <tr>
                     <td colSpan={6} className="px-6 py-8 bg-gray-50/50 border-y border-gray-200">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <div className="space-y-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                            {/* ── LEFT COLUMN ── */}
+                            <div className="space-y-5">
+
+                                {/* Package Information */}
                                 <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                                     <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-3">
                                         <Package className="h-5 w-5 text-blue-500" />
-                                        Package Details
+                                        Package Information
                                     </h4>
-                                    <div className="space-y-4 text-sm">
+                                    <div className="space-y-3 text-sm">
                                         <div className="flex justify-between">
-                                            <span className="text-gray-500">Name:</span>
-                                            <span className="font-semibold text-gray-900">{combinedName(order.package?.name)}</span>
+                                            <span className="text-gray-500">Package Name:</span>
+                                            <span className="font-semibold text-gray-900">{order.package?.name || 'N/A'}</span>
+                                        </div>
+                                        {order.package?.code && order.package.code.length > 0 && (
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-500">Package Code:</span>
+                                                <span className="font-mono text-gray-700">
+                                                    {Array.isArray(order.package.code) ? order.package.code.join(', ') : order.package.code}
+                                                </span>
+                                            </div>
+                                        )}
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-500">Price:</span>
+                                            <span className="text-gray-700">₹{order.package?.originalPrice ?? order.package?.price}</span>
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className="text-gray-500">Original Price:</span>
-                                            <span className="text-gray-400 line-through">₹{order.package?.originalPrice}</span>
+                                            <span className="text-gray-500">Discount:</span>
+                                            <span className="text-gray-700">₹{order.package?.discountAmount ?? 0}</span>
                                         </div>
                                         <div className="flex justify-between items-center pt-3 border-t">
-                                            <span className="text-gray-900 font-bold">Paid Amount:</span>
+                                            <span className="text-gray-900 font-bold">Final Price:</span>
                                             <span className="text-xl text-green-600 font-black">₹{order.package?.price}</span>
                                         </div>
                                     </div>
                                 </div>
 
+                                {/* Customer Information */}
                                 <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                                     <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-3">
                                         <User className="h-5 w-5 text-blue-500" />
-                                        Contact & Address
+                                        Customer Information
                                     </h4>
-                                    <div className="space-y-4 text-sm text-gray-800">
-                                        <div>
-                                            <p className="text-gray-500 mb-1">Shipping Address:</p>
-                                            <p className="font-medium leading-relaxed">
-                                                {`${order.contactInfo?.address.street}, ${order.contactInfo?.address.city}, ${order.contactInfo?.address.state} - ${order.contactInfo?.address.pincode}`}
-                                                {order.contactInfo?.address.landmark && (
-                                                    <span className="block text-gray-500 italic">Near: {order.contactInfo.address.landmark}</span>
-                                                )}
-                                            </p>
-                                        </div>
-                                        <div className="flex justify-between pt-2">
-                                            <span className="text-gray-500">Mobile:</span>
-                                            <span className="font-bold">{order.contactInfo?.mobile}</span>
-                                        </div>
+                                    <div className="space-y-3 text-sm">
                                         <div className="flex justify-between">
-                                            <span className="text-gray-500">Appointment:</span>
-                                            <span className="font-bold text-blue-600">{order.appointment?.date} ({order.appointment?.slot})</span>
+                                            <span className="text-gray-500">Name:</span>
+                                            <span className="font-semibold text-gray-900">
+                                                {typeof order.userId === 'object'
+                                                    ? `${order.userId.firstName} ${order.userId.lastName}`
+                                                    : 'N/A'}
+                                            </span>
                                         </div>
+                                        {order.contactInfo?.email && (
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-gray-500">Email:</span>
+                                                <span className="flex items-center gap-1.5 font-medium text-gray-800">
+                                                    {order.contactInfo.email}
+                                                    <button
+                                                        onClick={() => copyToClipboard(order.contactInfo?.email || '')}
+                                                        className="text-gray-400 hover:text-gray-600"
+                                                    >
+                                                        <Copy className="h-3 w-3" />
+                                                    </button>
+                                                </span>
+                                            </div>
+                                        )}
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-gray-500">Phone:</span>
+                                            <span className="flex items-center gap-1.5 font-bold text-gray-800">
+                                                {order.contactInfo?.mobile || 'N/A'}
+                                                {order.contactInfo?.mobile && (
+                                                    <button
+                                                        onClick={() => copyToClipboard(order.contactInfo?.mobile || '')}
+                                                        className="text-gray-400 hover:text-gray-600"
+                                                    >
+                                                        <Copy className="h-3 w-3" />
+                                                    </button>
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className="pt-1">
+                                            <span className="text-gray-500 block mb-1">Address:</span>
+                                            <p className="font-medium leading-relaxed text-gray-800">
+                                                {order.contactInfo?.address
+                                                    ? `${order.contactInfo.address.street}, ${order.contactInfo.address.city}, ${order.contactInfo.address.state} ${order.contactInfo.address.pincode}`
+                                                    : 'N/A'}
+                                            </p>
+                                            {order.contactInfo?.address?.landmark && (
+                                                <p className="text-gray-500 italic text-xs mt-0.5">
+                                                    Near: {order.contactInfo.address.landmark}
+                                                </p>
+                                            )}
+                                        </div>
+                                        {order.appointment?.date && (
+                                            <div className="flex justify-between pt-2 border-t">
+                                                <span className="text-gray-500">Appointment:</span>
+                                                <span className="font-bold text-blue-600">
+                                                    {order.appointment.date} ({order.appointment.slot})
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
+                                {/* Payment Details */}
                                 {order.payment && (
                                     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                                         <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-3">
                                             <CheckCircle className="h-5 w-5 text-blue-500" />
                                             Payment Details
                                         </h4>
-                                        <div className="space-y-4 text-sm">
+                                        <div className="space-y-3 text-sm">
                                             <div className="flex justify-between">
                                                 <span className="text-gray-500">Method:</span>
                                                 <span className="font-bold uppercase">{order.payment.type || 'N/A'}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-gray-500">Status:</span>
-                                                <span className={`font-black uppercase ${order.payment.status === 'SUCCESS' ? 'text-green-600' : 'text-orange-500'}`}>
+                                                <span className={`font-black uppercase ${order.payment.status === 'PAID' ? 'text-green-600' : 'text-orange-500'}`}>
                                                     {order.payment.status || 'PENDING'}
                                                 </span>
                                             </div>
@@ -263,27 +323,67 @@ const OrderAccordion: React.FC<OrderAccordionProps> = ({
                                 )}
                             </div>
 
-                            <div className="space-y-6">
+                            {/* ── RIGHT COLUMN ── */}
+                            <div className="space-y-5">
+
+                                {/* Order Status */}
+                                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                                    <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-3">
+                                        <CheckCircle className="h-5 w-5 text-blue-500" />
+                                        Order Status
+                                    </h4>
+                                    <div className="space-y-3 text-sm">
+                                        <div>
+                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(order.status)}`}>
+                                                {order.status}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-500">Created:</span>
+                                            <span className="font-medium text-gray-800">{formatDate(order.createdAt as any)}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-500">Last Updated:</span>
+                                            <span className="font-medium text-gray-800">{formatDate(order.updatedAt as any)}</span>
+                                        </div>
+                                        {order.notes && (
+                                            <div className="pt-2 border-t">
+                                                <span className="text-gray-500 text-xs block mb-1">Notes:</span>
+                                                <p className="text-gray-700 text-xs leading-relaxed">{order.notes}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Thyrocare Status */}
                                 <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                                     <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-3">
                                         <Truck className="h-5 w-5 text-blue-500" />
-                                        External Service (Thyrocare)
+                                        Thyrocare Status
                                     </h4>
-                                    <div className="space-y-4 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-500">Thyrocare ID:</span>
-                                            <span className="font-mono bg-gray-100 px-2 py-0.5 rounded flex items-center gap-2">
-                                                {order.thyrocare?.orderNo || 'NOT_SYNCED'}
+                                    <div className="space-y-3 text-sm">
+                                        <div>
+                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${getThyrocareStatusColor(order.thyrocare?.status || '')}`}>
+                                                {order.thyrocare?.status || 'YET TO ASSIGN'}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-gray-500">Thyrocare Order No:</span>
+                                            <span className="flex items-center gap-2 font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-800">
+                                                {order.thyrocare?.orderNo || 'N/A'}
                                                 {order.thyrocare?.orderNo && (
-                                                    <button onClick={() => copyToClipboard(order.thyrocare?.orderNo || '')} className="text-gray-400 hover:text-gray-600 transition-colors">
+                                                    <button
+                                                        onClick={() => copyToClipboard(order.thyrocare?.orderNo || '')}
+                                                        className="text-gray-400 hover:text-gray-600"
+                                                    >
                                                         <Copy className="h-3 w-3" />
                                                     </button>
                                                 )}
                                             </span>
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className="text-gray-500">Last Synched:</span>
-                                            <span className="font-medium">{formatDate(order.thyrocare?.lastSyncedAt)}</span>
+                                            <span className="text-gray-500">Last Synced:</span>
+                                            <span className="font-medium text-gray-700">{formatDate(order.thyrocare?.lastSyncedAt)}</span>
                                         </div>
                                         {order.thyrocare?.error && (
                                             <div className="p-3 bg-red-50 border border-red-100 rounded text-red-700 text-xs">
@@ -293,38 +393,42 @@ const OrderAccordion: React.FC<OrderAccordionProps> = ({
                                     </div>
                                 </div>
 
+                                {/* Beneficiaries */}
                                 <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                                     <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-3">
                                         <Users className="h-5 w-5 text-blue-500" />
-                                        Beneficiaries List
+                                        Beneficiaries ({order.beneficiaries?.length || 0})
                                     </h4>
                                     <div className="overflow-x-auto">
                                         <table className="min-w-full">
                                             <thead>
                                                 <tr className="text-left text-xs font-bold text-gray-400 uppercase tracking-tight">
                                                     <th className="pb-3">Name</th>
-                                                    <th className="pb-3">Details</th>
-                                                    <th className="pb-3 text-right">Reports</th>
+                                                    <th className="pb-3">Age</th>
+                                                    <th className="pb-3">Gender</th>
+                                                    <th className="pb-3 text-right">Report</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-50 text-sm">
                                                 {order.beneficiaries.map((ben, idx) => {
                                                     const report = order.reports?.find(r => r.beneficiaryName === ben.name || r.leadId === ben.leadId);
                                                     return (
-                                                        <tr key={idx} className="group hover:bg-gray-50/50">
+                                                        <tr key={idx} className="hover:bg-gray-50/50">
                                                             <td className="py-3 font-semibold text-gray-800">{ben.name}</td>
-                                                            <td className="py-3 text-gray-500">{ben.age}y / {ben.gender}</td>
+                                                            <td className="py-3 text-gray-600">{ben.age}</td>
+                                                            <td className="py-3 text-gray-600">{ben.gender}</td>
                                                             <td className="py-3 text-right">
                                                                 {report?.reportUrl ? (
                                                                     <a
                                                                         href={report.reportUrl}
                                                                         target="_blank"
-                                                                        className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-bold transition-colors"
+                                                                        rel="noreferrer"
+                                                                        className="text-blue-600 hover:text-blue-800 font-bold transition-colors"
                                                                     >
                                                                         View PDF
                                                                     </a>
                                                                 ) : (
-                                                                    <span className="text-gray-300">Pending</span>
+                                                                    <span className="text-gray-300">N/A</span>
                                                                 )}
                                                             </td>
                                                         </tr>
@@ -341,12 +445,6 @@ const OrderAccordion: React.FC<OrderAccordionProps> = ({
             )}
         </React.Fragment>
     );
-};
-
-// Helper for package names
-const combinedName = (name?: string) => {
-    if (!name) return 'N/A';
-    return name;
 };
 
 export default OrderAccordion;

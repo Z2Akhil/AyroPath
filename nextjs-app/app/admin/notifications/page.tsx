@@ -98,7 +98,8 @@ const NotificationsPage = () => {
             }
         } catch (err: any) {
             console.error('Error sending notification:', err);
-            setError(err.message || 'Failed to send notification. Please try again.');
+            const message = err.response?.data?.error || err.message || 'Failed to send notification. Please try again.';
+            setError(message);
         } finally {
             setSending(false);
         }

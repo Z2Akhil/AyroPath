@@ -14,7 +14,7 @@ export interface INotification extends Document {
         error?: string;
         sentAt?: Date;
     }>;
-    status: 'draft' | 'sending' | 'completed' | 'failed';  // Match old schema
+    status: 'draft' | 'sending' | 'completed' | 'partial' | 'failed';  // Match old schema
     totalRecipients: number;  // Added to match old schema
     sentCount: number;  // Added to match old schema
     recipientCount: number;
@@ -48,7 +48,7 @@ const NotificationSchema: Schema = new Schema({
     }],
     status: {
         type: String,
-        enum: ['draft', 'sending', 'completed', 'failed'],  // Added 'draft' and 'sending'
+        enum: ['draft', 'sending', 'completed', 'partial', 'failed'],  // Added 'draft' and 'sending'
         default: 'draft'
     },
     totalRecipients: { type: Number, required: true, min: 1 },  // Added
