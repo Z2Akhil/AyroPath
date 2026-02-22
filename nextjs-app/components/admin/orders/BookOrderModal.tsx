@@ -2,20 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-    X, User, Package, Calendar, Clock, MapPin, Phone, Mail,
-    AlertCircle, CheckCircle, Search, Info, ShoppingBag, Plus, Trash2, ChevronRight, ChevronLeft,
-    Users, FileText, RefreshCw
+    X, User, Package, Calendar, Clock, MapPin,
+    AlertCircle, CheckCircle, Search, Info, ShoppingBag, RefreshCw
 } from 'lucide-react';
 import { axiosInstance } from '@/lib/api/axiosInstance';
 import adminOrderApi from '@/lib/api/adminOrderApi';
 import { CustomerUser } from '@/types/admin';
 
 interface Product {
-    _id: string;
+    _id?: string;
     code: string;
     Id?: string;
     name: string;
-    type: string;
+    type?: string;
     sellingPrice?: number;
     price: number;
     thyrocareRate?: number;
@@ -38,7 +37,7 @@ interface BookOrderModalProps {
 const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSuccess }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [step, setStep] = useState(1);
+    const [step, setStep] = useState(1); // 1: Package, 2: Beneficiary & Details, 3: Slot & Confirm
 
     // Form states
     const [selectedPackages, setSelectedPackages] = useState<Product[]>([]);
@@ -48,18 +47,18 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
     const [hardCopyReport, setHardCopyReport] = useState(false);
 
     const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([
-        { name: `${user.firstName} ${user.lastName || ''}`.trim(), age: '', gender: 'Male' }
+        { name: `${user?.firstName} ${user?.lastName || ''}`, age: '', gender: 'Male' }
     ]);
 
     const [contactInfo, setContactInfo] = useState({
-        email: user.email || '',
-        mobile: user.mobileNumber || '',
+        email: user?.email || '',
+        mobile: user?.mobileNumber || '',
         address: {
-            street: '', // Will be filled by user
-            city: '',
-            state: '',
+            street: user?.address || '',
+            city: user?.city || '',
+            state: user?.state || '',
             pincode: '',
-            mobile: user.mobileNumber || ''
+            mobile: user?.mobileNumber || ''
         }
     });
 
@@ -74,7 +73,6 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
         slot: '',
         slotId: ''
     });
-
     const [slots, setSlots] = useState<any[]>([]);
     const [slotsLoading, setSlotsLoading] = useState(false);
     const [checkoutPricing, setCheckoutPricing] = useState<any>(null);
@@ -100,9 +98,9 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
     };
 
     const togglePackage = (pkg: Product) => {
-        const isSelected = selectedPackages.some(p => p.code === pkg.code || p._id === pkg._id);
+        const isSelected = selectedPackages.some(p => p.code === pkg.code || p.Id === pkg.code);
         if (isSelected) {
-            setSelectedPackages(selectedPackages.filter(p => p.code !== pkg.code && p._id !== pkg._id));
+            setSelectedPackages(selectedPackages.filter(p => p.code !== pkg.code && p.Id !== pkg.code));
         } else {
             setSelectedPackages([...selectedPackages, pkg]);
         }
@@ -110,7 +108,7 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
 
     const checkPincode = async (pincode: string) => {
         if (!pincode || pincode.length !== 6) return;
-        setPincodeStatus(prev => ({ ...prev, checking: true, message: '' }));
+        setPincodeStatus({ ...pincodeStatus, checking: true, message: '' });
         try {
             const response = await axiosInstance.get(`/client/pincode/${pincode}`);
             if (response.data.success && response.data.data?.status === 'Y') {
@@ -123,13 +121,41 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
         }
     };
 
+    const handleNextStep = () => {
+        if (step === 1 && selectedPackages.length === 0) {
+            setError('Please select at least one package');
+            return;
+        }
+        if (step === 2) {
+            if (beneficiaries.some(b => !b.name || !b.age || !b.gender)) {
+                setError('Please fill all beneficiary details correctly');
+                return;
+            }
+            if (!contactInfo.address.street || !contactInfo.address.city || !contactInfo.address.pincode) {
+                setError('Please fill address details');
+                return;
+            }
+            if (pincodeStatus.available !== true) {
+                setError('Collection not available at this pincode or pincode not checked');
+                return;
+            }
+        }
+        setError('');
+        setStep(step + 1);
+
+        // Fetch checkout pricing when entering Step 3
+        if (step + 1 === 3) {
+            fetchCheckoutPricing();
+        }
+    };
+
     const fetchCheckoutPricing = async () => {
         if (selectedPackages.length === 0) return;
 
         setPricingLoading(true);
         try {
             const items = selectedPackages.map(pkg => ({
-                productCode: pkg.code,
+                productCode: pkg.code || pkg.Id,
                 productType: pkg.type?.toUpperCase() || 'TEST',
                 sellingPrice: pkg.sellingPrice || pkg.price || 0,
                 thyrocareRate: pkg.thyrocareRate || pkg.b2cRate || pkg.price || 0
@@ -151,6 +177,10 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
         }
     };
 
+    const handlePrevStep = () => {
+        setStep(step - 1);
+    };
+
     const fetchSlots = async (date: string) => {
         if (!date || !contactInfo.address.pincode || selectedPackages.length === 0) return;
 
@@ -162,12 +192,12 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
             const patients = beneficiaries.map((b, i) => ({
                 Id: i + 1,
                 Name: b.name,
-                Gender: b.gender === "Male" ? "M" : b.gender === "Female" ? "F" : "O",
+                Gender: b.gender === 'Male' ? 'M' : b.gender === 'Female' ? 'F' : 'O',
                 Age: parseInt(b.age),
             }));
 
             const items = selectedPackages.map((p) => ({
-                Id: p.code,
+                Id: p.code || p.Id,
                 PatientQuantity: beneficiaries.length,
                 PatientIds: beneficiaries.map((_, i) => i + 1),
             }));
@@ -182,7 +212,7 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
 
             const response = await axiosInstance.post('/client/appointment-slots', payload);
 
-            if (response.data.success && response.data.data?.respId === "RES00001") {
+            if (response.data.success && response.data.data?.respId === 'RES00001') {
                 setSlots(response.data.data.lSlotDataRes || []);
             } else {
                 setSlots([]);
@@ -193,33 +223,6 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
             setError('Failed to fetch appointment slots. Please ensure pincode and beneficiaries are correct.');
         } finally {
             setSlotsLoading(false);
-        }
-    };
-
-    const handleNextStep = () => {
-        if (step === 1 && selectedPackages.length === 0) {
-            setError('Please select at least one package');
-            return;
-        }
-        if (step === 2) {
-            if (beneficiaries.some(b => !b.name || !b.age || !b.gender)) {
-                setError('Please fill all beneficiary details');
-                return;
-            }
-            if (!contactInfo.address.street || !contactInfo.address.city || !contactInfo.address.pincode) {
-                setError('Please fill address details');
-                return;
-            }
-            if (pincodeStatus.available !== true) {
-                setError('Collection not available at this pincode');
-                return;
-            }
-        }
-        setError('');
-        setStep(step + 1);
-
-        if (step + 1 === 3) {
-            fetchCheckoutPricing();
         }
     };
 
@@ -243,7 +246,7 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
 
             const payload = {
                 userId: user._id,
-                packageIds: selectedPackages.map(p => p.code),
+                packageIds: selectedPackages.map(p => p.code || p.Id),
                 packageNames: selectedPackages.map(p => p.name),
                 packagePrices: selectedPackages.map(p => ({
                     price: p.sellingPrice || p.price || 0,
@@ -274,12 +277,15 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
                 grandTotal: checkoutPricing?.grandTotal || null
             };
 
-            await adminOrderApi.bookOnBehalf(payload);
-            onSuccess('Order booked successfully!');
-            onClose();
+            const response = await adminOrderApi.bookOnBehalf(payload);
+
+            if ((response as any).data?.success) {
+                onSuccess('Order booked successfully!');
+                onClose();
+            }
         } catch (err: any) {
             console.error('Error booking order:', err);
-            setError(err.response?.data?.error || err.response?.data?.message || 'Failed to book order');
+            setError(err.response?.data?.message || 'Failed to book order');
         } finally {
             setLoading(false);
         }
@@ -288,7 +294,10 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
     const next7Days = [...Array(7)].map((_, i) => {
         const date = new Date();
         date.setDate(date.getDate() + i);
-        return date.toISOString().split('T')[0];
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     });
 
     const filteredPackages = packages.filter(p =>
@@ -296,7 +305,7 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
         p.code?.toLowerCase().includes(packageSearch.toLowerCase())
     );
 
-    const getProductTypeColor = (type: string) => {
+    const getProductTypeColor = (type?: string) => {
         switch (type?.toUpperCase()) {
             case 'TEST': return 'bg-purple-100 text-purple-700 border-purple-200';
             case 'PROFILE': return 'bg-blue-100 text-blue-700 border-blue-200';
@@ -307,52 +316,48 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
     };
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-md bg-black/60 overflow-hidden">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/40">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col overflow-hidden">
                 {/* Header */}
-                <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-indigo-600 to-blue-700 text-white rounded-t-3xl">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-white/20 p-2.5 rounded-xl">
-                            <ShoppingBag className="h-6 w-6" />
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-black tracking-tight">
-                                Book Test • <span className="text-indigo-100">{user.firstName} {user.lastName}</span>
-                            </h3>
-                            <div className="flex items-center gap-3 mt-1.5">
-                                <div className="flex gap-1.5">
-                                    {[1, 2, 3].map(i => (
-                                        <div key={`step-indicator-${i}`} className={`h-1.5 w-6 rounded-full transition-all duration-300 ${step >= i ? 'bg-white' : 'bg-white/20'}`} />
-                                    ))}
-                                </div>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-100">
-                                    Step {step}: {step === 1 ? 'Selection' : step === 2 ? 'Details' : 'Finalize'}
-                                </span>
-                            </div>
+                <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-indigo-600 text-white rounded-t-2xl">
+                    <div>
+                        <h3 className="text-xl font-bold flex items-center gap-2">
+                            <Package className="h-6 w-6" />
+                            Book Test for {user?.firstName} {user?.lastName}
+                        </h3>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className={`h-2 w-2 rounded-full ${step >= 1 ? 'bg-white' : 'bg-indigo-400'}`}></span>
+                            <span className={`h-2 w-2 rounded-full ${step >= 2 ? 'bg-white' : 'bg-indigo-400'}`}></span>
+                            <span className={`h-2 w-2 rounded-full ${step >= 3 ? 'bg-white' : 'bg-indigo-400'}`}></span>
+                            <p className="text-indigo-100 text-xs ml-2 uppercase tracking-wider font-semibold">
+                                Step {step}: {step === 1 ? 'Select Products' : step === 2 ? 'Details & Address' : 'Slot & Confirm'}
+                            </p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors active:scale-95">
+                    <button onClick={onClose} className="p-2 hover:bg-indigo-700 rounded-lg transition-colors">
                         <X className="h-6 w-6" />
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-8">
                     {error && (
-                        <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-xl flex items-center justify-between gap-3 text-red-700 animate-in slide-in-from-top-4">
-                            <div className="flex items-center gap-3">
-                                <AlertCircle className="h-5 w-5 shrink-0" />
-                                <p className="text-sm font-bold">{error}</p>
+                        <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg flex items-start gap-3 text-red-700">
+                            <AlertCircle className="h-5 w-5 mt-0.5" />
+                            <div className="flex-1">
+                                <p className="text-sm font-bold uppercase tracking-tight">Error</p>
+                                <p className="text-sm">{error}</p>
                             </div>
-                            <button onClick={() => setError('')} className="p-1 hover:bg-red-100 rounded-full">
+                            <button onClick={() => setError('')} className="text-red-400 hover:text-red-500">
                                 <X className="h-4 w-4" />
                             </button>
                         </div>
                     )}
 
+                    {/* Step 1: Select Products */}
                     {step === 1 && (
                         <div className="space-y-6">
-                            <div className="flex flex-col md:flex-row gap-4">
+                            <div className="flex items-center gap-4">
                                 <div className="relative flex-1">
                                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                                     <input
@@ -360,57 +365,60 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
                                         placeholder="Search tests, profiles or codes..."
                                         value={packageSearch}
                                         onChange={(e) => setPackageSearch(e.target.value)}
-                                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-semibold outline-none"
+                                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all font-medium"
                                     />
                                 </div>
-                                <div className="bg-indigo-50 px-6 py-4 rounded-2xl border border-indigo-100 flex items-center gap-3">
-                                    <div className="bg-indigo-600 text-white h-8 w-8 rounded-lg flex items-center justify-center font-black">
-                                        {selectedPackages.length}
-                                    </div>
-                                    <span className="text-indigo-700 font-bold text-sm">Packages Selected</span>
+                                <div className="bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 flex items-center gap-2">
+                                    <span className="text-indigo-700 font-bold">{selectedPackages.length}</span>
+                                    <span className="text-indigo-600 text-sm italic">items</span>
                                 </div>
                             </div>
 
                             {packageLoading ? (
-                                <div className="flex flex-col items-center justify-center py-24 opacity-60">
-                                    <RefreshCw className="h-12 w-12 text-indigo-600 animate-spin mb-4" />
-                                    <p className="text-indigo-600 font-black uppercase tracking-widest text-xs">Cataloging Products...</p>
+                                <div className="flex flex-col items-center justify-center py-20 grayscale opacity-50">
+                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+                                    <p className="text-indigo-600 font-bold">Loading products...</p>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[450px] overflow-y-auto pr-2">
                                     {filteredPackages.map((pkg) => {
-                                        const isSelected = selectedPackages.some(p => p.code === pkg.code || p._id === pkg._id);
+                                        const isSelected = selectedPackages.some(p => p.code === pkg.code || p.Id === pkg.code);
                                         return (
                                             <div
-                                                key={pkg._id}
+                                                key={pkg.code || pkg.Id}
                                                 onClick={() => togglePackage(pkg)}
-                                                className={`group p-4 border-2 rounded-2xl cursor-pointer transition-all duration-300 relative ${isSelected
-                                                    ? 'border-indigo-600 bg-indigo-50/50 shadow-lg scale-[1.02]'
-                                                    : 'border-gray-100 hover:border-indigo-200 hover:bg-gray-50/50'
+                                                className={`group relative p-3 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected
+                                                    ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-100'
+                                                    : 'border-gray-200 hover:border-indigo-300'
                                                     }`}
                                             >
-                                                <div className="flex items-start justify-between gap-3 mb-3">
-                                                    <h4 className="font-black text-gray-900 text-sm leading-tight uppercase group-hover:text-indigo-700 transition-colors line-clamp-2">
+                                                {/* Header Row: Name + Selection Checkbox */}
+                                                <div className="flex items-start justify-between gap-2 mb-2">
+                                                    <h4 className="font-bold text-gray-800 text-sm leading-tight group-hover:text-indigo-700 transition-colors uppercase">
                                                         {pkg.name}
                                                     </h4>
-                                                    <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${isSelected ? 'bg-indigo-600 border-indigo-600 rotate-0 scale-110' : 'border-gray-200 rotate-45 opacity-50'}`}>
-                                                        <Plus className={`h-4 w-4 text-white transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0'}`} />
+                                                    <div
+                                                        className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0 ${isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300'
+                                                            }`}
+                                                    >
+                                                        {isSelected && <CheckCircle className="h-4 w-4 text-white" />}
                                                     </div>
                                                 </div>
 
-                                                <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100/50">
+                                                {/* Details Row: Type + Code + Price */}
+                                                <div className="flex items-center justify-between text-xs">
                                                     <div className="flex items-center gap-2">
-                                                        <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase border ${getProductTypeColor(pkg.type)}`}>
+                                                        <span
+                                                            className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase border ${getProductTypeColor(pkg.type)}`}
+                                                        >
                                                             {pkg.type || 'TEST'}
                                                         </span>
-                                                        <span className="text-[10px] text-gray-400 font-bold">{pkg.code}</span>
+                                                        <span className="text-gray-500 font-medium">Code: {pkg.code || pkg.Id}</span>
                                                     </div>
-                                                    <div className="text-right">
-                                                        {pkg.originalPrice && pkg.originalPrice > pkg.price && (
-                                                            <p className="text-[10px] text-gray-400 line-through">₹{pkg.originalPrice}</p>
-                                                        )}
-                                                        <p className="text-lg font-black text-indigo-700 tracking-tight">₹{pkg.thyrocareRate || pkg.price}</p>
-                                                    </div>
+
+                                                    <span className="text-base font-black text-indigo-700">
+                                                        ₹{pkg.thyrocareRate || pkg.b2cRate || pkg.price}
+                                                    </span>
                                                 </div>
                                             </div>
                                         );
@@ -420,37 +428,31 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
                         </div>
                     )}
 
+                    {/* Step 2: Details & Address */}
                     {step === 2 && (
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                            {/* Beneficiaries Side */}
-                            <div className="lg:col-span-5 space-y-6">
-                                <div className="flex items-center justify-between border-b pb-4">
-                                    <h4 className="font-black text-gray-900 flex items-center gap-3">
-                                        <Users className="h-6 w-6 text-indigo-600" />
-                                        Patients Details
+                        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                            {/* Beneficiary Details */}
+                            <div className="lg:col-span-2 space-y-6">
+                                <div>
+                                    <h4 className="font-bold text-gray-900 flex items-center justify-between mb-4">
+                                        <span className="flex items-center gap-2">
+                                            <User className="h-5 w-5 text-indigo-600" />
+                                            Beneficiaries ({beneficiaries.length}/10)
+                                        </span>
                                     </h4>
-                                    <span className="bg-gray-100 px-3 py-1 rounded-full text-xs font-black text-gray-500 tracking-tight">
-                                        {beneficiaries.length} / 10
-                                    </span>
-                                </div>
-
-                                <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                                    {beneficiaries.map((ben, index) => (
-                                        <div key={`beneficiary-${index}`} className="group p-5 bg-white rounded-2xl border-2 border-gray-100 transition-all hover:border-indigo-600/30 hover:shadow-xl relative overflow-hidden">
-                                            <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-600 opacity-20 group-hover:opacity-100 transition-opacity" />
-
-                                            {beneficiaries.length > 1 && (
-                                                <button
-                                                    onClick={() => setBeneficiaries(beneficiaries.filter((_, i) => i !== index))}
-                                                    className="absolute top-4 right-4 text-gray-300 hover:text-red-500 transition-colors p-1"
-                                                >
-                                                    <Trash2 className="h-5 w-5" />
-                                                </button>
-                                            )}
-
-                                            <div className="space-y-5">
+                                    <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                                        {beneficiaries.map((ben, index) => (
+                                            <div key={index} className="relative group space-y-4 p-4 bg-gray-50 rounded-2xl border border-gray-200 transition-all hover:border-indigo-300 hover:bg-white shadow-sm">
+                                                {beneficiaries.length > 1 && (
+                                                    <button
+                                                        onClick={() => setBeneficiaries(beneficiaries.filter((_, i) => i !== index))}
+                                                        className="absolute -top-2 -right-2 bg-red-100 text-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-200"
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </button>
+                                                )}
                                                 <div>
-                                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Patient Full Name</label>
+                                                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Full Name</label>
                                                     <input
                                                         type="text"
                                                         value={ben.name}
@@ -459,13 +461,13 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
                                                             newBens[index].name = e.target.value;
                                                             setBeneficiaries(newBens);
                                                         }}
-                                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none font-bold text-gray-800"
-                                                        placeholder="Enter name..."
+                                                        className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                        placeholder="Patient name"
                                                     />
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div>
-                                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Age (Years)</label>
+                                                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Age</label>
                                                         <input
                                                             type="number"
                                                             value={ben.age}
@@ -474,12 +476,12 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
                                                                 newBens[index].age = e.target.value;
                                                                 setBeneficiaries(newBens);
                                                             }}
-                                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none font-bold text-gray-800"
-                                                            placeholder="e.g. 25"
+                                                            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                            placeholder="Age"
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Gender</label>
+                                                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Gender</label>
                                                         <select
                                                             value={ben.gender}
                                                             onChange={(e) => {
@@ -487,7 +489,7 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
                                                                 newBens[index].gender = e.target.value;
                                                                 setBeneficiaries(newBens);
                                                             }}
-                                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none font-bold text-gray-800"
+                                                            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
                                                         >
                                                             <option value="Male">Male</option>
                                                             <option value="Female">Female</option>
@@ -496,130 +498,135 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
-
-                                    {beneficiaries.length < 10 && (
-                                        <button
-                                            onClick={() => setBeneficiaries([...beneficiaries, { name: '', age: '', gender: 'Male' }])}
-                                            className="w-full py-5 border-2 border-dashed border-gray-200 rounded-3xl text-gray-400 font-black uppercase text-xs tracking-widest hover:border-indigo-600 hover:text-indigo-600 transition-all bg-gray-50/50 flex items-center justify-center gap-3 active:scale-[0.98]"
-                                        >
-                                            <Plus className="h-5 w-5" />
-                                            Add Another Patient
-                                        </button>
-                                    )}
+                                        ))}
+                                        {beneficiaries.length < 10 && (
+                                            <button
+                                                onClick={() => setBeneficiaries([...beneficiaries, { name: '', age: '', gender: 'Male' }])}
+                                                className="w-full py-4 border-2 border-dashed border-gray-300 rounded-2xl text-gray-400 font-bold hover:border-indigo-400 hover:text-indigo-500 transition-all flex items-center justify-center gap-2"
+                                            >
+                                                + Add More
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Address Side */}
-                            <div className="lg:col-span-7 space-y-8">
-                                <h4 className="font-black text-gray-900 flex items-center gap-3 border-b pb-4">
-                                    <MapPin className="h-6 w-6 text-indigo-600" />
-                                    Collection Logistics
-                                </h4>
-
-                                <div className="p-8 bg-indigo-50/50 border-2 border-indigo-100 rounded-[32px] space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="md:col-span-2">
-                                            <label className="text-[10px] font-black text-indigo-900/50 uppercase tracking-widest block mb-2">Pickup Location Address</label>
+                            {/* Address Details */}
+                            <div className="lg:col-span-3 space-y-6">
+                                <div>
+                                    <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                        <MapPin className="h-5 w-5 text-indigo-600" />
+                                        Collection Details
+                                    </h4>
+                                    <div className="p-6 bg-indigo-50 border border-indigo-100 rounded-2xl space-y-5">
+                                        <div>
+                                            <label className="block text-xs font-bold text-indigo-600 uppercase mb-1.5">Street Address</label>
                                             <textarea
-                                                rows={3}
+                                                rows={2}
                                                 value={contactInfo.address.street}
                                                 onChange={(e) => setContactInfo({ ...contactInfo, address: { ...contactInfo.address, street: e.target.value } })}
-                                                className="w-full px-5 py-4 bg-white border border-indigo-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 outline-none font-semibold text-gray-800"
-                                                placeholder="Street name, landmark, building suite..."
+                                                className="w-full px-4 py-3 bg-white border border-indigo-100 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                placeholder="House no, Area, Building..."
                                             />
                                         </div>
-
-                                        <div>
-                                            <label className="text-[10px] font-black text-indigo-900/50 uppercase tracking-widest block mb-2">Pincode (Verification Required)</label>
-                                            <div className="relative">
+                                        <div className="grid grid-cols-2 gap-5">
+                                            <div>
+                                                <label className="block text-xs font-bold text-indigo-600 uppercase mb-1.5">City</label>
                                                 <input
                                                     type="text"
-                                                    maxLength={6}
-                                                    value={contactInfo.address.pincode}
+                                                    value={contactInfo.address.city}
+                                                    onChange={(e) => setContactInfo({ ...contactInfo, address: { ...contactInfo.address, city: e.target.value } })}
+                                                    className="w-full px-4 py-3 bg-white border border-indigo-100 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-indigo-600 uppercase mb-1.5">Pincode</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        maxLength={6}
+                                                        value={contactInfo.address.pincode}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value.replace(/\D/g, '');
+                                                            setContactInfo({ ...contactInfo, address: { ...contactInfo.address, pincode: val } });
+                                                            if (val.length === 6) checkPincode(val);
+                                                            else setPincodeStatus({ checking: false, available: null, message: '' });
+                                                        }}
+                                                        className={`w-full px-4 py-3 bg-white border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none pr-10 ${pincodeStatus.available === true ? 'border-green-400 bg-green-50' :
+                                                            pincodeStatus.available === false ? 'border-red-400 bg-red-50' : 'border-indigo-100'
+                                                            }`}
+                                                    />
+                                                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                                        {pincodeStatus.checking ? (
+                                                            <div className="animate-spin h-5 w-5 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
+                                                        ) : pincodeStatus.available === true ? (
+                                                            <CheckCircle className="h-5 w-5 text-green-500" />
+                                                        ) : pincodeStatus.available === false ? (
+                                                            <AlertCircle className="h-5 w-5 text-red-500" />
+                                                        ) : null}
+                                                    </div>
+                                                </div>
+                                                {pincodeStatus.message && (
+                                                    <p className={`text-[10px] font-bold mt-1.5 ${pincodeStatus.available ? 'text-green-600' : 'text-red-600'}`}>
+                                                        {pincodeStatus.message}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-5">
+                                            <div>
+                                                <label className="block text-xs font-bold text-indigo-600 uppercase mb-1.5">State</label>
+                                                <input
+                                                    type="text"
+                                                    value={contactInfo.address.state}
+                                                    onChange={(e) => setContactInfo({ ...contactInfo, address: { ...contactInfo.address, state: e.target.value } })}
+                                                    className="w-full px-4 py-3 bg-white border border-indigo-100 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-indigo-600 uppercase mb-1.5">Mobile (For Collection)</label>
+                                                <input
+                                                    type="text"
+                                                    maxLength={10}
+                                                    value={contactInfo.address.mobile}
                                                     onChange={(e) => {
                                                         const val = e.target.value.replace(/\D/g, '');
-                                                        setContactInfo({ ...contactInfo, address: { ...contactInfo.address, pincode: val } });
-                                                        if (val.length === 6) checkPincode(val);
-                                                        else setPincodeStatus({ checking: false, available: null, message: '' });
+                                                        setContactInfo({
+                                                            ...contactInfo,
+                                                            mobile: val,
+                                                            address: { ...contactInfo.address, mobile: val }
+                                                        });
                                                     }}
-                                                    className={`w-full px-5 py-4 bg-white border rounded-2xl focus:ring-4 outline-none pr-12 font-black tracking-widest ${pincodeStatus.available === true ? 'border-green-400 text-green-700 bg-green-50' :
-                                                        pincodeStatus.available === false ? 'border-red-400 text-red-700 bg-red-50' : 'border-indigo-100'
-                                                        }`}
+                                                    className="w-full px-4 py-3 bg-white border border-indigo-100 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
                                                 />
-                                                <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                                    {pincodeStatus.checking ? <RefreshCw className="h-6 w-6 text-indigo-600 animate-spin" /> :
-                                                        pincodeStatus.available === true ? <CheckCircle className="h-6 w-6 text-green-500" /> :
-                                                            pincodeStatus.available === false ? <X className="h-6 w-6 text-red-500" /> : null}
-                                                </div>
                                             </div>
-                                            {pincodeStatus.message && <p className={`text-[10px] font-black mt-2 uppercase tracking-tight ${pincodeStatus.available ? 'text-green-600' : 'text-red-600'}`}>{pincodeStatus.message}</p>}
                                         </div>
 
-                                        <div>
-                                            <label className="text-[10px] font-black text-indigo-900/50 uppercase tracking-widest block mb-2">City Name</label>
-                                            <input
-                                                type="text"
-                                                value={contactInfo.address.city}
-                                                onChange={(e) => setContactInfo({ ...contactInfo, address: { ...contactInfo.address, city: e.target.value } })}
-                                                className="w-full px-5 py-4 bg-white border border-indigo-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 outline-none font-bold"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="text-[10px] font-black text-indigo-900/50 uppercase tracking-widest block mb-2">State</label>
-                                            <input
-                                                type="text"
-                                                value={contactInfo.address.state}
-                                                onChange={(e) => setContactInfo({ ...contactInfo, address: { ...contactInfo.address, state: e.target.value } })}
-                                                className="w-full px-5 py-4 bg-white border border-indigo-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 outline-none font-bold"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="text-[10px] font-black text-indigo-900/50 uppercase tracking-widest block mb-1.5">Emergency Contact (Mobile)</label>
-                                            <input
-                                                type="text"
-                                                maxLength={10}
-                                                value={contactInfo.address.mobile}
-                                                onChange={(e) => {
-                                                    const val = e.target.value.replace(/\D/g, '');
-                                                    setContactInfo(prev => ({
-                                                        ...prev,
-                                                        mobile: val,
-                                                        address: { ...prev.address, mobile: val }
-                                                    }));
-                                                }}
-                                                className="w-full px-5 py-4 bg-white border border-indigo-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 outline-none font-black"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Additional Options */}
-                                    <div className="pt-6 border-t border-indigo-100">
-                                        <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-[28px] p-6 group hover:shadow-lg transition-all duration-300">
+                                        {/* Hard Copy Report Option */}
+                                        <div className="mt-5 p-4 bg-amber-50 border border-amber-200 rounded-xl">
                                             <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-4">
-                                                    <div className={`p-3 rounded-2xl transition-colors ${hardCopyReport ? 'bg-amber-500 text-white' : 'bg-white text-amber-500 shadow-sm'}`}>
-                                                        <FileText className="h-6 w-6" />
-                                                    </div>
-                                                    <div>
-                                                        <h5 className="font-black text-amber-900 text-sm uppercase tracking-tight">Hard Copy Report</h5>
-                                                        <p className="text-[11px] text-amber-700/70 font-bold">Physical shipment to the address above</p>
-                                                    </div>
+                                                <div className="flex-1">
+                                                    <label className="block text-xs font-bold text-amber-700 uppercase mb-1">
+                                                        Hard Copy Report
+                                                    </label>
+                                                    <p className="text-[10px] text-amber-600">
+                                                        Request a physical printed copy of the test reports
+                                                    </p>
                                                 </div>
                                                 <button
+                                                    type="button"
                                                     onClick={() => setHardCopyReport(!hardCopyReport)}
-                                                    className={`w-14 h-8 rounded-full transition-all flex items-center px-1 ${hardCopyReport ? 'bg-amber-600' : 'bg-gray-200 shadow-inner'}`}
+                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${hardCopyReport ? 'bg-amber-500' : 'bg-gray-300'}`}
                                                 >
-                                                    <div className={`h-6 w-6 rounded-full bg-white shadow-xl transition-transform ${hardCopyReport ? 'translate-x-6' : 'translate-x-0'}`} />
+                                                    <span
+                                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${hardCopyReport ? 'translate-x-6' : 'translate-x-1'}`}
+                                                    />
                                                 </button>
                                             </div>
                                             {hardCopyReport && (
-                                                <div className="mt-4 flex items-center gap-3 bg-amber-500/10 p-3 rounded-xl border border-amber-500/10 animate-pulse">
-                                                    <Info className="h-4 w-4 text-amber-600" />
-                                                    <span className="text-[10px] font-black text-amber-700 uppercase tracking-widest">Additional ₹75.00 Logistic Charge Applied</span>
+                                                <div className="mt-3 flex items-center gap-2 text-xs font-bold text-amber-800 bg-amber-100 p-2 rounded-lg">
+                                                    <Info className="h-4 w-4" />
+                                                    <span>₹75 will be charged extra for hard copy</span>
                                                 </div>
                                             )}
                                         </div>
@@ -629,154 +636,184 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
                         </div>
                     )}
 
+                    {/* Step 3: Slot & Confirm */}
                     {step === 3 && (
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                            {/* Left Side: Slots */}
-                            <div className="lg:col-span-7 space-y-8">
-                                <div className="space-y-6">
-                                    <h4 className="font-black text-gray-900 flex items-center gap-3">
-                                        <Calendar className="h-6 w-6 text-indigo-600" />
-                                        Scheduling
+                        <div className="space-y-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                <div className="lg:col-span-2">
+                                    <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                        <Calendar className="h-5 w-5 text-indigo-600" />
+                                        Appointment Slot Selection
                                     </h4>
-
-                                    <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar">
-                                        {next7Days.map(date => {
-                                            const d = new Date(date);
-                                            const isSelected = appointment.date === date;
-                                            return (
-                                                <button
-                                                    key={date}
-                                                    onClick={() => {
-                                                        setAppointment({ ...appointment, date, slot: '', slotId: '' });
-                                                        fetchSlots(date);
-                                                    }}
-                                                    className={`flex flex-col items-center justify-center min-w-[100px] h-[100px] rounded-[24px] border-2 transition-all shrink-0 ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl scale-105' : 'bg-white border-gray-100 text-gray-400 hover:border-indigo-200'
-                                                        }`}
-                                                >
-                                                    <span className="text-[10px] font-black uppercase tracking-tight opacity-60">
-                                                        {d.toLocaleDateString(undefined, { weekday: 'short' })}
-                                                    </span>
-                                                    <span className="text-2xl font-black my-0.5">{d.getDate()}</span>
-                                                    <span className="text-[10px] font-bold opacity-60">
-                                                        {d.toLocaleDateString(undefined, { month: 'short' })}
-                                                    </span>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
-                                <div className="space-y-6">
-                                    <h4 className="font-black text-gray-900 flex items-center gap-3">
-                                        <Clock className="h-6 w-6 text-indigo-600" />
-                                        Availability
-                                    </h4>
-
-                                    {slotsLoading ? (
-                                        <div className="py-24 bg-gray-50 rounded-[32px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center">
-                                            <RefreshCw className="h-10 w-10 text-indigo-600 animate-spin mb-4" />
-                                            <p className="text-xs font-black text-indigo-600 uppercase tracking-[0.2em]">Contacting Phlebotomist...</p>
-                                        </div>
-                                    ) : slots.length > 0 ? (
-                                        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                                            {slots.map((s) => (
-                                                <button
-                                                    key={s.id}
-                                                    onClick={() => setAppointment({ ...appointment, slot: s.slot, slotId: s.id })}
-                                                    className={`py-3.5 px-2 rounded-xl text-[10px] font-black uppercase text-center transition-all border-2 ${appointment.slot === s.slot
-                                                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg'
-                                                        : 'bg-white border-gray-100 text-gray-700 hover:border-indigo-200 shadow-sm'
-                                                        }`}
-                                                >
-                                                    {s.slot}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="py-20 bg-gray-50 rounded-[32px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center opacity-40">
-                                            <Clock className="h-10 w-10 text-gray-300 mb-4" />
-                                            <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
-                                                {appointment.date ? 'No slots for this date' : 'Select a date above'}
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Right Side: Invoice Summary */}
-                            <div className="lg:col-span-5">
-                                <div className="bg-indigo-950 rounded-[40px] p-8 shadow-2xl text-white sticky top-0 border-4 border-white/5">
-                                    <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-6">
-                                        <h4 className="text-xl font-black uppercase tracking-tighter">Order Invoice</h4>
-                                        <ShoppingBag className="h-7 w-7 text-indigo-400" />
-                                    </div>
-
-                                    <div className="space-y-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-gray-50 border border-gray-200 rounded-3xl">
                                         <div className="space-y-4">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">Cart Contents</p>
-                                            <div className="space-y-2.5 max-h-[150px] overflow-y-auto pr-3 custom-scrollbar-light">
-                                                {selectedPackages.map((p, index) => (
-                                                    <div key={`cart-item-${p.code || p._id}-${index}`} className="flex justify-between items-center text-xs bg-white/5 p-3 rounded-2xl hover:bg-white/10 transition-colors">
-                                                        <span className="font-black text-indigo-50 uppercase truncate max-w-[180px]">{p.name}</span>
-                                                        <span className="font-black text-indigo-300 ml-4 shrink-0">₹{p.thyrocareRate || p.price}</span>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Select Date (Next 7 Days)</label>
+                                                <select
+                                                    value={appointment.date}
+                                                    onChange={(e) => {
+                                                        const date = e.target.value;
+                                                        setAppointment({ ...appointment, date, slot: '', slotId: '' });
+                                                        if (date) fetchSlots(date);
+                                                        else setSlots([]);
+                                                    }}
+                                                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-gray-700"
+                                                >
+                                                    <option value="">-- Choose Date --</option>
+                                                    {next7Days.map(date => (
+                                                        <option key={date} value={date}>{date}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            <div className="p-4 bg-white rounded-2xl border border-gray-100">
+                                                <p className="text-[10px] text-gray-400 font-bold uppercase mb-2">Selection Info</p>
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center gap-2 text-xs font-bold text-gray-600">
+                                                        <CheckCircle className={`h-4 w-4 ${pincodeStatus.available === true ? 'text-green-500' : 'text-gray-300'}`} />
+                                                        <span>Pincode Verified</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-xs font-bold text-gray-600">
+                                                        <CheckCircle className={`h-4 w-4 ${beneficiaries.every(b => b.name && b.age) ? 'text-green-500' : 'text-gray-300'}`} />
+                                                        <span>Beneficiaries Ready</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Available Time Slots</label>
+                                            {slotsLoading ? (
+                                                <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-gray-100">
+                                                    <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full mb-3"></div>
+                                                    <span className="text-[10px] text-indigo-400 font-black uppercase tracking-widest">Scanning...</span>
+                                                </div>
+                                            ) : slots.length > 0 ? (
+                                                <div className="grid grid-cols-2 gap-2 max-h-[250px] overflow-y-auto pr-2">
+                                                    {slots.map((s) => (
+                                                        <button
+                                                            key={s.id}
+                                                            onClick={() => setAppointment({ ...appointment, slot: s.slot, slotId: s.id })}
+                                                            className={`py-3 px-2 text-[10px] font-black border-2 rounded-xl transition-all uppercase tracking-tight ${appointment.slot === s.slot
+                                                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg'
+                                                                : 'bg-white text-gray-700 border-gray-200 hover:border-indigo-400'
+                                                                }`}
+                                                        >
+                                                            {s.slot}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center justify-center py-20 bg-white border-2 border-dashed border-gray-200 rounded-2xl text-center">
+                                                    <Clock className="h-8 w-8 text-gray-200 mb-3" />
+                                                    <p className="text-[10px] text-gray-400 font-bold uppercase px-4">
+                                                        {appointment.date ? 'No slots for this date' : 'Select a date to see slots'}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-indigo-900 p-8 rounded-[40px] shadow-2xl text-white transform hover:scale-[1.01] transition-transform">
+                                    <h4 className="font-black text-xl mb-6 tracking-tight flex items-center justify-between">
+                                        Summary
+                                        <ShoppingBag className="h-6 w-6 text-indigo-400" />
+                                    </h4>
+                                    <div className="space-y-6">
+                                        <div className="space-y-3">
+                                            <p className="text-[10px] text-indigo-400 uppercase font-black tracking-widest">Selected Items</p>
+                                            <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                                                {selectedPackages.map(p => (
+                                                    <div key={p.code || p.Id} className="flex justify-between items-start text-xs bg-white/5 p-2 rounded-lg">
+                                                        <span className="font-bold text-indigo-100 flex-1 uppercase text-[10px] leading-relaxed">{p.name}</span>
+                                                        <span className="font-black text-indigo-300 ml-4 shrink-0">₹{p.thyrocareRate || p.b2cRate || p.price}</span>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
 
-                                        <div className="space-y-4 pt-4 border-t border-white/5">
+                                        {/* Pricing Breakdown */}
+                                        <div className="space-y-3 pt-4 border-t border-white/10">
                                             {pricingLoading ? (
-                                                <div className="text-center py-6 opacity-50">
-                                                    <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-3" />
-                                                    <p className="text-[9px] font-black uppercase tracking-widest">Pricing Calculation...</p>
+                                                <div className="text-center py-4">
+                                                    <div className="animate-spin h-6 w-6 border-2 border-indigo-400 border-t-transparent rounded-full mx-auto mb-2"></div>
+                                                    <p className="text-[10px] text-indigo-300 uppercase">Calculating price...</p>
                                                 </div>
-                                            ) : checkoutPricing ? (
-                                                <div className="space-y-3.5">
-                                                    <div className="flex justify-between text-xs font-bold text-indigo-300/70">
-                                                        <span>Subtotal ({beneficiaries.length} P)</span>
-                                                        <span>₹{checkoutPricing.originalTotal?.toFixed(2)}</span>
+                                            ) : checkoutPricing && checkoutPricing.success ? (
+                                                <>
+                                                    <div className="flex justify-between items-center text-xs">
+                                                        <span className="text-indigo-300">Original Price ({beneficiaries.length} {beneficiaries.length === 1 ? 'person' : 'people'}):</span>
+                                                        <span className="text-white font-medium">₹{checkoutPricing.originalTotal?.toFixed(2)}</span>
                                                     </div>
-                                                    <div className="flex justify-between text-xs font-black text-green-400">
-                                                        <span>Partner Discount</span>
-                                                        <span>-₹{checkoutPricing.totalDiscount?.toFixed(2)}</span>
+                                                    <div className="flex justify-between items-center text-xs">
+                                                        <span className="text-indigo-300">Your Discount:</span>
+                                                        <span className="text-green-400 font-medium">-₹{checkoutPricing.totalDiscount?.toFixed(2)}</span>
                                                     </div>
+                                                    {checkoutPricing.marginAdjusted && (
+                                                        <div className="text-[10px] text-amber-400 italic bg-amber-500/10 p-2 rounded-lg">
+                                                            (Discount capped at ₹{checkoutPricing.thyrocareMargin?.toFixed(2) || checkoutPricing.totalDiscount?.toFixed(2)} for {beneficiaries.length} {beneficiaries.length === 1 ? 'person' : 'people'})
+                                                        </div>
+                                                    )}
                                                     {checkoutPricing.collectionCharge > 0 && (
-                                                        <div className="flex justify-between text-xs font-bold text-indigo-300/70">
-                                                            <span>Home Collection Charge</span>
-                                                            <span>+₹{checkoutPricing.collectionCharge?.toFixed(2)}</span>
+                                                        <div className="flex justify-between items-center text-xs">
+                                                            <span className="text-indigo-300">Collection Charge:</span>
+                                                            <span className="text-yellow-400">+₹{checkoutPricing.collectionCharge?.toFixed(2)}</span>
                                                         </div>
                                                     )}
                                                     {hardCopyReport && (
-                                                        <div className="flex justify-between text-xs font-bold text-indigo-300/70">
-                                                            <span>Hard Copy Logistic</span>
-                                                            <span>+₹75.00</span>
+                                                        <div className="flex justify-between items-center text-xs">
+                                                            <span className="text-indigo-300">Hard Copy Report:</span>
+                                                            <span className="text-yellow-400">+₹75.00</span>
                                                         </div>
                                                     )}
-
-                                                    <div className="pt-6 border-t border-white/20 mt-6 md:mt-10">
-                                                        <div className="flex justify-between items-end">
-                                                            <div>
-                                                                <span className="text-[9px] font-black uppercase tracking-[0.4em] text-indigo-500 block mb-1">Total Payable</span>
-                                                                <p className="text-[10px] font-bold text-indigo-200">Payment: POSTPAID (COD)</p>
-                                                            </div>
-                                                            <span className="text-4xl font-black text-white tracking-tighter">
-                                                                ₹{((checkoutPricing.grandTotal || 0) + (hardCopyReport ? 75 : 0)).toFixed(2)}
-                                                            </span>
+                                                    <div className="flex justify-between items-end pt-3 border-t border-white/10">
+                                                        <div className="space-y-1">
+                                                            <span className="text-[10px] text-indigo-400 font-black uppercase">Grand Total</span>
+                                                            <p className="text-sm font-bold text-indigo-200">For {beneficiaries.length} Patient(s)</p>
                                                         </div>
+                                                        <span className="text-3xl font-black text-white">
+                                                            ₹{((checkoutPricing.grandTotal || 0) + (hardCopyReport ? 75 : 0)).toFixed(2)}
+                                                        </span>
                                                     </div>
-                                                </div>
+                                                </>
                                             ) : (
-                                                <p className="text-center text-xs text-white/50 py-8 italic">Reviewing pricing variables...</p>
+                                                <>
+                                                    {/* Fallback calculation */}
+                                                    <div className="flex justify-between items-center text-xs">
+                                                        <span className="text-indigo-300">Estimated Price:</span>
+                                                        <span className="text-white font-medium">₹{selectedPackages.reduce((sum, p) => sum + (p.thyrocareRate || p.b2cRate || p.price || 0), 0).toFixed(2)}</span>
+                                                    </div>
+                                                    {hardCopyReport && (
+                                                        <div className="flex justify-between items-center text-xs">
+                                                            <span className="text-indigo-300">Hard Copy Report:</span>
+                                                            <span className="text-yellow-400">+₹75.00</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex justify-between items-end pt-3 border-t border-white/10">
+                                                        <div className="space-y-1">
+                                                            <span className="text-[10px] text-indigo-400 font-black uppercase">Grand Total</span>
+                                                            <p className="text-sm font-bold text-indigo-200">For {beneficiaries.length} Patient(s)</p>
+                                                        </div>
+                                                        <span className="text-3xl font-black text-white">
+                                                            ₹{(selectedPackages.reduce((sum, p) => sum + (p.thyrocareRate || p.b2cRate || p.price || 0), 0) + (hardCopyReport ? 75 : 0)).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-[10px] text-indigo-300/70 italic">*Final price may vary based on Thyrocare margin</p>
+                                                </>
                                             )}
                                         </div>
 
-                                        <div className="space-y-3 mt-10">
-                                            <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5">
-                                                <Calendar className="h-5 w-5 text-indigo-400" />
-                                                <div>
-                                                    <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Schedule</p>
-                                                    <p className="text-xs font-black text-white">{appointment.date || 'NOT SET'} @ {appointment.slot || 'NOT SET'}</p>
-                                                </div>
+                                        <div className="space-y-3 pt-4">
+                                            <div className="flex items-center gap-3 text-[10px] font-black uppercase bg-white/5 p-4 rounded-2xl border border-white/5">
+                                                <MapPin className="h-4 w-4 text-indigo-400" />
+                                                <span className="truncate">{contactInfo.address.city}, {contactInfo.address.pincode}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3 text-[10px] font-black uppercase bg-indigo-500/20 p-4 rounded-2xl border border-indigo-400/20">
+                                                <Calendar className="h-4 w-4 text-indigo-100" />
+                                                <span className="font-black">
+                                                    {appointment.date || 'TBD'} • {appointment.slot || 'TBD'}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -787,53 +824,31 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
                 </div>
 
                 {/* Footer */}
-                <div className="px-10 py-8 border-t border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-b-3xl">
+                <div className="px-8 py-6 border-t border-gray-100 flex justify-between items-center bg-gray-50 rounded-b-2xl">
                     <button
-                        onClick={step === 1 ? onClose : () => setStep(step - 1)}
-                        className="px-8 py-3.5 text-gray-400 font-black uppercase text-xs tracking-widest hover:text-gray-900 transition-all active:scale-95 flex items-center gap-2"
+                        onClick={step === 1 ? onClose : handlePrevStep}
+                        disabled={loading}
+                        className="px-10 py-3 border-2 border-gray-300 rounded-2xl text-gray-700 font-black hover:bg-white hover:border-gray-800 transition-all uppercase text-xs tracking-widest disabled:opacity-50"
                     >
-                        <ChevronLeft className="h-4 w-4" />
-                        {step === 1 ? 'Discard Booking' : 'Back to Step ' + (step - 1)}
+                        {step === 1 ? 'Cancel' : 'Back'}
                     </button>
 
                     <button
                         onClick={step === 3 ? handleSubmit : handleNextStep}
-                        disabled={loading || slotsLoading || packageLoading}
-                        className={`px-12 py-4 rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-xl hover:shadow-2xl active:scale-95 flex items-center gap-3 disabled:opacity-50 ${step === 3 ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                            }`}
+                        disabled={loading || slotsLoading}
+                        className={`px-12 py-4 bg-indigo-600 text-white rounded-2xl font-black hover:bg-black transition-all shadow-2xl flex items-center gap-3 disabled:opacity-50 uppercase text-xs tracking-widest ${loading ? 'animate-pulse' : ''}`}
                     >
-                        {loading ? 'Finalizing...' : step === 3 ? 'Confirm & Book Order' : 'Continue'}
-                        {!loading && <ChevronRight className="h-4 w-4" />}
+                        {loading ? (
+                            <>
+                                <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                                Booking...
+                            </>
+                        ) : (
+                            <>{step === 3 ? 'Finalize Order' : 'Next Step'}</>
+                        )}
                     </button>
                 </div>
             </div>
-
-            <style jsx global>{`
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 6px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: #e2e8f0;
-                    border-radius: 10px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: #cbd5e1;
-                }
-                
-                .custom-scrollbar-light::-webkit-scrollbar {
-                    width: 4px;
-                }
-                .custom-scrollbar-light::-webkit-scrollbar-track {
-                    background: rgba(255, 255, 255, 0.05);
-                }
-                .custom-scrollbar-light::-webkit-scrollbar-thumb {
-                    background: rgba(255, 255, 255, 0.2);
-                    border-radius: 10px;
-                }
-            `}</style>
         </div>
     );
 };

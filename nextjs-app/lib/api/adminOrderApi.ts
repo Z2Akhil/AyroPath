@@ -41,6 +41,18 @@ const adminOrderApi = {
         return response.data;
     },
 
+    syncOrdersStatus: async (orderIds: string[]): Promise<{
+        success: boolean;
+        message: string;
+        total: number;
+        successful: number;
+        failed: number;
+        statusChanged: number;
+    }> => {
+        const response = await adminAxios.post('/admin/orders/sync-status/batch', { orderIds });
+        return response.data;
+    },
+
     syncAllOrdersStatus: async (): Promise<{
         success: boolean;
         message: string;
