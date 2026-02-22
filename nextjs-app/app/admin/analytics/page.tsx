@@ -191,13 +191,7 @@ const AnalyticsPage = () => {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
-                        <LayoutDashboard className="h-8 w-8 text-blue-600" />
-                        Analytics Overview
-                    </h1>
-                    <p className="mt-1 text-sm text-gray-500 font-medium">
-                        Monitor your business performance and customer trends
-                    </p>
+                    <h1 className="text-2xl font-bold text-gray-900">Analytics Dashboard</h1>
                 </div>
                 <DateRangePicker
                     onDateChange={handleDateChange}
@@ -252,126 +246,106 @@ const AnalyticsPage = () => {
                 />
             </div>
 
-            {/* Charts Section - Primary Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <AnalyticsChart
-                    type="area"
-                    data={orderTrendsData}
-                    xKey="date"
-                    yKeys={['revenue']}
-                    title="Revenue Growth"
-                    colors={['#3b82f6']}
-                    loading={trendsLoading}
-                    height={400}
-                />
-
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Order Status Distribution */}
                 <AnalyticsChart
                     type="pie"
                     data={orderStatusData}
                     title="Order Status Distribution"
-                    colors={['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#6366f1']}
                     loading={loading}
-                    height={400}
+                    height={350}
+                />
+
+                {/* Revenue Trend */}
+                <AnalyticsChart
+                    type="line"
+                    data={orderTrendsData}
+                    xKey="date"
+                    yKeys={['revenue']}
+                    title="Revenue Trend"
+                    loading={trendsLoading}
+                    height={350}
                 />
             </div>
 
-            {/* Charts Section - Secondary Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Second Row Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* User Signup Trend */}
+                <AnalyticsChart
+                    type="area"
+                    data={userTrendsData}
+                    xKey="date"
+                    yKeys={['userCount']}
+                    title="User Signup Trend"
+                    loading={trendsLoading}
+                    height={350}
+                />
+
+                {/* Thyrocare Status Flow */}
                 <AnalyticsChart
                     type="bar"
                     data={thyrocareStatusData}
                     xKey="name"
                     yKeys={['count']}
-                    title="Thyrocare Workflow Status"
-                    colors={['#6366f1']}
+                    title="Thyrocare Status Flow"
                     loading={loading}
-                    height={400}
-                />
-
-                <AnalyticsChart
-                    type="line"
-                    data={userTrendsData}
-                    xKey="date"
-                    yKeys={['userCount']}
-                    title="User Acquisition Trend"
-                    colors={['#ec4899']}
-                    loading={trendsLoading}
-                    height={400}
+                    height={350}
                 />
             </div>
 
-            {/* Tertiary Metrics Grid */}
+            {/* Additional Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-                    <div className="p-3 bg-purple-50 rounded-xl">
-                        <Package className="h-6 w-6 text-purple-600" />
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold text-gray-500 uppercase">Avg Order Value</p>
-                        <p className="text-lg font-bold text-gray-900">{formatCurrency(overviewData?.metrics?.avgOrderValue || 0)}</p>
-                    </div>
-                </div>
+                <MetricCard
+                    title="Avg Order Value"
+                    value={formatCurrency(overviewData?.metrics?.avgOrderValue || 0)}
+                    icon={Package}
+                    loading={loading}
+                />
 
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-                    <div className="p-3 bg-blue-50 rounded-xl">
-                        <Users className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold text-gray-500 uppercase">New Users</p>
-                        <p className="text-lg font-bold text-gray-900">{overviewData?.metrics?.newUsers || 0}</p>
-                    </div>
-                </div>
+                <MetricCard
+                    title="New Users"
+                    value={overviewData?.metrics?.newUsers || 0}
+                    icon={Users}
+                    loading={loading}
+                />
 
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-                    <div className="p-3 bg-green-50 rounded-xl">
-                        <CheckCircle className="h-6 w-6 text-green-600" />
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold text-gray-500 uppercase">Success Rate</p>
-                        <p className="text-lg font-bold text-gray-900">
-                            {Math.round(((overviewData?.orderStatus?.COMPLETED || 0) / (overviewData?.metrics?.totalOrders || 1)) * 100)}%
-                        </p>
-                    </div>
-                </div>
+                <MetricCard
+                    title="Completed Orders"
+                    value={overviewData?.orderStatus?.COMPLETED || 0}
+                    icon={CheckCircle}
+                    loading={loading}
+                />
 
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-                    <div className="p-3 bg-amber-50 rounded-xl">
-                        <Clock className="h-6 w-6 text-amber-600" />
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold text-gray-500 uppercase">Pending Tasks</p>
-                        <p className="text-lg font-bold text-gray-900">{overviewData?.orderStatus?.PENDING || 0}</p>
-                    </div>
-                </div>
+                <MetricCard
+                    title="Pending Orders"
+                    value={overviewData?.orderStatus?.PENDING || 0}
+                    icon={Clock}
+                    loading={loading}
+                />
             </div>
 
-            {/* Quick Stats Summary Grid - Parity with old implementation */}
+            {/* Stats Summary */}
             {overviewData && (
-                <div className="bg-white rounded-[40px] border border-gray-100 p-10 shadow-sm hover:shadow-2xl hover:shadow-gray-200/40 transition-all duration-700">
-                    <div className="flex items-center gap-4 mb-8">
-                        <div className="h-12 w-12 bg-gray-900 rounded-2xl flex items-center justify-center text-white">
-                            <TrendingUp className="h-6 w-6" />
+                <div className="mt-6 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center p-4 bg-blue-50 rounded-lg">
+                            <p className="text-sm text-gray-600">Failed Orders</p>
+                            <p className="text-2xl font-bold text-gray-900">{overviewData.orderStatus?.FAILED || 0}</p>
                         </div>
-                        <div>
-                            <h3 className="text-xl font-black text-gray-900 tracking-tight">Executive Summary</h3>
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Snapshot of key performance indicators</p>
+                        <div className="text-center p-4 bg-green-50 rounded-lg">
+                            <p className="text-sm text-gray-600">Created Orders</p>
+                            <p className="text-2xl font-bold text-gray-900">{overviewData.orderStatus?.CREATED || 0}</p>
                         </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                        {[
-                            { label: 'Failed Orders', value: overviewData.orderStatus?.FAILED || 0, color: 'red' },
-                            { label: 'Created Orders', value: overviewData.orderStatus?.CREATED || 0, color: 'blue' },
-                            { label: 'Cancelled Orders', value: overviewData.orderStatus?.CANCELLED || 0, color: 'amber' },
-                            { label: 'Total Users', value: overviewData.metrics?.totalUsers || 0, color: 'purple' }
-                        ].map((stat, idx) => (
-                            <div key={idx} className={`p-6 bg-${stat.color}-50/50 border border-${stat.color}-100/50 rounded-3xl group hover:bg-${stat.color}-50 transition-all duration-300`}>
-                                <p className={`text-[10px] font-black text-${stat.color}-600/60 uppercase tracking-widest mb-2 group-hover:translate-x-1 transition-transform`}>
-                                    {stat.label}
-                                </p>
-                                <p className="text-3xl font-black text-gray-900">{stat.value.toLocaleString()}</p>
-                            </div>
-                        ))}
+                        <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                            <p className="text-sm text-gray-600">Cancelled Orders</p>
+                            <p className="text-2xl font-bold text-gray-900">{overviewData.orderStatus?.CANCELLED || 0}</p>
+                        </div>
+                        <div className="text-center p-4 bg-purple-50 rounded-lg">
+                            <p className="text-sm text-gray-600">Total Users</p>
+                            <p className="text-2xl font-bold text-gray-900">{overviewData.metrics?.totalUsers || 0}</p>
+                        </div>
                     </div>
                 </div>
             )}

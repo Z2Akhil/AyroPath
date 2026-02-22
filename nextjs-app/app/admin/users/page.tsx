@@ -147,6 +147,69 @@ export default function UsersPage() {
                 </button>
             </div>
 
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 mt-6">
+                <div className="bg-white rounded-lg p-6 shadow-sm border-l-4 border-blue-500">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-600">Total Users</p>
+                            <p className="text-2xl font-bold text-gray-900">{totalUsers}</p>
+                        </div>
+                        <Users className="h-8 w-8 text-blue-500" />
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-6 shadow-sm border-l-4 border-green-500">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-600">Active Users</p>
+                            <p className="text-2xl font-bold text-gray-900">
+                                {users.filter(u => u.isActive).length}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                                Showing current page only
+                            </p>
+                        </div>
+                        <Users className="h-8 w-8 text-green-500" />
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-6 shadow-sm border-l-4 border-purple-500">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-600">Verified Users</p>
+                            <p className="text-2xl font-bold text-gray-900">
+                                {users.filter(u => u.isVerified === true).length}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                                Showing current page only
+                            </p>
+                        </div>
+                        <Mail className="h-8 w-8 text-purple-500" />
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-6 shadow-sm border-l-4 border-orange-500">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-600">This Month</p>
+                            <p className="text-2xl font-bold text-gray-900">
+                                {users.filter(u => {
+                                    const userDate = new Date(u.createdAt);
+                                    const now = new Date();
+                                    return userDate.getMonth() === now.getMonth() &&
+                                        userDate.getFullYear() === now.getFullYear();
+                                }).length}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                                Showing current page only
+                            </p>
+                        </div>
+                        <Calendar className="h-8 w-8 text-orange-500" />
+                    </div>
+                </div>
+            </div>
+
             {/* Filters & Search */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
                 <div className="flex flex-col md:flex-row gap-4">
