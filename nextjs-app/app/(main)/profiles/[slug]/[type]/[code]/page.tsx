@@ -27,6 +27,7 @@ const PackageDetailPage = ({ params }: PageProps) => {
     const [error, setError] = useState<string | null>(null);
     const [openCategory, setOpenCategory] = useState<Set<string>>(new Set());
     const { cart } = useCart();
+    const [shareLabel, setShareLabel] = useState('Share');
 
     const formItems = useMemo(() => {
         if (!pkg) return [];
@@ -141,8 +142,23 @@ const PackageDetailPage = ({ params }: PageProps) => {
                                                 <AlertCircle size={16} /> {pkg.fasting === "CF" ? "Fasting Required" : "No Fasting"}
                                             </span>
                                         )}
-                                        <button className="flex items-center gap-1.5 py-1 px-3 bg-emerald-50 text-emerald-700 rounded-full font-semibold hover:bg-emerald-100 transition-colors">
-                                            <Share2 size={16} /> Share
+                                        <button
+                                            onClick={async () => {
+                                                const url = window.location.href;
+                                                const title = pkg.name;
+                                                if (navigator.share) {
+                                                    try {
+                                                        await navigator.share({ title, url });
+                                                    } catch (_) { }
+                                                } else {
+                                                    await navigator.clipboard.writeText(url);
+                                                    setShareLabel('Copied!');
+                                                    setTimeout(() => setShareLabel('Share'), 2000);
+                                                }
+                                            }}
+                                            className="flex items-center gap-1.5 py-1 px-3 bg-emerald-50 text-emerald-700 rounded-full font-semibold hover:bg-emerald-100 transition-colors"
+                                        >
+                                            <Share2 size={16} /> {shareLabel}
                                         </button>
                                     </div>
                                 </div>
@@ -215,52 +231,10 @@ const PackageDetailPage = ({ params }: PageProps) => {
                                 </div>
                             </div>
                         </div>
-
-                        {/* Informational Sections */}
-                        <div className="mt-16 space-y-16 py-12 border-t border-gray-100">
-                            {/* Why Book With Us */}
-                            <div className="text-center">
-                                <h2 className="text-2xl font-black text-gray-900 mb-10 tracking-tight">WHY BOOK WITH AYROPATH?</h2>
-                                <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
-                                    {[
-                                        { icon: MapPin, text: "100% Safe & Hygienic" },
-                                        { icon: Home, text: "Free Home Collection" },
-                                        { icon: Percent, text: "Heavy Discounts" },
-                                        { icon: Calendar, text: "Reports Online" },
-                                        { icon: CreditCard, text: "Secure Payments" },
-                                    ].map((item, i) => (
-                                        <div key={i} className="flex flex-col items-center group">
-                                            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-600 transition-colors duration-300">
-                                                <item.icon className="w-8 h-8 text-blue-600 group-hover:text-white transition-colors duration-300" />
-                                            </div>
-                                            <p className="text-xs font-bold text-gray-700 uppercase leading-tight">{item.text}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* How It Works */}
-                            <div className="text-center">
-                                <h2 className="text-2xl font-black text-gray-900 mb-10 tracking-tight">HOW IT WORKS</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                    {[
-                                        { title: "1. Book Test", icon: CheckCircle, desc: "Choose your test and preferred slot online easily." },
-                                        { title: "2. Collection", icon: Home, desc: "Our expert phlebotomist collects sample from home." },
-                                        { title: "3. Reports", icon: Calendar, desc: "Access reports online within 24–48 hours." },
-                                    ].map((step, i) => (
-                                        <div key={i} className="bg-gray-50 rounded-3xl p-8 hover:shadow-lg transition-all border border-gray-100">
-                                            <step.icon className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-                                            <h4 className="font-black text-gray-900 mb-2 uppercase">{step.title}</h4>
-                                            <p className="text-gray-500 text-sm font-medium">{step.desc}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     {/* Sidebar - Booking Form */}
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-1 lg:row-span-2">
                         <div className="sticky top-24">
                             <BookingForm
                                 pkgName={pkg.name}
@@ -274,6 +248,48 @@ const PackageDetailPage = ({ params }: PageProps) => {
                                 pkgId={pkg.code}
                                 items={formItems}
                             />
+                        </div>
+                    </div>
+
+                    {/* Informational Sections */}
+                    <div className="lg:col-span-2 mt-8 lg:mt-0 space-y-16 py-12 border-t border-gray-100">
+                        {/* Why Book With Us */}
+                        <div className="text-center">
+                            <h2 className="text-2xl font-black text-gray-900 mb-10 tracking-tight">WHY BOOK WITH AYROPATH?</h2>
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+                                {[
+                                    { icon: MapPin, text: "100% Safe & Hygienic" },
+                                    { icon: Home, text: "Free Home Collection" },
+                                    { icon: Percent, text: "Heavy Discounts" },
+                                    { icon: Calendar, text: "Reports Online" },
+                                    { icon: CreditCard, text: "Secure Payments" },
+                                ].map((item, i) => (
+                                    <div key={i} className="flex flex-col items-center group">
+                                        <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-600 transition-colors duration-300">
+                                            <item.icon className="w-8 h-8 text-blue-600 group-hover:text-white transition-colors duration-300" />
+                                        </div>
+                                        <p className="text-xs font-bold text-gray-700 uppercase leading-tight">{item.text}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* How It Works */}
+                        <div className="text-center">
+                            <h2 className="text-2xl font-black text-gray-900 mb-10 tracking-tight">HOW IT WORKS</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                {[
+                                    { title: "1. Book Test", icon: CheckCircle, desc: "Choose your test and preferred slot online easily." },
+                                    { title: "2. Collection", icon: Home, desc: "Our expert phlebotomist collects sample from home." },
+                                    { title: "3. Reports", icon: Calendar, desc: "Access reports online within 24–48 hours." },
+                                ].map((step, i) => (
+                                    <div key={i} className="bg-gray-50 rounded-3xl p-8 hover:shadow-lg transition-all border border-gray-100">
+                                        <step.icon className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+                                        <h4 className="font-black text-gray-900 mb-2 uppercase">{step.title}</h4>
+                                        <p className="text-gray-500 text-sm font-medium">{step.desc}</p>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
