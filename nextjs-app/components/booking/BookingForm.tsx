@@ -12,7 +12,9 @@ import { checkPincode, getAppointmentSlots, SlotData } from "@/lib/api/clientApi
 import { getInitialFormData, saveContactInfo } from "@/lib/utils/localStorage";
 import ConfirmationDialog from "../ui/ConfirmationDialog";
 import AuthModal from "../ui/AuthModal";
-import { MapPin, Calendar, Clock, User as UserIcon, AlertCircle, CheckCircle2, Info, Plus, Trash2, ArrowRight } from 'lucide-react';
+import { MapPin, Calendar, Clock, User as UserIcon, AlertCircle, CheckCircle2, Info, Plus, Trash2, ArrowRight, ShoppingCart, CheckCircle } from 'lucide-react';
+import { useCartValidation } from '@/hooks/useCartValidation';
+import Link from 'next/link';
 
 interface BookingFormProps {
     pkgName: string | string[];
@@ -28,14 +30,18 @@ interface BookingFormProps {
     hasDiscount?: boolean;
     discountPercentage?: number;
     discountAmount?: number;
+    hideCartActions?: boolean;
 }
 
-const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, items }) => {
+const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, items, hideCartActions = false }) => {
     const pkgNames = Array.isArray(pkgName) ? pkgName : [pkgName];
+    const pkgCode = Array.isArray(pkgId) ? pkgId[0] : pkgId;
     const { user } = useUser();
-    const { cart, clearCart } = useCart();
+    const { cart, clearCart, refreshCart } = useCart();
+    const { addToCartWithValidation, validationDialog, closeValidationDialog } = useCartValidation();
     const { showSuccessCard } = useOrderSuccess();
     const { success: toastSuccess, error: toastError } = useToast();
+    const [cartLoading, setCartLoading] = useState(false);
 
     const [numPersons, setNumPersons] = useState(1);
     const [selectedBeneficiaries, setSelectedBeneficiaries] = useState([{ name: "", age: "", gender: "" }]);
@@ -299,6 +305,36 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
             setLoading(false);
         }
     };
+
+    const handleAddToCart = async () => {
+        // Auth guard is inside CartProvider.addToCart — but we go through addToCartWithValidation
+        // which calls CartApi directly (bypasses CartProvider). So we guard here.
+        if (!user) {
+            setAuthOpen(true);
+            return;
+        }
+        setCartLoading(true);
+        try {
+            const productType = items[0]?.productType || 'PROFILE';
+            const result = await addToCartWithValidation(
+                pkgCode,
+                productType,
+                pkgNames[0] || '',
+                1
+            );
+            if (result.success) {
+                await refreshCart();
+            }
+        } catch (err: any) {
+            toastError(err.message || 'Failed to add to cart');
+        } finally {
+            setCartLoading(false);
+        }
+    };
+
+    const isInCart = cart?.items?.some(
+        (item) => item.productCode === pkgCode
+    );
 
     const isBeneficiariesValid = selectedBeneficiaries.every(b =>
         b.name && b.name.length <= 50 && b.age && parseInt(b.age) >= 1 && parseInt(b.age) <= 100 && b.gender
@@ -601,23 +637,57 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                         By clicking book now, you agree to our terms of service. Incomplete addresses will lead to order rejection.
                     </p>
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full py-5 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-2xl font-black text-xl hover:from-blue-700 hover:to-blue-900 transition-all shadow-xl hover:shadow-2xl disabled:opacity-50 group"
-                    >
-                        {loading ? (
-                            <div className="flex items-center justify-center gap-3">
-                                <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
-                                <span>PROCESSING...</span>
-                            </div>
+                    {/* Action Buttons */}
+                    <div className="flex flex-col gap-3">
+                        {/* Add to Cart — hidden on cart page */}
+                        {!hideCartActions && (isInCart ? (
+                            <Link
+                                href="/cart"
+                                className="w-full py-4 flex items-center justify-center gap-3 bg-green-600 hover:bg-green-700 text-white rounded-2xl font-black text-lg transition-all shadow-lg hover:shadow-xl"
+                            >
+                                <CheckCircle className="w-5 h-5" />
+                                GO TO CART
+                            </Link>
                         ) : (
-                            <div className="flex items-center justify-center gap-3">
-                                <span>BOOK APPOINTMENT</span>
-                                <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-                            </div>
-                        )}
-                    </button>
+                            <button
+                                type="button"
+                                onClick={handleAddToCart}
+                                disabled={cartLoading}
+                                className="w-full py-4 flex items-center justify-center gap-3 bg-white border-2 border-blue-600 text-blue-700 rounded-2xl font-black text-lg hover:bg-blue-50 transition-all shadow-sm disabled:opacity-50"
+                            >
+                                {cartLoading ? (
+                                    <>
+                                        <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                                        <span>ADDING...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <ShoppingCart className="w-5 h-5" />
+                                        ADD TO CART
+                                    </>
+                                )}
+                            </button>
+                        ))}
+
+                        {/* Book Now */}
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full py-5 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-2xl font-black text-xl hover:from-blue-700 hover:to-blue-900 transition-all shadow-xl hover:shadow-2xl disabled:opacity-50 group"
+                        >
+                            {loading ? (
+                                <div className="flex items-center justify-center gap-3">
+                                    <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                                    <span>PROCESSING...</span>
+                                </div>
+                            ) : (
+                                <div className="flex items-center justify-center gap-3">
+                                    <span>BOOK APPOINTMENT</span>
+                                    <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                                </div>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </form>
 
@@ -631,6 +701,28 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                 title="Sign In Required"
                 message="Please sign in to your account to securely place your order and manage your reports."
                 confirmText="Sign In"
+            />
+            {/* Cart validation dialog (duplicate test checks etc.) */}
+            <ConfirmationDialog
+                isOpen={validationDialog.isOpen}
+                onClose={closeValidationDialog}
+                onConfirm={async () => {
+                    if (validationDialog.onConfirm) {
+                        const result = await validationDialog.onConfirm();
+                        if (result?.success) await refreshCart();
+                    }
+                    closeValidationDialog();
+                }}
+                title={validationDialog.title}
+                message={validationDialog.message}
+                type={
+                    validationDialog.type === 'error' ? 'danger'
+                        : validationDialog.type === 'success' ? 'info'
+                            : validationDialog.type === 'warning' ? 'warning'
+                                : 'info'
+                }
+                confirmText={validationDialog.confirmText}
+                cancelText={validationDialog.cancelText}
             />
             {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
         </div>

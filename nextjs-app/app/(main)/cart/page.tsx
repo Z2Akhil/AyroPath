@@ -145,6 +145,7 @@ const CartPage = () => {
                                 hasDiscount={priceInfo.hasDiscount}
                                 discountPercentage={priceInfo.discountPercentage}
                                 discountAmount={priceInfo.discountAmount}
+                                hideCartActions
                             />
                         </div>
                     </div>
