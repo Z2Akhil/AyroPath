@@ -109,6 +109,13 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
         fetchInitialPricing();
     }, [items, numPersons]);
 
+    useEffect(() => {
+        if (appointmentDate) {
+            fetchAppointmentSlots();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [appointmentDate]);
+
     const handlePersonsChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const count = parseInt(e.target.value);
         setNumPersons(count);
@@ -584,7 +591,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                                 <select
                                     value={appointmentDate}
                                     onChange={(e) => setAppointmentDate(e.target.value)}
-                                    onBlur={fetchAppointmentSlots}
                                     className="w-full border-2 border-gray-100 rounded-xl px-4 py-3 bg-gray-50 focus:border-blue-500 outline-none transition-all disabled:opacity-50"
                                     disabled={!pincodeStatus?.includes("✅") || !isBeneficiariesValid || !isContactValid}
                                 >
