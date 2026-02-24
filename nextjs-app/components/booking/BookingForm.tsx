@@ -352,22 +352,22 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
     return (
         <div className="w-full max-w-2xl mx-auto">
             <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-3xl shadow-xl overflow-hidden">
-                <div className="bg-blue-600 p-6 text-white text-center">
-                    <h2 className="text-2xl font-bold">{pkgNames.length === 1 ? pkgNames[0] : "Health Package Combo"}</h2>
-                    <p className="opacity-90 mt-1 font-medium italic">Book Now, Pay Later • No Hidden Charges</p>
+                <div className="bg-blue-600 p-4 text-white text-center">
+                    <h2 className="text-xl font-bold">{pkgNames.length === 1 ? pkgNames[0] : "Health Package Combo"}</h2>
+                    <p className="opacity-90 mt-0.5 text-sm font-medium italic">Book Now, Pay Later • No Hidden Charges</p>
                 </div>
 
-                <div className="p-6 md:p-8 space-y-8">
+                <div className="p-4 md:p-6 space-y-5">
                     {/* Persons Selector */}
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                        <label className="block text-sm font-bold text-gray-700 mb-1.5 flex items-center gap-2">
                             <UserIcon className="w-4 h-4 text-blue-500" />
                             Number of Persons
                         </label>
                         <select
                             value={numPersons}
                             onChange={handlePersonsChange}
-                            className="w-full border-2 border-gray-100 rounded-xl px-4 py-3 bg-gray-50 focus:border-blue-500 transition-all outline-none"
+                            className="w-full border-2 border-gray-100 rounded-xl px-3 py-2 bg-gray-50 focus:border-blue-500 transition-all outline-none text-sm"
                         >
                             {[...Array(10)].map((_, i) => (
                                 <option key={i + 1} value={i + 1}>
@@ -378,8 +378,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                     </div>
 
                     {/* Pricing Breakdown */}
-                    <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-5 shadow-inner">
-                        <h3 className="text-sm font-bold text-blue-900 mb-4 uppercase tracking-wider">Price Breakdown</h3>
+                    <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-3 shadow-inner">
+                        <h3 className="text-xs font-bold text-blue-900 mb-3 uppercase tracking-wider">Price Breakdown</h3>
                         {pricingLoading ? (
                             <div className="flex items-center gap-2 text-blue-600">
                                 <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -401,9 +401,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                                         <span className="font-semibold">+₹{checkoutPricing.collectionCharge.toFixed(2)}</span>
                                     </div>
                                 )}
-                                <div className="pt-3 border-t border-blue-200 flex justify-between items-center">
-                                    <span className="text-gray-900 font-bold">Total Payable</span>
-                                    <span className="text-2xl font-black text-blue-700">₹{checkoutPricing.grandTotal.toFixed(2)}</span>
+                                <div className="pt-2 border-t border-blue-200 flex justify-between items-center">
+                                    <span className="text-gray-900 font-bold text-sm">Total Payable</span>
+                                    <span className="text-xl font-black text-blue-700">₹{checkoutPricing.grandTotal.toFixed(2)}</span>
                                 </div>
                             </div>
                         ) : (
@@ -413,7 +413,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
 
                     {/* Pincode Check */}
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                        <label className="block text-sm font-bold text-gray-700 mb-1.5 flex items-center gap-2">
                             <MapPin className="w-4 h-4 text-blue-500" />
                             Service Area Pincode
                         </label>
@@ -423,13 +423,13 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                                 placeholder="6-digit Pincode"
                                 value={pincode}
                                 onChange={(e) => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                className="flex-1 border-2 border-gray-100 rounded-xl px-4 py-3 bg-gray-50 focus:border-blue-500 outline-none transition-all"
+                                className="flex-1 border-2 border-gray-100 rounded-xl px-3 py-2 bg-gray-50 focus:border-blue-500 outline-none transition-all text-sm"
                             />
                             <button
                                 type="button"
                                 onClick={handlePincodeCheck}
                                 disabled={loading || pincode.length !== 6}
-                                className="px-6 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-all disabled:opacity-50"
+                                className="px-5 py-2 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-gray-800 transition-all disabled:opacity-50"
                             >
                                 {loading ? '...' : 'Check'}
                             </button>
@@ -442,16 +442,16 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                     </div>
 
                     {/* Beneficiaries */}
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-bold text-gray-900">Beneficiary Details</h3>
-                            <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full font-bold">
+                            <h3 className="text-base font-bold text-gray-900">Beneficiary Details</h3>
+                            <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-bold">
                                 {numPersons} Person(s)
                             </span>
                         </div>
-                        <div className="grid gap-4">
+                        <div className="grid gap-3">
                             {selectedBeneficiaries.map((ben, idx) => (
-                                <div key={idx} className="p-5 border-2 border-gray-50 rounded-2xl bg-gray-50/50 space-y-4">
+                                <div key={idx} className="p-3 border-2 border-gray-50 rounded-xl bg-gray-50/50 space-y-3">
                                     <div className="flex items-center gap-2 text-blue-600 font-bold text-xs uppercase tracking-widest">
                                         <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center text-[10px]">
                                             {idx + 1}
@@ -461,22 +461,22 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                                     <input
                                         type="text"
                                         placeholder="Full Name"
-                                        className="w-full border-2 border-white rounded-xl px-4 py-3 bg-white shadow-sm focus:border-blue-400 outline-none transition-all"
+                                        className="w-full border-2 border-white rounded-xl px-3 py-2 bg-white shadow-sm focus:border-blue-400 outline-none transition-all text-sm"
                                         value={ben.name}
                                         onChange={(e) => handleBeneficiaryChange(idx, "name", e.target.value)}
                                         required
                                     />
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-2 gap-2">
                                         <input
                                             type="number"
                                             placeholder="Age"
-                                            className="w-full border-2 border-white rounded-xl px-4 py-3 bg-white shadow-sm focus:border-blue-400 outline-none transition-all"
+                                            className="w-full border-2 border-white rounded-xl px-3 py-2 bg-white shadow-sm focus:border-blue-400 outline-none transition-all text-sm"
                                             value={ben.age}
                                             onChange={(e) => handleBeneficiaryChange(idx, "age", e.target.value)}
                                             required
                                         />
                                         <select
-                                            className="w-full border-2 border-white rounded-xl px-4 py-3 bg-white shadow-sm focus:border-blue-400 outline-none transition-all"
+                                            className="w-full border-2 border-white rounded-xl px-3 py-2 bg-white shadow-sm focus:border-blue-400 outline-none transition-all text-sm"
                                             value={ben.gender}
                                             onChange={(e) => handleBeneficiaryChange(idx, "gender", e.target.value)}
                                             required
@@ -493,15 +493,15 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                     </div>
 
                     {/* Contact Info */}
-                    <div className="space-y-4 pt-4 border-t border-gray-100">
-                        <h3 className="text-lg font-bold text-gray-900">Communication Details</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3 pt-3 border-t border-gray-100">
+                        <h3 className="text-base font-bold text-gray-900">Communication Details</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Email Address</label>
                                 <input
                                     type="email"
                                     placeholder="your@email.com"
-                                    className="w-full border-2 border-gray-100 rounded-xl px-4 py-3 bg-gray-50 focus:border-blue-500 outline-none transition-all"
+                                    className="w-full border-2 border-gray-100 rounded-xl px-3 py-2 bg-gray-50 focus:border-blue-500 outline-none transition-all text-sm"
                                     value={contactInfo.email}
                                     onChange={(e) => handleContactInfoChange('email', e.target.value)}
                                     required
@@ -512,7 +512,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                                 <input
                                     type="tel"
                                     placeholder="10-digit mobile"
-                                    className="w-full border-2 border-gray-100 rounded-xl px-4 py-3 bg-gray-50 focus:border-blue-500 outline-none transition-all"
+                                    className="w-full border-2 border-gray-100 rounded-xl px-3 py-2 bg-gray-50 focus:border-blue-500 outline-none transition-all text-sm"
                                     value={contactInfo.mobile}
                                     onChange={(e) => handleContactInfoChange('mobile', e.target.value)}
                                     required
@@ -524,24 +524,24 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                             <textarea
                                 rows={2}
                                 placeholder="House/Flat No, Apartment, Landmark"
-                                className="w-full border-2 border-gray-100 rounded-xl px-4 py-3 bg-gray-50 focus:border-blue-500 outline-none transition-all"
+                                className="w-full border-2 border-gray-100 rounded-xl px-3 py-2 bg-gray-50 focus:border-blue-500 outline-none transition-all text-sm"
                                 value={contactInfo.address.street}
                                 onChange={(e) => handleContactInfoChange('address.street', e.target.value)}
                                 required
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-3">
                             <input
                                 type="text"
                                 placeholder="City"
-                                className="w-full border-2 border-gray-100 rounded-xl px-4 py-3 bg-gray-50 focus:border-blue-500 outline-none transition-all"
+                                className="w-full border-2 border-gray-100 rounded-xl px-3 py-2 bg-gray-50 focus:border-blue-500 outline-none transition-all text-sm"
                                 value={contactInfo.address.city}
                                 onChange={(e) => handleContactInfoChange('address.city', e.target.value)}
                             />
                             <input
                                 type="text"
                                 placeholder="State"
-                                className="w-full border-2 border-gray-100 rounded-xl px-4 py-3 bg-gray-50 focus:border-blue-500 outline-none transition-all"
+                                className="w-full border-2 border-gray-100 rounded-xl px-3 py-2 bg-gray-50 focus:border-blue-500 outline-none transition-all text-sm"
                                 value={contactInfo.address.state}
                                 onChange={(e) => handleContactInfoChange('address.state', e.target.value)}
                             />
@@ -562,12 +562,12 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                     </div>
 
                     {/* Validation Checklist */}
-                    <div className="bg-amber-50 rounded-2xl p-5 border border-amber-100">
-                        <h4 className="text-sm font-bold text-amber-900 mb-3 flex items-center gap-2">
-                            <Info className="w-4 h-4" />
+                    <div className="bg-amber-50 rounded-xl p-3 border border-amber-100">
+                        <h4 className="text-xs font-bold text-amber-900 mb-2 flex items-center gap-2">
+                            <Info className="w-3.5 h-3.5" />
                             Booking Requirements
                         </h4>
-                        <ul className="grid gap-2">
+                        <ul className="grid gap-1.5">
                             <li className={`flex items-center gap-2 text-xs font-medium ${pincodeStatus?.includes("✅") ? "text-green-700" : "text-amber-700"}`}>
                                 {pincodeStatus?.includes("✅") ? <CheckCircle2 className="w-3.5 h-3.5" /> : "○"} Verified Pincode
                             </li>
@@ -581,9 +581,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                     </div>
 
                     {/* Appointment Selection */}
-                    <div className="space-y-4 pt-4 border-t border-gray-100">
-                        <h3 className="text-lg font-bold text-gray-900">Schedule Collection</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3 pt-3 border-t border-gray-100">
+                        <h3 className="text-base font-bold text-gray-900">Schedule Collection</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider flex items-center gap-1">
                                     <Calendar className="w-3.5 h-3.5" /> Date
@@ -591,7 +591,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                                 <select
                                     value={appointmentDate}
                                     onChange={(e) => setAppointmentDate(e.target.value)}
-                                    className="w-full border-2 border-gray-100 rounded-xl px-4 py-3 bg-gray-50 focus:border-blue-500 outline-none transition-all disabled:opacity-50"
+                                    className="w-full border-2 border-gray-100 rounded-xl px-3 py-2 bg-gray-50 focus:border-blue-500 outline-none transition-all disabled:opacity-50 text-sm"
                                     disabled={!pincodeStatus?.includes("✅") || !isBeneficiariesValid || !isContactValid}
                                 >
                                     <option value="">Select Date</option>
@@ -610,7 +610,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                                 <select
                                     value={selectedSlot}
                                     onChange={(e) => setSelectedSlot(e.target.value)}
-                                    className="w-full border-2 border-gray-100 rounded-xl px-4 py-3 bg-gray-50 focus:border-blue-500 outline-none transition-all disabled:opacity-50"
+                                    className="w-full border-2 border-gray-100 rounded-xl px-3 py-2 bg-gray-50 focus:border-blue-500 outline-none transition-all disabled:opacity-50 text-sm"
                                     disabled={!appointmentDate || availableSlots.length === 0}
                                 >
                                     <option value="">Select Time</option>
@@ -623,35 +623,35 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                     </div>
 
                     {/* Hardcopy Option */}
-                    <div className="bg-red-50 p-4 rounded-2xl flex items-center justify-between group cursor-pointer border border-transparent hover:border-red-200 transition-all" onClick={() => setWantHardcopy(!wantHardcopy)}>
-                        <div className="flex items-start gap-3">
+                    <div className="bg-red-50 p-3 rounded-xl flex items-center justify-between group cursor-pointer border border-transparent hover:border-red-200 transition-all" onClick={() => setWantHardcopy(!wantHardcopy)}>
+                        <div className="flex items-start gap-2">
                             <input
                                 type="checkbox"
                                 checked={wantHardcopy}
                                 onChange={(e) => setWantHardcopy(e.target.checked)}
-                                className="mt-1 w-4 h-4 rounded text-red-600 focus:ring-red-500"
+                                className="mt-0.5 w-4 h-4 rounded text-red-600 focus:ring-red-500"
                             />
                             <div>
                                 <p className="text-sm font-bold text-red-800">Hard Copy Reports Required?</p>
                                 <p className="text-xs text-red-600 opacity-80">Include printed reports for an additional ₹75</p>
                             </div>
                         </div>
-                        <span className="text-lg font-black text-red-700">₹75</span>
+                        <span className="text-base font-black text-red-700">₹75</span>
                     </div>
 
-                    <p className="text-[10px] text-gray-400 text-center uppercase tracking-widest px-8">
+                    <p className="text-[10px] text-gray-400 text-center uppercase tracking-widest px-4">
                         By clicking book now, you agree to our terms of service. Incomplete addresses will lead to order rejection.
                     </p>
 
                     {/* Action Buttons */}
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2">
                         {/* Add to Cart — hidden on cart page */}
                         {!hideCartActions && (isInCart ? (
                             <Link
                                 href="/cart"
-                                className="w-full py-4 flex items-center justify-center gap-3 bg-green-600 hover:bg-green-700 text-white rounded-2xl font-black text-lg transition-all shadow-lg hover:shadow-xl"
+                                className="w-full py-3 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white rounded-xl font-black text-base transition-all shadow-lg hover:shadow-xl"
                             >
-                                <CheckCircle className="w-5 h-5" />
+                                <CheckCircle className="w-4 h-4" />
                                 GO TO CART
                             </Link>
                         ) : (
@@ -659,16 +659,16 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                                 type="button"
                                 onClick={handleAddToCart}
                                 disabled={cartLoading}
-                                className="w-full py-4 flex items-center justify-center gap-3 bg-white border-2 border-blue-600 text-blue-700 rounded-2xl font-black text-lg hover:bg-blue-50 transition-all shadow-sm disabled:opacity-50"
+                                className="w-full py-3 flex items-center justify-center gap-2 bg-white border-2 border-blue-600 text-blue-700 rounded-xl font-black text-base hover:bg-blue-50 transition-all shadow-sm disabled:opacity-50"
                             >
                                 {cartLoading ? (
                                     <>
-                                        <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                                        <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                                         <span>ADDING...</span>
                                     </>
                                 ) : (
                                     <>
-                                        <ShoppingCart className="w-5 h-5" />
+                                        <ShoppingCart className="w-4 h-4" />
                                         ADD TO CART
                                     </>
                                 )}
@@ -679,17 +679,17 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-5 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-2xl font-black text-xl hover:from-blue-700 hover:to-blue-900 transition-all shadow-xl hover:shadow-2xl disabled:opacity-50 group"
+                            className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-xl font-black text-lg hover:from-blue-700 hover:to-blue-900 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 group"
                         >
                             {loading ? (
-                                <div className="flex items-center justify-center gap-3">
-                                    <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                                <div className="flex items-center justify-center gap-2">
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                     <span>PROCESSING...</span>
                                 </div>
                             ) : (
-                                <div className="flex items-center justify-center gap-3">
+                                <div className="flex items-center justify-center gap-2">
                                     <span>BOOK APPOINTMENT</span>
-                                    <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                 </div>
                             )}
                         </button>
