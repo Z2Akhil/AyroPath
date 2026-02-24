@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useUser } from "./UserProvider";
+import { useAuthModal } from "./AuthModalProvider";
 import CartApi from "@/lib/api/cartApi";
 import { Cart, CartContextType, CartItem } from "@/types";
 
@@ -34,6 +35,7 @@ const initialCartState: Cart = {
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useUser();
+    const { openAuth } = useAuthModal();
     const [cart, setCart] = useState<Cart>(initialCartState);
     const [loading, setLoading] = useState(false);
 
@@ -65,17 +67,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setLoading(true);
         try {
             if (user) {
+                // User just logged in — fetch their cart from the backend.
+                // Pass any pending guest session ID so backend can merge it.
                 const currentGuestSessionId = cart?.guestSessionId ||
                     (localStorage.getItem('cart') ? JSON.parse(localStorage.getItem('cart')!).guestSessionId : null);
 
                 const response = await CartApi.getCart(currentGuestSessionId);
                 processCartResponse(response);
             } else {
-                loadCartFromLocalStorage();
+                // User just logged out — clear the displayed cart.
+                // Do NOT load from localStorage so logged-out users see an empty cart.
+                setCart(initialCartState);
             }
         } catch (error) {
             console.error("Error loading cart:", error);
-            loadCartFromLocalStorage();
+            // On error, fall back to empty rather than leaking another user's items.
+            setCart(initialCartState);
         } finally {
             setLoading(false);
         }
@@ -142,6 +149,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const addToCart = async (item: any) => {
+        // Block unauthenticated users — open login modal instead.
+        if (!user) {
+            openAuth('login');
+            return { success: false, message: 'Please login to add items to cart' };
+        }
+
         setLoading(true);
 
         try {
