@@ -10,6 +10,7 @@ import { useAuthModal } from '@/providers/AuthModalProvider';
 import { useUser } from '@/providers/UserProvider';
 import { Logo } from '@/components/ui';
 import SearchBar from '@/components/search/SearchBar';
+import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
 
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
@@ -200,6 +201,7 @@ interface HeaderProps {
 const Header = ({ children }: HeaderProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const { user, logout } = useUser();
   const { cart } = useCart();
   const cartCount = cart?.items?.length || 0;
@@ -214,8 +216,15 @@ const Header = ({ children }: HeaderProps) => {
     openAuth('login');
   };
 
+  // Show confirmation dialog instead of logging out immediately
   const handleLogout = () => {
+    setLogoutConfirmOpen(true);
+  };
+
+  const confirmLogout = () => {
     logout();
+    setLogoutConfirmOpen(false);
+    setMenuOpen(false);
   };
 
   // Prevent hydration mismatch by not rendering user-dependent content until mounted
@@ -311,6 +320,18 @@ const Header = ({ children }: HeaderProps) => {
         onLogin={handleLogin}
         onLogout={handleLogout}
         onClose={() => setMenuOpen(false)}
+      />
+
+      {/* Logout Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={logoutConfirmOpen}
+        onClose={() => setLogoutConfirmOpen(false)}
+        onConfirm={confirmLogout}
+        title="Logout"
+        message="Are you sure you want to logout? You will need to login again to access your cart and orders."
+        type="danger"
+        confirmText="Yes, Logout"
+        cancelText="Cancel"
       />
 
       {children}
