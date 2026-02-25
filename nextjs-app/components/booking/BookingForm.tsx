@@ -48,6 +48,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
     const [pincode, setPincode] = useState("");
     const [pincodeStatus, setPincodeStatus] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [appointmentDate, setAppointmentDate] = useState("");
     const [availableSlots, setAvailableSlots] = useState<SlotData[]>([]);
     const [selectedSlot, setSelectedSlot] = useState("");
@@ -253,7 +254,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
         }
 
         try {
-            setLoading(true);
+            setIsSubmitting(true);
 
             const finalAmount = checkoutPricing?.grandTotal
                 ? (checkoutPricing.grandTotal + (wantHardcopy ? 75 : 0))
@@ -309,7 +310,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
             console.error("Error creating order:", error);
             toastError(error.response?.data?.message || "Failed to create order");
         } finally {
-            setLoading(false);
+            setIsSubmitting(false);
         }
     };
 
@@ -678,10 +679,10 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                         {/* Book Now */}
                         <button
                             type="submit"
-                            disabled={loading}
-                            className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-xl font-black text-lg hover:from-blue-700 hover:to-blue-900 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 group"
+                            disabled={loading || isSubmitting || !appointmentDate || !selectedSlot}
+                            className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-xl font-black text-lg hover:from-blue-700 hover:to-blue-900 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed group"
                         >
-                            {loading ? (
+                            {isSubmitting ? (
                                 <div className="flex items-center justify-center gap-2">
                                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                     <span>PROCESSING...</span>
