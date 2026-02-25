@@ -106,9 +106,19 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         clearError
     };
 
+    const isRedirectingToLogin = !isLoading && !isAuthenticated && !pathname.includes('/admin/login');
+    const isRedirectingToDashboard = !isLoading && isAuthenticated && pathname.includes('/admin/login');
+    const shouldShowLoader = isLoading || isRedirectingToLogin || isRedirectingToDashboard;
+
     return (
         <AuthContext.Provider value={value}>
-            {children}
+            {shouldShowLoader ? (
+                <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                    <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                </div>
+            ) : (
+                children
+            )}
         </AuthContext.Provider>
     );
 };
