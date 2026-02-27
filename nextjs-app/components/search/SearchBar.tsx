@@ -218,18 +218,18 @@ const SearchBar = () => {
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-800 text-sm truncate">{item.name}</p>
-                        
+
                         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.className}`}>
                             {badge.text}
                           </span>
-                          
+
                           {item.sellingPrice && (
                             <span className="text-sm font-semibold text-gray-900">
                               {formatPrice(item.sellingPrice)}
                             </span>
                           )}
-                          
+
                           {hasDiscount && item.originalPrice && (
                             <>
                               <span className="text-xs text-gray-400 line-through">
@@ -244,26 +244,8 @@ const SearchBar = () => {
                       </div>
 
                       {/* Action Button */}
-                      <div className="flex-shrink-0">
-                        {item.type === 'TEST' ? (
-                          inCart ? (
-                            <button
-                              className="flex items-center gap-1 text-xs bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-100 transition-colors"
-                              onClick={(e) => handleRemoveFromCart(item, e)}
-                            >
-                              <Minus className="h-3 w-3" />
-                              Remove
-                            </button>
-                          ) : (
-                            <button
-                              className="flex items-center gap-1 text-xs bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1.5 rounded-full hover:bg-blue-100 transition-colors"
-                              onClick={(e) => handleAddToCart(item, e)}
-                            >
-                              <Plus className="h-3 w-3" />
-                              Add
-                            </button>
-                          )
-                        ) : (
+                      <div className="flex-shrink-0 flex items-center gap-2">
+                        {item.type !== 'TEST' && (
                           <button
                             className="flex items-center gap-1 text-xs bg-gray-100 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-full hover:bg-gray-200 transition-colors"
                             onClick={(e) => {
@@ -273,6 +255,24 @@ const SearchBar = () => {
                           >
                             <ExternalLink className="h-3 w-3" />
                             View
+                          </button>
+                        )}
+
+                        {inCart ? (
+                          <button
+                            className="flex items-center gap-1 text-xs bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-100 transition-colors"
+                            onClick={(e) => handleRemoveFromCart(item, e)}
+                          >
+                            <Minus className="h-3 w-3" />
+                            Remove
+                          </button>
+                        ) : (
+                          <button
+                            className="flex items-center gap-1 text-xs bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1.5 rounded-full hover:bg-blue-100 transition-colors"
+                            onClick={(e) => handleAddToCart(item, e)}
+                          >
+                            <Plus className="h-3 w-3" />
+                            Add
                           </button>
                         )}
                       </div>
