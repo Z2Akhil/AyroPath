@@ -12,7 +12,7 @@ export interface AuthResponse {
 export const authApi = {
     async requestOTP(mobileNumber: string, purpose: string = 'verification'): Promise<AuthResponse> {
         try {
-            const response = await api.post('/auth/request-otp', {
+            const response = await api.post('/auth/otp/request', {
                 mobileNumber,
                 purpose,
             });
@@ -24,7 +24,7 @@ export const authApi = {
 
     async verifyOTP(mobileNumber: string, otp: string, purpose: string = 'verification'): Promise<AuthResponse> {
         try {
-            const response = await api.post('/auth/verify-otp', {
+            const response = await api.post('/auth/otp/verify', {
                 mobileNumber,
                 otp,
                 purpose,

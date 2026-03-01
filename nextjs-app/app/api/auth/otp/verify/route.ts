@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db/mongoose';
 import OTP from '@/lib/models/OTP';
+import User from '@/lib/models/User';
 import SMSService from '@/lib/services/smsService';
 
 export async function POST(request: NextRequest) {
@@ -65,9 +66,24 @@ export async function POST(request: NextRequest) {
     otpRecord.isUsed = true;
     await otpRecord.save();
 
+    let user;
+    if (purpose === 'verification') {
+      user = await User.findOneAndUpdate(
+        { mobileNumber },
+        { isVerified: true },
+        { new: true, upsert: true }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       message: 'OTP verified successfully',
+      user: purpose === 'verification' && user ? {
+        id: user._id,
+        mobileNumber: user.mobileNumber,
+        isVerified: user.isVerified,
+      } : undefined,
+      purpose,
       provider: 'MessageCentral'
     });
   } catch (error) {
