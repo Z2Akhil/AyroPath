@@ -296,31 +296,7 @@ const OrderAccordion: React.FC<OrderAccordionProps> = ({
                                     </div>
                                 </div>
 
-                                {/* Payment Details */}
-                                {order.payment && (
-                                    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                                        <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-3">
-                                            <CheckCircle className="h-5 w-5 text-blue-500" />
-                                            Payment Details
-                                        </h4>
-                                        <div className="space-y-3 text-sm">
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-500">Method:</span>
-                                                <span className="font-bold uppercase">{order.payment.type || 'N/A'}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-500">Status:</span>
-                                                <span className={`font-black uppercase ${order.payment.status === 'PAID' ? 'text-green-600' : 'text-orange-500'}`}>
-                                                    {order.payment.status || 'PENDING'}
-                                                </span>
-                                            </div>
-                                            <div className="flex justify-between items-center pt-2 border-t">
-                                                <span className="text-gray-900 font-bold">Total Amount:</span>
-                                                <span className="text-lg font-black">₹{order.payment.amount || 0}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
+
                             </div>
 
                             {/* ── RIGHT COLUMN ── */}
