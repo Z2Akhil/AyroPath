@@ -207,6 +207,7 @@ const Header = ({ children }: HeaderProps) => {
   const cartCount = cart?.items?.length || 0;
   const { settings, loading } = useSiteSettings();
   const { openAuth } = useAuthModal();
+  const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
@@ -225,6 +226,7 @@ const Header = ({ children }: HeaderProps) => {
     logout();
     setLogoutConfirmOpen(false);
     setMenuOpen(false);
+    router.push('/');
   };
 
   // Prevent hydration mismatch by not rendering user-dependent content until mounted

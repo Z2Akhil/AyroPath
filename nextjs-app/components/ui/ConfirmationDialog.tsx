@@ -68,15 +68,25 @@ const ConfirmationDialog = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+        <div
+            className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
+                }`}
+        >
             <div
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all duration-300 animate-scale-in"
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                onClick={onClose}
+            ></div>
+            <div
+                className={`bg-white rounded-2xl shadow-2xl w-full max-w-md relative transform transition-all duration-300 ease-out ${isOpen ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-4 opacity-0'
+                    }`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-100">
                     <div className="flex items-center space-x-3">
-                        {getIcon()}
+                        <div className="p-2 bg-gray-50 rounded-full">
+                            {getIcon()}
+                        </div>
                         <h2 className="text-xl font-bold text-gray-900">{title}</h2>
                     </div>
                     <button
@@ -90,30 +100,34 @@ const ConfirmationDialog = ({
 
                 {/* Message */}
                 <div className="p-6">
-                    <p className="text-gray-600 leading-relaxed">{message}</p>
+                    <p className="text-gray-600 leading-relaxed text-sm md:text-base">{message}</p>
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+                <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl">
                     <button
                         onClick={onClose}
                         disabled={isLoading}
-                        className="px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg 
-                       hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 
-                       focus:ring-offset-2 transition-all duration-200 font-medium disabled:opacity-50"
+                        className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl 
+                       hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 
+                       focus:ring-offset-2 transition-all duration-200 disabled:opacity-50"
                     >
                         {cancelText}
                     </button>
                     <button
                         onClick={onConfirm}
                         disabled={isLoading}
-                        className={`px-4 py-2.5 text-white rounded-lg focus:outline-none focus:ring-2 
-                       focus:ring-offset-2 transition-all duration-200 font-medium 
-                       disabled:opacity-50 disabled:cursor-not-allowed ${getButtonStyles()}`}
+                        className={`px-5 py-2.5 text-sm font-medium text-white rounded-xl focus:outline-none focus:ring-2 
+                       focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow 
+                       disabled:opacity-50 disabled:cursor-not-allowed ${type === 'danger' ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500' :
+                                type === 'warning' ? 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500' :
+                                    type === 'info' ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500' :
+                                        'bg-gray-800 hover:bg-gray-900 focus:ring-gray-800'
+                            }`}
                     >
                         {isLoading ? (
                             <div className="flex items-center space-x-2">
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                 <span>Processing...</span>
                             </div>
                         ) : (
