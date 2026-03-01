@@ -2,6 +2,20 @@ import { adminAxios } from './adminAxios';
 
 export const adminProductApi = {
     /**
+     * Fetch products from database without syncing
+     * @param productType 'OFFER' | 'TEST' | 'PROFILE' | 'ALL'
+     */
+    fetchProducts: async (productType: string) => {
+        try {
+            const response = await adminAxios.get(`/admin/products?type=${productType}`);
+            return response.data;
+        } catch (error: any) {
+            console.error('Error fetching products:', error);
+            throw error.response?.data || { success: false, error: 'Failed to fetch products' };
+        }
+    },
+
+    /**
      * Fetch products and sync with Thyrocare
      * @param productType 'OFFER' | 'TEST' | 'PROFILE' | 'ALL'
      */

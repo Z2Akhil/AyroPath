@@ -23,7 +23,9 @@ const ProductCatalog: React.FC<ProductCatalogProps> = ({ type, title, icon }) =>
 
         setError(null);
         try {
-            const response = await adminProductApi.syncProducts(type);
+            const apiCall = isSync ? adminProductApi.syncProducts : adminProductApi.fetchProducts;
+            const response = await apiCall(type);
+
             if (response.success) {
                 setProducts(response.products);
             } else {
