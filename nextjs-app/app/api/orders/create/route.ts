@@ -82,7 +82,8 @@ const createThyrocareOrder = async (order: any, adminSession: any) => {
             orderId: order.orderId,
             error: error.response?.data || error.message
         });
-        throw new Error(error.response?.data?.response || error.message || 'Thyrocare API error');
+        const thyrocareMsg = error.response?.data?.response?.message || error.response?.data?.response || error.message || 'Thyrocare API error';
+        throw new Error(typeof thyrocareMsg === 'string' ? thyrocareMsg : JSON.stringify(thyrocareMsg));
     }
 };
 
@@ -157,7 +158,7 @@ export async function POST(req: NextRequest) {
                 gender: b.gender
             })),
             contactInfo: {
-                email: contactInfo.email,
+                email: (contactInfo.email && contactInfo.email.trim() !== '') ? contactInfo.email.trim() : 'no-reply@ayropath.com',
                 mobile: contactInfo.mobile,
                 address: {
                     street: contactInfo.address.street,

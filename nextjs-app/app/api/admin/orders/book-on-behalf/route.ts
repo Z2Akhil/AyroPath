@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
                 gender: b.gender
             })),
             contactInfo: {
-                email: contactInfo.email,
+                email: (contactInfo.email && contactInfo.email.trim() !== '') ? contactInfo.email.trim() : 'no-reply@ayropath.com',
                 mobile: contactInfo.mobile,
                 address: contactInfo.address
             },
@@ -128,8 +128,13 @@ export async function POST(req: NextRequest) {
                 if (response.data.response_status === 1) {
                     return response.data;
                 } else {
+                    require('fs').appendFileSync('/tmp/ayropath-error.log', new Date().toISOString() + ' Thyrocare Rejected Payload: ' + JSON.stringify(response.data) + '\n');
                     throw new Error(response.data.response || 'Thyrocare order creation failed');
                 }
+            }).catch(e => {
+                require('fs').appendFileSync('/tmp/ayropath-error.log', new Date().toISOString() + ' Thyrocare Axios Catch: ' + JSON.stringify(e.response?.data || e.message) + '\n');
+                const thyrocareMsg = e.response?.data?.response?.message || e.response?.data?.response || e.message;
+                throw new Error(typeof thyrocareMsg === 'string' ? thyrocareMsg : JSON.stringify(thyrocareMsg));
             });
 
             order.thyrocare.orderNo = thyrocareResponse.order_no;
@@ -165,20 +170,22 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true, message: 'Order created successfully', order });
 
         } catch (thyrocareError: any) {
+            require('fs').appendFileSync('/tmp/ayropath-error.log', new Date().toISOString() + ' Thyrocare Error: ' + (thyrocareError.stack || thyrocareError.message) + '\n');
             order.thyrocare.error = thyrocareError.message;
             order.status = 'FAILED';
             await order.save();
 
             return NextResponse.json({
                 success: false,
-                message: 'Order created locally but failed in Thyrocare',
+                message: thyrocareError.message || 'Order created locally but failed in Thyrocare',
                 error: thyrocareError.message,
                 orderId: order.orderId
-            }, { status: 500 });
+            }, { status: 400 });
         }
 
     } catch (error: any) {
+        require('fs').appendFileSync('/tmp/ayropath-error.log', new Date().toISOString() + ' : ' + (error.stack || error.message) + '\n');
         console.error('Book on behalf error:', error);
-        return NextResponse.json({ success: false, error: error.message || 'Failed to book on behalf' }, { status: 500 });
+        return NextResponse.json({ success: false, error: error.message || 'Failed to book on behalf', stack: error.stack }, { status: 500 });
     }
 }

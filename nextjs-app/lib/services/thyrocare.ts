@@ -59,7 +59,7 @@ export class ThyrocareService {
         if (dataOrError?.response?.status === 401) return true;
         const response = dataOrError?.response?.data?.response || dataOrError?.response || dataOrError?.message || dataOrError;
         const responseStr = (response || '').toString().toLowerCase();
-        return responseStr.includes('invalid') || responseStr.includes('invalid api key');
+        return responseStr.includes('invalid api key') || responseStr === 'invalid';
     }
 
     static async makeRequest<T>(apiCallFn: (apiKey: string) => Promise<T>): Promise<T> {

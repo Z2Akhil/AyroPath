@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
       grandTotal: validationResult.breakdown.grandTotal,
       // @ts-expect-error - marginAdjusted is added dynamically
       marginAdjusted: validationResult.adjustedItems.some(item => item.marginAdjusted),
-      thyrocareMargin: validationResult.thyrocareResponse?.margin,
+      thyrocareMargin: validationResult.thyrocareResponse?.margin ? parseFloat(validationResult.thyrocareResponse.margin) : undefined,
       items: validationResult.adjustedItems,
       message: validationResult.message
     });
