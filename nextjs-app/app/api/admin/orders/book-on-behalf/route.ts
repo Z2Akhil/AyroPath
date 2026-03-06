@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
             },
             reportsHardcopy: reports || 'N',
             payment: {
-                amount: totalSellingPrice,
+                amount: totalSellingPrice + (reports === 'Y' ? 75 : 0),
                 type: 'POSTPAID',
                 status: 'PENDING'
             },

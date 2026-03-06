@@ -83,7 +83,7 @@ export default function AccountPage() {
                 setOrders(data || []);
 
                 const totalOrders = data?.length || 0;
-                const totalSpent = data?.reduce((sum, order) => sum + (order.package?.price || 0), 0) || 0;
+                const totalSpent = data?.reduce((sum, order) => sum + (order.payment?.amount || order.package?.price || 0), 0) || 0;
                 const activeOrders = data?.filter(order =>
                     order.status && !["DONE", "REPORTED", "CANCELLED", "FAILED"].includes(order.status.toUpperCase())
                 ).length || 0;
@@ -495,7 +495,7 @@ export default function AccountPage() {
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-sm font-medium">₹{order.package?.price?.toLocaleString()}</p>
+                                        <p className="text-sm font-medium">₹{(order.payment?.amount || order.package?.price || 0).toLocaleString()}</p>
                                         <p className="text-xs text-gray-500">
                                             {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN') : 'N/A'}
                                         </p>

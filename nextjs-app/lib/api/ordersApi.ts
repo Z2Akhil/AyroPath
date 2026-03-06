@@ -3,7 +3,6 @@ import { axiosInstance } from "./axiosInstance";
 export interface OrderPackage {
     name: string;
     price: number;
-    testsCount?: number;
 }
 
 export interface OrderAppointment {
@@ -31,6 +30,12 @@ export interface OrderThyrocare {
     lastSyncedAt?: string;
 }
 
+export interface OrderPayment {
+    amount: number;
+    type: string;
+    status: string;
+}
+
 export interface Order {
     orderId: string;
     status: string;
@@ -39,7 +44,9 @@ export interface Order {
     contactInfo?: OrderContactInfo;
     thyrocare?: OrderThyrocare;
     reports?: OrderReport[];
+    reportsHardcopy?: 'Y' | 'N';
     beneficiaries?: any[];
+    payment?: OrderPayment;
     createdAt?: string;
     updatedAt?: string;
 }

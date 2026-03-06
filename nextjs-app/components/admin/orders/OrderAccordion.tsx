@@ -133,7 +133,14 @@ const OrderAccordion: React.FC<OrderAccordionProps> = ({
             <tr className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={onToggle}>
                 <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{order.orderId}</div>
-                    <div className="text-sm text-gray-500">₹{order.package?.price || 0}</div>
+                    <div className="flex items-center gap-2">
+                        <div className="text-sm font-bold text-blue-700">₹{order.payment?.amount || order.package?.price || 0}</div>
+                        {order.reportsHardcopy === 'Y' && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 uppercase">
+                                Hard Copy
+                            </span>
+                        )}
+                    </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
@@ -222,9 +229,15 @@ const OrderAccordion: React.FC<OrderAccordionProps> = ({
                                             <span className="text-gray-500">Discount:</span>
                                             <span className="text-gray-700">₹{order.package?.discountAmount ?? 0}</span>
                                         </div>
+                                        {order.reportsHardcopy === 'Y' && (
+                                            <div className="flex justify-between text-red-600 font-medium">
+                                                <span>Hard Copy Charge:</span>
+                                                <span>₹75</span>
+                                            </div>
+                                        )}
                                         <div className="flex justify-between items-center pt-3 border-t">
-                                            <span className="text-gray-900 font-bold">Final Price:</span>
-                                            <span className="text-xl text-green-600 font-black">₹{order.package?.price}</span>
+                                            <span className="text-gray-900 font-bold">Total Amount:</span>
+                                            <span className="text-xl text-blue-700 font-black">₹{order.payment?.amount || order.package?.price}</span>
                                         </div>
                                     </div>
                                 </div>

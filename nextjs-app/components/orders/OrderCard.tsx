@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import {
     ChevronDown, ChevronUp, Phone, Mail, FileText, Calendar,
-    User, Package, IndianRupee, AlertCircle, CheckCircle, Clock,
+    User, IndianRupee, AlertCircle, CheckCircle, Clock,
     XCircle, HelpCircle, Download, FileDown, Users
 } from 'lucide-react';
 import { downloadReport } from '@/lib/api/ordersApi';
@@ -155,9 +155,19 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, showContactSupport = true 
                         <IndianRupee className="h-4 w-4 text-green-600" />
                         <div className="min-w-0">
                             <p className="text-xs text-gray-500">Amount</p>
-                            <p className="font-medium">₹{packageInfo.price?.toLocaleString() || '0'}</p>
+                            <p className="font-medium">₹{(order.payment?.amount || packageInfo.price || 0).toLocaleString()}</p>
                         </div>
                     </div>
+
+                    {order.reportsHardcopy === 'Y' && (
+                        <div className="flex items-center gap-2 min-w-[120px] flex-1">
+                            <FileText className="h-4 w-4 text-red-600" />
+                            <div className="min-w-0">
+                                <p className="text-xs text-gray-500">Hard Copy</p>
+                                <p className="font-medium text-sm text-red-600">Requested</p>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="flex items-center gap-2 min-w-[120px] flex-1">
                         <Calendar className="h-4 w-4 text-purple-600" />
@@ -175,13 +185,6 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, showContactSupport = true 
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 min-w-[120px] flex-1">
-                        <Package className="h-4 w-4 text-orange-600" />
-                        <div className="min-w-0">
-                            <p className="text-xs text-gray-500">Tests</p>
-                            <p className="font-medium text-sm">{packageInfo.testsCount || 'N/A'}</p>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -223,8 +226,13 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, showContactSupport = true 
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-500">Amount:</span>
-                                    <span className="font-medium">₹{packageInfo.price?.toLocaleString()}</span>
+                                    <span className="font-medium text-blue-700">₹{(order.payment?.amount || packageInfo.price || 0).toLocaleString()}</span>
                                 </div>
+                                {order.reportsHardcopy === 'Y' && (
+                                    <div className="flex justify-between text-xs text-red-600 italic">
+                                        <span>(Includes ₹75 for hard copy)</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between">
                                     <span className="text-gray-500">Order Date:</span>
                                     <span className="font-medium">
