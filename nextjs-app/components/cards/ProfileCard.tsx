@@ -71,14 +71,18 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ pkg }) => {
 
         {/* Bottom title strip */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white px-3 py-2 text-sm sm:text-base font-semibold">
-          {name}
+          <Link href={detailPath} className="hover:underline">
+            {name}
+          </Link>
         </div>
       </div>
 
       {/* CONTENT */}
       <div className="p-3 sm:p-4 flex flex-col grow">
         <h2 className="text-base sm:text-lg font-bold text-gray-800 mb-2 line-clamp-1">
-          {name}
+          <Link href={detailPath} className="hover:text-blue-600 transition-colors">
+            {name}
+          </Link>
         </h2>
 
         <div className="flex items-center justify-between bg-gray-100 rounded-full py-2 px-3 sm:px-4 mb-3 text-xs sm:text-sm">

@@ -35,7 +35,9 @@ const OfferCard: React.FC<OfferCardProps> = ({ pkg }) => {
 
       {/* Header */}
       <h2 className="font-bold text-lg text-gray-900 mb-2 uppercase pr-6">
-        {name}
+        <Link href={detailPath} className="hover:text-blue-600 transition-colors">
+          {name}
+        </Link>
       </h2>
 
       {/* Test list */}
