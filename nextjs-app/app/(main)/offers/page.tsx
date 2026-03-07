@@ -1,53 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import OfferCard from "@/components/cards/OfferCard";
 import SkeletonOfferCard from "@/components/skeletons/SkeletonOfferCard";
 import Pagination from "@/components/ui/Pagination";
-
-interface Offer {
-  code: string;
-  name: string;
-  type: string;
-  childs?: any[];
-  testCount?: number;
-  [key: string]: any;
-}
+import { useProducts } from "@/providers/ProductProvider";
 
 interface OfferPageProps {
   limit?: number;
 }
 
 const OfferPage: React.FC<OfferPageProps> = ({ limit }) => {
-  const [offers, setOffers] = useState<Offer[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { offers, loading, error } = useProducts();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(12);
-
-  useEffect(() => {
-    const fetchOffers = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/products?type=OFFER');
-        if (!response.ok) {
-          throw new Error('Failed to fetch offers');
-        }
-        const data = await response.json();
-        if (data.success) {
-          setOffers(data.products || []);
-        } else {
-          throw new Error(data.message || 'Failed to fetch offers');
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOffers();
-  }, []);
 
   if (loading) {
     return (

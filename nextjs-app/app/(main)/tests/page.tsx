@@ -1,55 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import TestCard from "@/components/cards/TestCard";
 import SkeletonTestCard from "@/components/skeletons/SkeletonTestCard";
 import Pagination from "@/components/ui/Pagination";
-
-interface Test {
-  code: string;
-  name: string;
-  category?: string;
-  specimenType?: string;
-  units?: string;
-  fasting?: string;
-  bookedCount?: string;
-  [key: string]: any;
-}
+import { useProducts } from "@/providers/ProductProvider";
 
 interface TestPageProps {
   limit?: number;
 }
 
 const TestPage: React.FC<TestPageProps> = ({ limit }) => {
-  const [tests, setTests] = useState<Test[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { tests, loading, error } = useProducts();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(12);
-
-  useEffect(() => {
-    const fetchTests = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/products?type=TESTS');
-        if (!response.ok) {
-          throw new Error('Failed to fetch tests');
-        }
-        const data = await response.json();
-        if (data.success) {
-          setTests(data.products || []);
-        } else {
-          throw new Error(data.message || 'Failed to fetch tests');
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTests();
-  }, []);
 
   if (loading) {
     return (

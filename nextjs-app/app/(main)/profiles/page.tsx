@@ -1,58 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import ProfileCard from '@/components/cards/ProfileCard';
 import SkeletonProfileCard from "@/components/skeletons/SkeletonProfileCard";
 import Pagination from "@/components/ui/Pagination";
-
-interface Package {
-  code: string;
-  name: string;
-  type: string;
-  testCount?: number;
-  bookedCount?: number;
-  category?: string;
-  specimenType?: string;
-  fasting?: string;
-  imageLocation?: string;
-  imageMaster?: any[];
-  [key: string]: any;
-}
+import { useProducts } from "@/providers/ProductProvider";
 
 interface ProfilePageProps {
   limit?: number;
 }
 
 const ProfilePage: React.FC<ProfilePageProps> = ({ limit }) => {
-  const [packages, setPackages] = useState<Package[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { packages, loading, error } = useProducts();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(12);
-
-  useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/products?type=PROFILE');
-        if (!response.ok) {
-          throw new Error('Failed to fetch packages');
-        }
-        const data = await response.json();
-        if (data.success) {
-          setPackages(data.products || []);
-        } else {
-          throw new Error(data.message || 'Failed to fetch packages');
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPackages();
-  }, []);
 
   if (loading) {
     return (
