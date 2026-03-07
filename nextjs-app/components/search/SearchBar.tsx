@@ -11,6 +11,7 @@ import type { Product } from '@/types';
 interface SearchResult extends Product {
   sellingPrice?: number;
   originalPrice?: number;
+  thyrocareRate?: number;
 }
 
 const SearchBar = () => {
@@ -203,9 +204,10 @@ const SearchBar = () => {
                 const isActive = index === highlightIndex;
                 const badge = getTypeBadge(item.type);
                 const inCart = isInCart(item);
-                const hasDiscount = item.originalPrice && item.sellingPrice && item.originalPrice > item.sellingPrice;
-                const discountPercent = hasDiscount && item.originalPrice && item.sellingPrice
-                  ? Math.round(((item.originalPrice - item.sellingPrice) / item.originalPrice) * 100)
+                const originalPriceValue = item.originalPrice || item.thyrocareRate || item.rate?.b2C || item.rate?.offerRate || 0;
+                const hasDiscount = originalPriceValue > 0 && item.sellingPrice && originalPriceValue > item.sellingPrice;
+                const discountPercent = hasDiscount && item.sellingPrice
+                  ? Math.round(((originalPriceValue - item.sellingPrice) / originalPriceValue) * 100)
                   : 0;
 
                 return (
@@ -224,19 +226,16 @@ const SearchBar = () => {
                             {badge.text}
                           </span>
 
-                          {item.sellingPrice && (
+                          {originalPriceValue && (
                             <span className="text-sm font-semibold text-gray-900">
-                              {formatPrice(item.sellingPrice)}
+                              {formatPrice(originalPriceValue)}
                             </span>
                           )}
 
-                          {hasDiscount && item.originalPrice && (
+                          {hasDiscount && originalPriceValue > 0 && (
                             <>
-                              <span className="text-xs text-gray-400 line-through">
-                                {formatPrice(item.originalPrice)}
-                              </span>
                               <span className="text-xs text-green-600 font-medium">
-                                {discountPercent}% off
+                                Up to {discountPercent}% off
                               </span>
                             </>
                           )}
