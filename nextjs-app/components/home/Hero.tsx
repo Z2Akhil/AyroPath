@@ -3,12 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSiteSettings } from "@/providers/SiteSettingsProvider";
 
 const Hero = () => {
   const [imgError, setImgError] = useState(false);
+  const { settings, loading } = useSiteSettings();
 
-  // Using default hero image - site settings can be added later
-  const heroImage = "/hero.webp";
+  const heroImage = !imgError && settings?.heroImage ? settings.heroImage : "/hero.webp";
 
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden md:flex mb-12 hero-card transition-standard">
@@ -39,14 +40,18 @@ const Hero = () => {
       </div>
 
       <div className="md:w-1/2 h-64 md:h-auto min-h-[300px] relative">
-        <Image
-          src={heroImage}
-          alt="Lab technician"
-          fill
-          className="object-cover"
-          priority
-          onError={() => setImgError(true)}
-        />
+        {loading ? (
+          <div className="w-full h-full bg-gray-200 animate-pulse" />
+        ) : (
+          <Image
+            src={heroImage}
+            alt="Lab technician"
+            fill
+            className="object-cover"
+            priority
+            onError={() => setImgError(true)}
+          />
+        )}
       </div>
       <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
     </div>

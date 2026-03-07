@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db/mongoose';
 import SiteSettings from '@/lib/models/SiteSettings';
 import { adminAuth } from '@/lib/auth';
-import { promises as fs } from 'fs';
-import path from 'path';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
@@ -67,23 +67,18 @@ export async function PUT(request: NextRequest) {
     }
 
     // Handle File Uploads
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    await fs.mkdir(uploadDir, { recursive: true });
-
     if (logoFile && logoFile.size > 0 && typeof logoFile.arrayBuffer === 'function') {
       const buffer = Buffer.from(await logoFile.arrayBuffer());
-      const ext = path.extname(logoFile.name) || '';
-      const filename = `logo-${Date.now()}${ext}`;
-      await fs.writeFile(path.join(uploadDir, filename), buffer);
-      updates.logo = `/uploads/${filename}`;
+      const base64Str = buffer.toString('base64');
+      const mimeType = logoFile.type || 'image/png';
+      updates.logo = `data:${mimeType};base64,${base64Str}`;
     }
 
     if (heroImageFile && heroImageFile.size > 0 && typeof heroImageFile.arrayBuffer === 'function') {
       const buffer = Buffer.from(await heroImageFile.arrayBuffer());
-      const ext = path.extname(heroImageFile.name) || '';
-      const filename = `hero-${Date.now()}${ext}`;
-      await fs.writeFile(path.join(uploadDir, filename), buffer);
-      updates.heroImage = `/uploads/${filename}`;
+      const base64Str = buffer.toString('base64');
+      const mimeType = heroImageFile.type || 'image/jpeg';
+      updates.heroImage = `data:${mimeType};base64,${base64Str}`;
     }
 
     Object.assign(settings, updates);
