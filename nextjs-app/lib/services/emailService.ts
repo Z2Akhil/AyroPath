@@ -110,7 +110,7 @@ class EmailService {
 
     async sendPasswordResetEmail(email: string, resetToken: string) {
         const subject = 'Reset Your AryoPath Password';
-        const resetLink = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+        const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
 
         const html = this.renderTemplate('password-reset', { resetLink });
 
@@ -161,8 +161,8 @@ class EmailService {
                 ...variables,
                 subject,
                 content,
-                unsubscribeLink: `${process.env.CLIENT_URL || 'http://localhost:3000'}/unsubscribe`,
-                preferencesLink: `${process.env.CLIENT_URL || 'http://localhost:3000'}/account/preferences`
+                unsubscribeLink: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/unsubscribe`,
+                preferencesLink: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/account/preferences`
             };
 
             const html = this.renderTemplate(templateName, templateVariables);
