@@ -235,20 +235,18 @@ const PackageDetailPage = ({ params }: PageProps) => {
 
                     {/* Sidebar - Booking Form */}
                     <div className="lg:col-span-1 lg:row-span-2">
-                        <div className="sticky top-24">
-                            <BookingForm
-                                pkgName={pkg.name}
-                                priceInfo={{
-                                    displayPrice,
-                                    originalPrice,
-                                    discountPercentage,
-                                    discountAmount: originalPrice - displayPrice,
-                                    hasDiscount
-                                }}
-                                pkgId={pkg.code}
-                                items={formItems}
-                            />
-                        </div>
+                        <BookingForm
+                            pkgName={pkg.name}
+                            priceInfo={{
+                                displayPrice,
+                                originalPrice,
+                                discountPercentage,
+                                discountAmount: originalPrice - displayPrice,
+                                hasDiscount
+                            }}
+                            pkgId={pkg.code}
+                            items={formItems}
+                        />
                     </div>
 
                     {/* Informational Sections */}
