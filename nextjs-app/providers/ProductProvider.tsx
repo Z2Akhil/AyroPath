@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { Product, ProductContextType } from '@/types';
-import { getProductsFromBackend } from '@/lib/api/productApi';
+import { getProductsFromBackend, getHomePageData } from '@/lib/api/productApi';
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
@@ -78,9 +78,11 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
         initialFetchDone.current = true;
 
         const fetchProducts = async () => {
+            setLoading(true);
             // --- Try cache first ---
             const cached = loadFromCache();
             if (cached) {
+                console.log('Loading products from cache');
                 const allUnique = deduplicateProducts([
                     ...cached.offers,
                     ...cached.packages,
@@ -90,70 +92,43 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
                 setPackages(cached.packages);
                 setTests(cached.tests);
                 setAllProducts(allUnique);
-                setHasMoreProducts(false);
+                setHasMoreProducts(true); 
                 setLoading(false);
                 return;
             }
 
-            // --- No cache: fetch initial batch ---
+            // --- No cache: fetch homepage data ---
             try {
-                setLoading(true);
+                console.log('Fetching homepage data...');
+                const homepageData = await getHomePageData();
 
-                const [offersResult, profilesResult, testsResult] = await Promise.all([
-                    getProductsFromBackend('OFFER', { limit: INITIAL_LIMIT }),
-                    getProductsFromBackend('PROFILE', { limit: INITIAL_LIMIT }),
-                    getProductsFromBackend('TESTS', { limit: INITIAL_LIMIT }),
-                ]);
-
-                const initialOffers = offersResult.products || [];
-                const initialPackages = profilesResult.products || [];
-                const initialTests = testsResult.products || [];
-
-                setOffers(initialOffers);
-                setPackages(initialPackages);
-                setTests(initialTests);
-                setAllProducts(deduplicateProducts([...initialOffers, ...initialPackages, ...initialTests]));
-
-                const hasMore = offersResult.hasMore || profilesResult.hasMore || testsResult.hasMore;
-                setHasMoreProducts(hasMore);
-                setLoading(false);
-
-                // --- Background: fetch the rest and cache ---
-                if (hasMore && !backgroundFetchDone.current) {
-                    backgroundFetchDone.current = true;
-                    setLoadingMore(true);
-
-                    await new Promise(resolve => setTimeout(resolve, 100));
-
-                    const [allOffersResult, allProfilesResult, allTestsResult] = await Promise.all([
-                        getProductsFromBackend('OFFER'),
-                        getProductsFromBackend('PROFILE'),
-                        getProductsFromBackend('TESTS'),
-                    ]);
-
-                    const allOfferProducts = allOffersResult.products || [];
-                    const allPackageProducts = allProfilesResult.products || [];
-                    const allTestProducts = allTestsResult.products || [];
-
-                    setOffers(allOfferProducts);
-                    setPackages(allPackageProducts);
-                    setTests(allTestProducts);
-                    setAllProducts(deduplicateProducts([...allOfferProducts, ...allPackageProducts, ...allTestProducts]));
-                    setHasMoreProducts(false);
-                    setLoadingMore(false);
-
-                    // Persist full list to cache
-                    saveToCache({ offers: allOfferProducts, packages: allPackageProducts, tests: allTestProducts });
-                } else if (!hasMore) {
-                    // Initial fetch already got everything — cache it
-                    saveToCache({ offers: initialOffers, packages: initialPackages, tests: initialTests });
+                if (homepageData) {
+                    setOffers(homepageData.offers);
+                    setPackages(homepageData.profiles);
+                    setTests(homepageData.tests);
+                    setAllProducts(deduplicateProducts([
+                        ...homepageData.offers,
+                        ...homepageData.profiles,
+                        ...homepageData.tests
+                    ]));
+                    
+                    setHasMoreProducts(true);
+                    
+                    // Cache the homepage data
+                    saveToCache({
+                        offers: homepageData.offers,
+                        packages: homepageData.profiles,
+                        tests: homepageData.tests
+                    });
+                } else {
+                    console.error('Homepage data was null');
+                    setError('Failed to load homepage products');
                 }
-
             } catch (err) {
-                console.error('Error in ProductContext:', err);
+                console.error('Error in fetchProducts:', err);
                 setError('Failed to load products');
+            } finally {
                 setLoading(false);
-                setLoadingMore(false);
             }
         };
 

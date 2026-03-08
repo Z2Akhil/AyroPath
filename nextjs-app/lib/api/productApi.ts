@@ -33,6 +33,31 @@ export const getProductsFromBackend = async (productType: string, options: { lim
     }
 };
 
+export interface HomePageData {
+    offers: Product[];
+    profiles: Product[];
+    tests: Product[];
+}
+
+export const getHomePageData = async (): Promise<HomePageData | null> => {
+    try {
+        const response = await fetch('/api/homepage');
+        const data = await response.json();
+        
+        if (data.success) {
+            return {
+                offers: data.offers || [],
+                profiles: data.profiles || [],
+                tests: data.tests || []
+            };
+        }
+        return null;
+    } catch (error) {
+        console.error("Error fetching homepage data:", error);
+        return null;
+    }
+};
+
 export const getProductByCode = async (code: string): Promise<Product | null> => {
     try {
         const response = await fetch(`/api/products/${code}`);
