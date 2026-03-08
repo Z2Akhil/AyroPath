@@ -2,49 +2,9 @@
 
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { Product, ProductContextType } from '@/types';
-import { getProductsFromBackend, getHomePageData } from '@/lib/api/productApi';
+import { getHomePageData } from '@/lib/api/productApi';
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
-
-const CACHE_KEY = 'ayropath_products';
-const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
-const INITIAL_LIMIT = 20;
-
-interface ProductCache {
-    timestamp: number;
-    offers: Product[];
-    packages: Product[];
-    tests: Product[];
-}
-
-const loadFromCache = (): ProductCache | null => {
-    if (typeof window === 'undefined') return null;
-    try {
-        const raw = localStorage.getItem(CACHE_KEY);
-        if (!raw) return null;
-        const parsed: ProductCache = JSON.parse(raw);
-        if (Date.now() - parsed.timestamp > CACHE_TTL) {
-            localStorage.removeItem(CACHE_KEY);
-            return null;
-        }
-        return parsed;
-    } catch {
-        return null;
-    }
-};
-
-const saveToCache = (data: Omit<ProductCache, 'timestamp'>) => {
-    if (typeof window === 'undefined') return;
-    try {
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, timestamp: Date.now() }));
-    } catch {
-        // storage might be full – silently ignore
-    }
-};
-
-export const clearProductCache = () => {
-    if (typeof window !== 'undefined') localStorage.removeItem(CACHE_KEY);
-};
 
 const deduplicateProducts = (products: Product[]): Product[] => {
     return Array.from(
@@ -70,7 +30,6 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
     const [error, setError] = useState<string | null>(null);
     const [hasMoreProducts, setHasMoreProducts] = useState(true);
 
-    const backgroundFetchDone = useRef(false);
     const initialFetchDone = useRef(false);
 
     useEffect(() => {
@@ -79,27 +38,7 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
 
         const fetchProducts = async () => {
             setLoading(true);
-            // --- Try cache first ---
-            const cached = loadFromCache();
-            if (cached) {
-                console.log('Loading products from cache');
-                const allUnique = deduplicateProducts([
-                    ...cached.offers,
-                    ...cached.packages,
-                    ...cached.tests,
-                ]);
-                setOffers(cached.offers);
-                setPackages(cached.packages);
-                setTests(cached.tests);
-                setAllProducts(allUnique);
-                setHasMoreProducts(true); 
-                setLoading(false);
-                return;
-            }
-
-            // --- No cache: fetch homepage data ---
             try {
-                console.log('Fetching homepage data...');
                 const homepageData = await getHomePageData();
 
                 if (homepageData) {
@@ -111,17 +50,8 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
                         ...homepageData.profiles,
                         ...homepageData.tests
                     ]));
-                    
                     setHasMoreProducts(true);
-                    
-                    // Cache the homepage data
-                    saveToCache({
-                        offers: homepageData.offers,
-                        packages: homepageData.profiles,
-                        tests: homepageData.tests
-                    });
                 } else {
-                    console.error('Homepage data was null');
                     setError('Failed to load homepage products');
                 }
             } catch (err) {
@@ -145,7 +75,6 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
         error,
         hasMoreProducts,
         refreshProducts: () => {
-            clearProductCache();
             window.location.reload();
         },
     };
@@ -156,4 +85,3 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
         </ProductContext.Provider>
     );
 };
-

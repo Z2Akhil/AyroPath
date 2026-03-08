@@ -40,12 +40,19 @@ async function getProductDetails(productCode: string, productType: string): Prom
 
   const combinedData = product.getCombinedData();
   
-  // For OFFERs: thyrocareRate = offerRate (discounted price), b2C = MRP
-  // For TESTs/PROFILEs: thyrocareRate = b2C (MRP)
-  // originalPrice should be the MRP (b2C), thyrocareRate is what we send to Thyrocare API
-  const thyrocareRate = combinedData.thyrocareRate || combinedData.rate?.offerRate || combinedData.rate?.b2C || 0;
-  const originalPrice = combinedData.rate?.b2C || thyrocareRate;
-  const sellingPrice = combinedData.sellingPrice || thyrocareRate;
+  // Match legacy getProductDisplayPrice logic:
+  // For OFFERs: offerRate is the original price (MRP of the offer)
+  // For TESTs/PROFILEs: b2C is the original price (MRP)
+  let originalPrice: number;
+  if (productType === 'OFFER') {
+    originalPrice = combinedData.rate?.offerRate || combinedData.thyrocareRate || 0;
+  } else {
+    originalPrice = combinedData.rate?.b2C || combinedData.thyrocareRate || 0;
+  }
+  
+  // thyrocareRate is what we send to Thyrocare API for cart validation
+  const thyrocareRate = combinedData.thyrocareRate || originalPrice;
+  const sellingPrice = combinedData.sellingPrice || originalPrice;
   const discount = Math.max(0, originalPrice - sellingPrice);
 
   return {

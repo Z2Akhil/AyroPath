@@ -36,17 +36,20 @@ export async function GET(req: NextRequest) {
                 const offers = await Offer.find({}).lean();
 
                 rawProducts = [
-                    ...tests.map(t => ({ ...t, type: 'TEST' })),
-                    ...profiles.map(p => ({ ...p, type: 'PROFILE' })),
-                    ...offers.map(o => ({ ...o, type: 'OFFER' }))
+                    ...tests.map(t => ({ ...t, type: t.type || 'TEST' })),
+                    ...profiles.map(p => ({ ...p, type: p.type || 'PROFILE' })),
+                    ...offers.map(o => ({ ...o, type: o.type || 'OFFER' }))
                 ];
             } else {
                 let model: typeof Test | typeof Profile | typeof Offer = Test;
                 if (type === 'PROFILE' || type === 'POP') model = Profile;
                 else if (type === 'OFFER') model = Offer;
 
-                // @ts-expect-error - Mongoose query filter type complexity
-                rawProducts = await model.find({ type }).lean();
+                // Query the model directly without filtering by 'type' field
+                // Each model is type-specific (Test, Profile, Offer)
+                // Filtering by type would miss products like POP stored in the Profile model
+                // @ts-expect-error - Mongoose query type complexity
+                rawProducts = await model.find({}).lean();
             }
 
             // Map raw database objects to the flattened structure expected by AdminTable
