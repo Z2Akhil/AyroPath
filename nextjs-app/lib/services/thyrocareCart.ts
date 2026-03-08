@@ -172,10 +172,9 @@ export class ThyrocareCartService {
     let collectionCharge = 0;
     let hasCollectionCharge = false;
 
-    if (Math.abs(thyrocarePayable - thyrocareProductCost - COLLECTION_CHARGE) <= 10) {
-      collectionCharge = COLLECTION_CHARGE;
-      hasCollectionCharge = true;
-    } else if (thyrocareProductCost < MINIMUM_ORDER && thyrocarePayable >= MINIMUM_ORDER) {
+    // Collection charge applies only when product total per beneficiary is below minimum order
+    const productTotalPerBen = ourTotalSelling;
+    if (productTotalPerBen > 0 && productTotalPerBen < MINIMUM_ORDER) {
       collectionCharge = COLLECTION_CHARGE;
       hasCollectionCharge = true;
     }

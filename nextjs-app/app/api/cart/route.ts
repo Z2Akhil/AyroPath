@@ -51,15 +51,20 @@ const getProductDetails = async (productCode: string, productType: string) => {
   }
 
   const combinedData = product.getCombinedData ? product.getCombinedData() : product;
+  
+  // For OFFERs: thyrocareRate = offerRate (discounted price), b2C = MRP
+  // For TESTs/PROFILEs: thyrocareRate = b2C (MRP)
+  // originalPrice should always be the MRP (b2C)
   const thyrocareRate = combinedData.thyrocareRate || combinedData.rate?.b2C || combinedData.rate?.offerRate || 0;
+  const originalPrice = combinedData.rate?.b2C || thyrocareRate;
   const sellingPrice = combinedData.sellingPrice || thyrocareRate;
-  const discount = Math.max(0, thyrocareRate - sellingPrice);
+  const discount = Math.max(0, originalPrice - sellingPrice);
 
   return {
     productCode: product.code,
     productType: productType,
     name: product.name,
-    originalPrice: thyrocareRate,
+    originalPrice: originalPrice,
     sellingPrice: sellingPrice,
     discount: discount,
     thyrocareRate: thyrocareRate
