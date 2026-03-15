@@ -63,9 +63,12 @@ export const getImageUrl = (product: any) => {
   // Remove leading slash for safe concatenation
   const cleanPath = rawPath.startsWith("/") ? rawPath.slice(1) : rawPath;
 
-  // Otherwise prefix with backend URL or use relative path
-  // If NEXT_PUBLIC_API_URL is missing, we use root-relative path which is safer in Next.js
-  const apiBase = process.env.NEXT_PUBLIC_API_URL;
+  // Use relative path so the browser uses the correct domain in production
+  // We don't want to use NEXT_PUBLIC_API_URL if it is hardcoded to localhost
+  const apiBase = typeof window !== 'undefined'
+    ? ''
+    : (process.env.NEXT_PUBLIC_API_URL || '');
+  
   if (!apiBase) {
     return `/${cleanPath}`;
   }

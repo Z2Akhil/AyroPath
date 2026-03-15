@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-const baseURL = process.env.NEXT_PUBLIC_API_URL
-    ? `${process.env.NEXT_PUBLIC_API_URL}/api`
-    : '/api';
+const baseURL = typeof window !== 'undefined' 
+    ? '/api' 
+    : (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/api` : 'http://localhost:3000/api');
 
 export const adminAxios = axios.create({
     baseURL,

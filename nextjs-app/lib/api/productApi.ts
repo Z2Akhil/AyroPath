@@ -6,10 +6,16 @@ export interface GetProductsResponse {
     hasMore: boolean;
 }
 
+// Helper to get correct base URL depending on client/server context
+const getBaseUrl = () => {
+    if (typeof window !== 'undefined') return '';
+    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+};
+
 export const getProductsFromBackend = async (productType: string, options: { limit?: number; skip?: number } = {}): Promise<GetProductsResponse> => {
     try {
         const { limit, skip } = options;
-        let url = `/api/products?type=${productType}`;
+        let url = `${getBaseUrl()}/api/products?type=${productType}`;
 
         if (limit) url += `&limit=${limit}`;
         if (skip) url += `&skip=${skip}`;
@@ -41,7 +47,7 @@ export interface HomePageData {
 
 export const getHomePageData = async (): Promise<HomePageData | null> => {
     try {
-        const response = await fetch('/api/homepage');
+        const response = await fetch(`${getBaseUrl()}/api/homepage`);
         const data = await response.json();
         
         if (data.success) {
@@ -60,7 +66,7 @@ export const getHomePageData = async (): Promise<HomePageData | null> => {
 
 export const getProductByCode = async (code: string): Promise<Product | null> => {
     try {
-        const response = await fetch(`/api/products/${code}`);
+        const response = await fetch(`${getBaseUrl()}/api/products/${code}`);
         const data = await response.json();
 
         if (data.success) {
