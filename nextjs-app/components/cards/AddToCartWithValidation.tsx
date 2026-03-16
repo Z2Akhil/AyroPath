@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ShoppingCart } from 'lucide-react';
-import { useCartValidation, ValidationDialogConfig } from '@/hooks/useCartValidation';
+import { useCartValidation } from '@/hooks/useCartValidation';
 import ConfirmationDialog from '../ui/ConfirmationDialog';
 import AuthModal from '../ui/AuthModal';
 import { useUser } from '@/providers/UserProvider';
@@ -47,13 +47,15 @@ const AddToCartWithValidation: React.FC<AddToCartWithValidationProps> = ({
         item => item.productCode === productCode && item.productType === productType
     );
 
+    const baseButtonClass = `inline-flex w-full min-w-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold transition-all duration-300 shadow-sm active:scale-95 ${className}`;
+
     if (isInCart) {
         return (
             <Link
                 href="/cart"
-                className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 shadow-sm active:scale-95 bg-green-600 text-white hover:bg-green-700 hover:shadow-md ${className}`}
+                className={`${baseButtonClass} bg-green-600 text-white hover:bg-green-700 hover:shadow-md`}
             >
-                <span className="font-bold text-sm">✓ Go to Cart</span>
+                <span className="text-center whitespace-nowrap">✓ Go to Cart</span>
             </Link>
         );
     }
@@ -97,19 +99,20 @@ const AddToCartWithValidation: React.FC<AddToCartWithValidationProps> = ({
     return (
         <>
             <button
+                type="button"
                 onClick={handleAddToCart}
                 disabled={isLoading}
-                className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 shadow-sm active:scale-95 bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+                className={`${baseButtonClass} bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50`}
             >
                 {isLoading ? (
                     <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span className="font-bold text-sm">Adding...</span>
+                        <div className="h-4 w-4 shrink-0 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                        <span className="text-center whitespace-nowrap">Adding...</span>
                     </>
                 ) : (
                     <>
-                        {showIcon && <ShoppingCart className="w-5 h-5" />}
-                        <span className="font-bold text-sm">{buttonText}</span>
+                        {showIcon && <ShoppingCart className="h-5 w-5 shrink-0" />}
+                        <span className="text-center whitespace-nowrap">{buttonText}</span>
                     </>
                 )}
             </button>
