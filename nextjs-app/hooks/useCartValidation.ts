@@ -41,6 +41,19 @@ export const useCartValidation = () => {
         setValidationDialog(prev => ({ ...prev, isOpen: false }));
     };
 
+    const checkForExistingOffer = (cartItems: any[], newProduct: any) => {
+        if (newProduct.type === 'OFFER') {
+            const existingOffer = cartItems.find(item => item.productType === 'OFFER');
+            if (existingOffer && existingOffer.productCode !== newProduct.code) {
+                return {
+                    hasExistingOffer: true,
+                    existingOffer: existingOffer
+                };
+            }
+        }
+        return { hasExistingOffer: false };
+    };
+
     const checkForDuplicateTests = (cartItems: any[], newProduct: any) => {
         if (newProduct.type === 'TEST') {
             for (const cartItem of cartItems) {
@@ -130,6 +143,69 @@ export const useCartValidation = () => {
             };
 
             const cartItems = cartResponse.cart?.items || [];
+            
+            // Check for existing offer restriction
+            const offerValidation = checkForExistingOffer(cartItems, newProduct);
+            if (offerValidation.hasExistingOffer) {
+                const existingOffer = offerValidation.existingOffer;
+                showValidationDialog({
+                    title: 'Replace Current Offer?',
+                    message: `You already have "${existingOffer.name}" in your cart. Only one offer is allowed at a time. Would you like to replace it with "${newProduct.name}"?`,
+                    type: 'info',
+                    confirmText: 'Replace Offer',
+                    cancelText: 'Cancel',
+                    onConfirm: async () => {
+                        try {
+                            // Remove existing offer
+                            await CartApi.removeFromCart(existingOffer.productCode, 'OFFER', guestSessionId);
+                            
+                            // Check for duplicates in the new product before adding
+                            const validationResult = checkForDuplicateTests(cartItems.filter(i => i.productCode !== existingOffer.productCode), newProduct);
+                            
+                            if (validationResult.hasDuplicates && validationResult.action === 'remove') {
+                                const duplicateTests = validationResult.details?.duplicateTests || [];
+                                const testCodes = duplicateTests.map((t: any) => t.testCode);
+                                
+                                const confirmResponse = await CartApi.addToCartWithConfirmation(
+                                    productCode,
+                                    productType,
+                                    quantity,
+                                    testCodes,
+                                    guestSessionId
+                                );
+
+                                if (confirmResponse.success) {
+                                    success(`Offer replaced with "${newProduct.name}"${testCodes.length > 0 ? ` (removed ${testCodes.length} duplicate test(s))` : ''}`);
+                                    closeValidationDialog();
+                                    return { success: true, cart: confirmResponse.cart };
+                                }
+                            } else {
+                                const addResponse = await CartApi.addToCart(productCode, productType, quantity, guestSessionId);
+                                if (addResponse.success) {
+                                    success(`Offer replaced with "${newProduct.name}"`);
+                                    closeValidationDialog();
+                                    return { success: true, cart: addResponse.cart };
+                                }
+                            }
+                            
+                            showError('Failed to add new offer');
+                            closeValidationDialog();
+                            return { success: false, error: 'Failed to add item to cart' };
+                        } catch (err: any) {
+                            console.error('Error replacing offer:', err);
+                            showError('Failed to replace offer');
+                            closeValidationDialog();
+                            return { success: false, error: err.message };
+                        }
+                    },
+                    onCancel: () => {
+                        closeValidationDialog();
+                    },
+                    data: { existingOffer, newProduct }
+                });
+                return { success: false, requiresConfirmation: true };
+            }
+
             const validationResult = checkForDuplicateTests(cartItems, newProduct);
 
             if (validationResult.hasDuplicates) {
