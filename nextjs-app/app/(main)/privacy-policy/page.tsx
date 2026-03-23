@@ -1,8 +1,16 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Privacy Policy | Ayropath',
-    description: 'Privacy Policy for Ayropath Technologies Limited - Learn how we collect, use, and protect your personal and health information.',
+    title: 'Privacy Policy',
+    description: 'Privacy Policy for Ayropath Technologies Limited — Learn how we collect, use, and protect your personal and health information.',
+    openGraph: {
+        title: 'Privacy Policy | Ayropath',
+        description: 'Learn how Ayropath collects, uses, and protects your personal and health information.',
+        type: 'website',
+    },
+    alternates: {
+        canonical: '/privacy-policy',
+    },
 };
 
 export default function PrivacyPolicyPage() {

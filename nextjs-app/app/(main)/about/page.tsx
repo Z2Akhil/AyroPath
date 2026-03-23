@@ -1,4 +1,18 @@
+import type { Metadata } from 'next';
 import Image from "next/image";
+
+export const metadata: Metadata = {
+    title: 'About Us - Health Diagnostics Partner',
+    description: 'Learn about Ayropath Technologies Limited — India\'s trusted diagnostics platform in association with Thyrocare. NABL & CAP accredited labs, advanced automation, and affordable health testing across India.',
+    openGraph: {
+        title: 'About Ayropath - Your Trusted Health Diagnostics Partner',
+        description: 'India\'s foremost automated laboratory in association with Thyrocare. NABL & CAP accredited, affordable diagnostics with free home collection.',
+        type: 'website',
+    },
+    alternates: {
+        canonical: '/about',
+    },
+};
 
 const AboutPage = () => {
   return (

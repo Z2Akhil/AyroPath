@@ -1,8 +1,16 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Terms of Service | Ayropath',
-    description: 'Terms of Service for Ayropath Technologies Limited - Read our terms and conditions for using our diagnostic services.',
+    title: 'Terms of Service',
+    description: 'Terms of Service for Ayropath — Read our terms and conditions for using our diagnostic services.',
+    openGraph: {
+        title: 'Terms of Service | Ayropath',
+        description: 'Read the terms and conditions for using Ayropath diagnostic services.',
+        type: 'website',
+    },
+    alternates: {
+        canonical: '/terms-of-service',
+    },
 };
 
 export default function TermsOfServicePage() {

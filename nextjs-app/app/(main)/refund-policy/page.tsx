@@ -1,8 +1,16 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Refund Policy | Ayropath',
-    description: 'Refund Policy for Ayropath Technologies Limited - Learn about our refund and cancellation policies for diagnostic services.',
+    title: 'Refund Policy',
+    description: 'Refund Policy for Ayropath — Learn about our refund and cancellation policies for diagnostic services.',
+    openGraph: {
+        title: 'Refund Policy | Ayropath',
+        description: 'Learn about Ayropath\'s refund and cancellation policies for diagnostic services.',
+        type: 'website',
+    },
+    alternates: {
+        canonical: '/refund-policy',
+    },
 };
 
 export default function RefundPolicyPage() {
