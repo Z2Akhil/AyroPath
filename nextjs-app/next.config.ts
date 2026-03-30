@@ -34,6 +34,20 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: "/packages",
+        destination: "/profiles",
+        permanent: true,
+      },
+      {
+        source: "/packages/:path*",
+        destination: "/profiles/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

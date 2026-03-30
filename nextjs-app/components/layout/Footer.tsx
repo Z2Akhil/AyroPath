@@ -115,7 +115,7 @@ const Footer = () => {
               <li>
                 <Link href="/profiles" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
                   <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
-                  Popular Packages
+                  Popular Profiles
                 </Link>
               </li>
               <li>
@@ -155,7 +155,7 @@ const Footer = () => {
                 'Home Sample Collection',
                 'Online Reports',
                 'Doctor Consultation',
-                'Health Packages',
+                'Health Profiles',
                 '24/7 Support',
               ].map((service, i) => (
                 <li key={i} className="flex items-center gap-2 text-sm text-gray-300 mt-2">
