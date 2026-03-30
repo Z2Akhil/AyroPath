@@ -39,7 +39,7 @@ export default async function OffersPage({ limit }: OffersPageProps) {
 
     const [offerDocs, totalCount] = await Promise.all([
         Offer.find({ isActive: true })
-            .select('name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category')
+            .select('name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category imageLocation thyrocareData.imageLocation imageMaster thyrocareData.imageMaster')
             .limit(fetchLimit)
             .lean(),
         Offer.countDocuments({ isActive: true }),
@@ -57,6 +57,12 @@ export default async function OffersPage({ limit }: OffersPageProps) {
         testCount: o.thyrocareData?.testCount || 0,
         fasting: o.thyrocareData?.fasting || '',
         category: o.thyrocareData?.category || '',
+        imageLocation: o.imageLocation || null,
+        imageMaster: o.imageMaster ? JSON.parse(JSON.stringify(o.imageMaster)) : null,
+        thyrocareData: o.thyrocareData ? { 
+            imageLocation: o.thyrocareData.imageLocation || null,
+            imageMaster: o.thyrocareData.imageMaster ? JSON.parse(JSON.stringify(o.thyrocareData.imageMaster)) : null
+        } : null,
         isActive: o.isActive,
     }));
 
@@ -81,7 +87,7 @@ export default async function OffersPage({ limit }: OffersPageProps) {
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
             />
-            <OffersPageClient initialData={initialData as any} initialTotal={totalCount} />
+            <OffersPageClient initialData={initialData as any} initialTotal={totalCount} limit={limit} />
         </>
     );
 }

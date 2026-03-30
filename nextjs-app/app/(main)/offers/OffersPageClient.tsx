@@ -10,9 +10,10 @@ import { Product } from '@/types';
 interface OffersPageClientProps {
     initialData: Product[];
     initialTotal: number;
+    limit?: number;
 }
 
-export default function OffersPageClient({ initialData, initialTotal }: OffersPageClientProps) {
+export default function OffersPageClient({ initialData, initialTotal, limit }: OffersPageClientProps) {
     const [offers, setOffers] = useState<Product[]>(initialData);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -80,7 +81,7 @@ export default function OffersPageClient({ initialData, initialTotal }: OffersPa
                 }
             </div>
 
-            {totalItems > itemsPerPage && totalPages > 1 && (
+            {(!limit) && totalItems > itemsPerPage && totalPages > 1 && (
                 <div className="mt-3 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                     <Pagination
                         currentPage={currentPage}

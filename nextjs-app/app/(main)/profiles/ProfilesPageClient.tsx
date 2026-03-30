@@ -10,9 +10,10 @@ import { Product } from '@/types';
 interface ProfilesPageClientProps {
     initialData: Product[];
     initialTotal: number;
+    limit?: number;
 }
 
-export default function ProfilesPageClient({ initialData, initialTotal }: ProfilesPageClientProps) {
+export default function ProfilesPageClient({ initialData, initialTotal, limit }: ProfilesPageClientProps) {
     const [packages, setPackages] = useState<Product[]>(initialData);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -80,7 +81,7 @@ export default function ProfilesPageClient({ initialData, initialTotal }: Profil
                 }
             </div>
 
-            {totalItems > itemsPerPage && totalPages > 1 && (
+            {(!limit) && totalItems > itemsPerPage && totalPages > 1 && (
                 <div className="mt-3 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                     <Pagination
                         currentPage={currentPage}

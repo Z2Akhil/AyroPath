@@ -10,9 +10,10 @@ import { Product } from '@/types';
 interface TestsPageClientProps {
     initialData: Product[];
     initialTotal: number;
+    limit?: number;
 }
 
-export default function TestsPageClient({ initialData, initialTotal }: TestsPageClientProps) {
+export default function TestsPageClient({ initialData, initialTotal, limit }: TestsPageClientProps) {
     const [tests, setTests] = useState<Product[]>(initialData);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -80,7 +81,7 @@ export default function TestsPageClient({ initialData, initialTotal }: TestsPage
                 }
             </div>
 
-            {totalItems > itemsPerPage && totalPages > 1 && (
+            {(!limit) && totalItems > itemsPerPage && totalPages > 1 && (
                 <div className="mt-3 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                     <Pagination
                         currentPage={currentPage}

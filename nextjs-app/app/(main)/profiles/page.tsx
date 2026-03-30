@@ -39,7 +39,7 @@ export default async function ProfilesPage({ limit }: ProfilesPageProps) {
 
     const [profileDocs, totalCount] = await Promise.all([
         Profile.find({ isActive: true })
-            .select('name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category')
+            .select('name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category imageLocation thyrocareData.imageLocation imageMaster thyrocareData.imageMaster')
             .sort({ 'thyrocareData.bookedCount': -1 })
             .limit(fetchLimit)
             .lean(),
@@ -59,6 +59,12 @@ export default async function ProfilesPage({ limit }: ProfilesPageProps) {
         testCount: p.thyrocareData?.testCount || 0,
         fasting: p.thyrocareData?.fasting || '',
         category: p.thyrocareData?.category || '',
+        imageLocation: p.imageLocation || null,
+        imageMaster: p.imageMaster ? JSON.parse(JSON.stringify(p.imageMaster)) : null,
+        thyrocareData: p.thyrocareData ? { 
+            imageLocation: p.thyrocareData.imageLocation || null,
+            imageMaster: p.thyrocareData.imageMaster ? JSON.parse(JSON.stringify(p.thyrocareData.imageMaster)) : null
+        } : null,
         isActive: p.isActive,
     }));
 
@@ -84,7 +90,7 @@ export default async function ProfilesPage({ limit }: ProfilesPageProps) {
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
             />
-            <ProfilesPageClient initialData={initialData as any} initialTotal={totalCount} />
+            <ProfilesPageClient initialData={initialData as any} initialTotal={totalCount} limit={limit} />
         </>
     );
 }

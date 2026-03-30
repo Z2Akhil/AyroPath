@@ -40,7 +40,7 @@ export default async function TestsPage({ limit }: TestsPageProps) {
 
     const [testDocs, totalCount] = await Promise.all([
         Test.find({ isActive: true })
-            .select('name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category')
+            .select('name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category imageLocation thyrocareData.imageLocation imageMaster thyrocareData.imageMaster')
             .limit(fetchLimit)
             .lean(),
         Test.countDocuments({ isActive: true }),
@@ -58,6 +58,12 @@ export default async function TestsPage({ limit }: TestsPageProps) {
         testCount: t.thyrocareData?.testCount || 0,
         fasting: t.thyrocareData?.fasting || '',
         category: t.thyrocareData?.category || '',
+        imageLocation: t.imageLocation || null,
+        imageMaster: t.imageMaster ? JSON.parse(JSON.stringify(t.imageMaster)) : null,
+        thyrocareData: t.thyrocareData ? { 
+            imageLocation: t.thyrocareData.imageLocation || null,
+            imageMaster: t.thyrocareData.imageMaster ? JSON.parse(JSON.stringify(t.thyrocareData.imageMaster)) : null
+        } : null,
         isActive: t.isActive,
     }));
 
@@ -82,7 +88,7 @@ export default async function TestsPage({ limit }: TestsPageProps) {
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
             />
-            <TestsPageClient initialData={initialData as any} initialTotal={totalCount} />
+            <TestsPageClient initialData={initialData as any} initialTotal={totalCount} limit={limit} />
         </>
     );
 }
