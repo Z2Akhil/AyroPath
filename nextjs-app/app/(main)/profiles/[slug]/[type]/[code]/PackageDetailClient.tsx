@@ -57,7 +57,7 @@ const PackageDetailClient = ({ product: pkg }: PackageDetailClientProps) => {
                         Home
                     </Link>
                     <ChevronDown size={14} className="rotate-270 text-gray-400" />
-                    <Link href="/packages" className="hover:text-blue-600 transition-colors">
+                    <Link href="/profiles" className="hover:text-blue-600 transition-colors">
                         Packages
                     </Link>
                     <ChevronDown size={14} className="rotate-270 text-gray-400" />

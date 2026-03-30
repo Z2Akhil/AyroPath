@@ -113,7 +113,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/packages" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
+                <Link href="/profiles" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
                   <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
                   Popular Packages
                 </Link>
