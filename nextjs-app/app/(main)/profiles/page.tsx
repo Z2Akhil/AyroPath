@@ -1,106 +1,90 @@
-"use client";
+import { Metadata } from 'next';
+import connectToDatabase from '@/lib/db/mongoose';
+import Profile from '@/lib/models/Profile';
+import ProfilesPageClient from './ProfilesPageClient';
 
-import { useState, useEffect } from "react";
-import ProfileCard from '@/components/cards/ProfileCard';
-import SkeletonProfileCard from "@/components/skeletons/SkeletonProfileCard";
-import Pagination from "@/components/ui/Pagination";
-import { getProductsFromBackend } from "@/lib/api/productApi";
-import { Product } from "@/types";
-import { useProducts } from "@/providers/ProductProvider";
+export const revalidate = 3600; // Revalidate every hour
 
-interface ProfilePageProps {
-  limit?: number;
-}
-
-const ProfilePage: React.FC<ProfilePageProps> = ({ limit }) => {
-  const { packages: initialPackages, loading: initialLoading, error: initialError } = useProducts();
-
-  const [packages, setPackages] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(12);
-  const [totalItems, setTotalItems] = useState(0);
-
-  useEffect(() => {
-    // If it's the landing page (with limit), use the context data
-    if (limit) {
-      setPackages(initialPackages.slice(0, limit));
-      setLoading(initialLoading);
-      setError(initialError);
-      return;
-    }
-
-    // For the full page, fetch data based on pagination
-    const fetchPackages = async () => {
-      setLoading(true);
-      try {
-        const skip = (currentPage - 1) * itemsPerPage;
-        const result = await getProductsFromBackend('PROFILE', { limit: itemsPerPage, skip });
-        setPackages(result.products);
-        setTotalItems(result.totalCount);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching packages:", err);
-        setError("Failed to load packages");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPackages();
-  }, [currentPage, itemsPerPage, limit, initialPackages, initialLoading, initialError]);
-
-  if (loading && packages.length === 0) {
-    return (
-      <div className="max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-10">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">
-          Available Health Profiles
-        </h1>
-        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: limit || 8 }).map((_, index) => (
-            <SkeletonProfileCard key={index} />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error && packages.length === 0) {
-    return <div className="text-center py-20 text-red-500">{error}</div>;
-  }
-
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-
-  return (
-    <div className="max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-10">
-      <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">
-        Available Health Profiles
-      </h1>
-
-      <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {packages.length > 0 ? (
-          packages.map((pkg, index) => <ProfileCard key={index} pkg={pkg} />)
-        ) : (
-          <p className="text-gray-500 col-span-full text-center">
-            No packages available.
-          </p>
-        )}
-      </div>
-      {!limit && totalItems > itemsPerPage && totalPages > 1 && (
-        <div className="mt-3 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            itemsPerPage={itemsPerPage}
-            onItemsPerPageChange={setItemsPerPage}
-            totalItems={totalItems}
-          />
-        </div>
-      )}
-    </div>
-  );
+export const metadata: Metadata = {
+    title: 'Health Checkup Packages | Thyrocare Profiles – Ayropath',
+    description: 'Book Thyrocare health checkup packages online with free home sample collection. Full body checkups, diabetes screening, thyroid profiles and more. NABL accredited labs, reports in 24–48 hrs.',
+    keywords: [
+        'health checkup packages', 'thyrocare profiles', 'full body checkup online',
+        'blood test packages', 'preventive health checkup', 'home sample collection',
+        'NABL accredited lab', 'affordable health test', 'book health test online India',
+    ],
+    openGraph: {
+        title: 'Health Checkup Packages | Thyrocare Profiles – Ayropath',
+        description: 'Book Thyrocare health packages online. Full body checkups, thyroid profiles and more with free home collection.',
+        type: 'website',
+        siteName: 'Ayropath',
+        locale: 'en_IN',
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'Health Checkup Packages | Thyrocare Profiles – Ayropath',
+        description: 'Book Thyrocare health packages online with free home collection.',
+    },
+    alternates: { canonical: '/profiles' },
 };
 
-export default ProfilePage;
+interface ProfilesPageProps {
+    limit?: number;
+}
+
+export default async function ProfilesPage({ limit }: ProfilesPageProps) {
+    await connectToDatabase();
+
+    const fetchLimit = limit || 12;
+
+    const [profileDocs, totalCount] = await Promise.all([
+        Profile.find({ isActive: true })
+            .select('name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category')
+            .sort({ 'thyrocareData.bookedCount': -1 })
+            .limit(fetchLimit)
+            .lean(),
+        Profile.countDocuments({ isActive: true }),
+    ]);
+
+    // Serialize to plain objects compatible with Product type
+    const initialData = profileDocs.map((p: any) => ({
+        code: p.code,
+        name: p.name,
+        type: p.type,
+        sellingPrice: p.customPricing?.sellingPrice || p.thyrocareData?.rate?.b2C || 0,
+        rate: {
+            b2C: p.thyrocareData?.rate?.b2C || 0,
+            offerRate: p.thyrocareData?.rate?.offerRate || 0,
+        },
+        testCount: p.thyrocareData?.testCount || 0,
+        fasting: p.thyrocareData?.fasting || '',
+        category: p.thyrocareData?.category || '',
+        isActive: p.isActive,
+    }));
+
+    // ItemList JSON-LD for listing page
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ayropath.com';
+    const itemListJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        name: 'Health Checkup Packages',
+        description: 'Thyrocare health checkup profiles available for online booking at Ayropath',
+        numberOfItems: totalCount,
+        itemListElement: initialData.slice(0, 10).map((pkg, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            name: pkg.name,
+            url: `${siteUrl}/profiles/${pkg.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '')}/${pkg.type}/${pkg.code}`,
+        })),
+    };
+
+    return (
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+            />
+            <ProfilesPageClient initialData={initialData as any} initialTotal={totalCount} />
+        </>
+    );
+}

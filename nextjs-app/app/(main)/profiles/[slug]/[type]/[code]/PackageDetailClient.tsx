@@ -139,7 +139,7 @@ const PackageDetailClient = ({ product: pkg }: PackageDetailClientProps) => {
                             {/* Included Tests List */}
                             <div className="space-y-6">
                                 <div className="flex items-center justify-between">
-                                    <h2 className="text-2xl font-black text-gray-900">Included Tests ({pkg.testCount || pkg.childs?.length || 0})</h2>
+                                <h2 className="text-2xl font-black text-gray-900">What&apos;s Included in {pkg.name}? ({pkg.testCount || pkg.childs?.length || 0} Parameters Covered)</h2>
                                     <span className="text-xs font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-1 rounded">All Grouped By Category</span>
                                 </div>
                                 <div className="space-y-4">
@@ -195,7 +195,7 @@ const PackageDetailClient = ({ product: pkg }: PackageDetailClientProps) => {
                     <div className="lg:col-span-2 mt-8 lg:mt-0 space-y-16 py-12 border-t border-gray-100">
                         {/* Why Book With Us */}
                         <div className="text-center">
-                            <h2 className="text-2xl font-black text-gray-900 mb-10 tracking-tight">WHY BOOK WITH AYROPATH?</h2>
+                            <h2 className="text-2xl font-black text-gray-900 mb-10 tracking-tight">Why Book {pkg.name} With Ayropath?</h2>
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
                                 {[
                                     { icon: MapPin, text: "100% Safe & Hygienic" },
@@ -216,7 +216,7 @@ const PackageDetailClient = ({ product: pkg }: PackageDetailClientProps) => {
 
                         {/* How It Works */}
                         <div className="text-center">
-                            <h2 className="text-2xl font-black text-gray-900 mb-10 tracking-tight">HOW IT WORKS</h2>
+                            <h2 className="text-2xl font-black text-gray-900 mb-10 tracking-tight">How to Book Your {pkg.name} Test Online</h2>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 {[
                                     { title: "1. Book Test", icon: CheckCircle, desc: "Choose your test and preferred slot online easily." },

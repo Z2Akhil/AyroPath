@@ -1,111 +1,88 @@
-"use client";
+import { Metadata } from 'next';
+import connectToDatabase from '@/lib/db/mongoose';
+import Test from '@/lib/models/Test';
+import TestsPageClient from './TestsPageClient';
 
-import { useState, useEffect } from "react";
-import TestCard from "@/components/cards/TestCard";
-import SkeletonTestCard from "@/components/skeletons/SkeletonTestCard";
-import Pagination from "@/components/ui/Pagination";
-import { getProductsFromBackend } from "@/lib/api/productApi";
-import { Product } from "@/types";
-import { useProducts } from "@/providers/ProductProvider";
+export const revalidate = 3600;
 
-interface TestPageProps {
-  limit?: number;
-}
-
-const TestPage: React.FC<TestPageProps> = ({ limit }) => {
-  const { tests: initialTests, loading: initialLoading, error: initialError } = useProducts();
-
-  const [tests, setTests] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(12);
-  const [totalItems, setTotalItems] = useState(0);
-
-  useEffect(() => {
-    // If it's the landing page (with limit), use the context data
-    if (limit) {
-      setTests(initialTests.slice(0, limit));
-      setLoading(initialLoading);
-      setError(initialError);
-      return;
-    }
-
-    // For the full page, fetch data based on pagination
-    const fetchTests = async () => {
-      setLoading(true);
-      try {
-        const skip = (currentPage - 1) * itemsPerPage;
-        const result = await getProductsFromBackend('TESTS', { limit: itemsPerPage, skip });
-        setTests(result.products);
-        setTotalItems(result.totalCount);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching tests:", err);
-        setError("Failed to load tests");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTests();
-  }, [currentPage, itemsPerPage, limit, initialTests, initialLoading, initialError]);
-
-  if (loading && tests.length === 0) {
-    return (
-      <div className="max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-10">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">
-          Available Tests
-        </h1>
-        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: limit || 8 }).map((_, index) => (
-            <SkeletonTestCard key={index} />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error && tests.length === 0) {
-    return (
-      <div className="text-center py-20 text-red-500">{error}</div>
-    );
-  }
-
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-
-  return (
-    <div className="max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-10">
-      <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">
-        Available Tests
-      </h1>
-
-      <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {tests.length > 0 ? (
-          tests.map((test) => (
-            <TestCard key={test.code} test={test} />
-          ))
-        ) : (
-          <p className="text-gray-500 col-span-full text-center">
-            No tests available.
-          </p>
-        )}
-      </div>
-
-      {!limit && totalItems > itemsPerPage && totalPages > 1 && (
-        <div className="mt-3 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            itemsPerPage={itemsPerPage}
-            onItemsPerPageChange={setItemsPerPage}
-            totalItems={totalItems}
-          />
-        </div>
-      )}
-    </div>
-  );
+export const metadata: Metadata = {
+    title: 'Individual Lab Tests & Diagnostics | Thyrocare – Ayropath',
+    description: 'Book individual Thyrocare lab tests online with free home sample collection. Blood tests, thyroid tests, diabetes tests, liver function, kidney function and more. NABL accredited labs, reports in 24–48 hrs.',
+    keywords: [
+        'thyrocare individual tests', 'blood test online', 'lab test booking',
+        'thyroid test home collection', 'diabetes test online', 'CBC test price',
+        'liver function test', 'kidney function test', 'NABL lab test india',
+        'diagnostic test booking india',
+    ],
+    openGraph: {
+        title: 'Individual Lab Tests & Diagnostics | Thyrocare – Ayropath',
+        description: 'Book individual Thyrocare lab tests online with free home collection. NABL accredited labs, affordable pricing.',
+        type: 'website',
+        siteName: 'Ayropath',
+        locale: 'en_IN',
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'Lab Tests & Diagnostics | Thyrocare – Ayropath',
+        description: 'Book individual Thyrocare lab tests online with free home collection.',
+    },
+    alternates: { canonical: '/tests' },
 };
 
-export default TestPage;
+interface TestsPageProps {
+    limit?: number;
+}
+
+export default async function TestsPage({ limit }: TestsPageProps) {
+    await connectToDatabase();
+
+    const fetchLimit = limit || 12;
+
+    const [testDocs, totalCount] = await Promise.all([
+        Test.find({ isActive: true })
+            .select('name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category')
+            .limit(fetchLimit)
+            .lean(),
+        Test.countDocuments({ isActive: true }),
+    ]);
+
+    const initialData = testDocs.map((t: any) => ({
+        code: t.code,
+        name: t.name,
+        type: t.type,
+        sellingPrice: t.customPricing?.sellingPrice || t.thyrocareData?.rate?.b2C || 0,
+        rate: {
+            b2C: t.thyrocareData?.rate?.b2C || 0,
+            offerRate: t.thyrocareData?.rate?.offerRate || 0,
+        },
+        testCount: t.thyrocareData?.testCount || 0,
+        fasting: t.thyrocareData?.fasting || '',
+        category: t.thyrocareData?.category || '',
+        isActive: t.isActive,
+    }));
+
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ayropath.com';
+    const itemListJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        name: 'Individual Lab Tests',
+        description: 'Individual Thyrocare diagnostic tests available for online booking at Ayropath',
+        numberOfItems: totalCount,
+        itemListElement: initialData.slice(0, 10).map((test, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            name: test.name,
+            url: `${siteUrl}/profiles/${test.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '')}/${test.type}/${test.code}`,
+        })),
+    };
+
+    return (
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+            />
+            <TestsPageClient initialData={initialData as any} initialTotal={totalCount} />
+        </>
+    );
+}
