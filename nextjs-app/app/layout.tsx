@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { ClientProviders } from "@/providers/Providers";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ayropath.com";
@@ -18,43 +20,80 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ayropath.com";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Ayropath - Health Diagnostics & Lab Tests at Home",
+    default: "Full Body Checkup at Home – Book Health Packages | Ayropath",
     template: "%s | Ayropath",
   },
   description:
-    "Book health checkups, blood tests & diagnostic packages online with Ayropath. NABL & CAP accredited labs in association with Thyrocare. Free home sample collection, affordable pricing & fast reports.",
+    "Book full body checkup with 80+ parameters. Free home sample collection across India. NABL & CAP accredited Thyrocare labs. Digital reports in 24–48 hrs. Book now starting ₹499.",
   keywords: [
-    "health checkup",
+    // Tier 1 — High Commercial Intent
+    "full body checkup",
+    "full body checkup near me",
+    "health checkup packages",
+    "preventive health checkup",
+    "blood test at home",
+    "Thyrocare full body checkup",
+    "health checkup packages India",
+    "home sample collection",
+    "book lab test online",
+    // Tier 2 — Thyrocare Branded
+    "Thyrocare",
+    "Thyrocare Aarogyam",
+    "Thyrocare Aarogyam C",
+    "Thyrocare Aarogyam 1.1",
+    "Thyrocare home collection",
+    "Thyrocare blood test price",
+    "Aarogyam packages",
+    "Aarogyam Basic",
+    "Aarogyam Advanced",
+    "Aarogyam Male",
+    "Aarogyam Female",
+    "Ayropath",
+    // Tier 2 — Service Specific
     "blood test",
     "lab test",
     "diagnostic test",
-    "home sample collection",
-    "Thyrocare",
-    "Ayropath",
-    "full body checkup",
-    "health package",
     "CBC test",
     "thyroid test",
+    "TSH T3 T4 test",
     "lipid profile",
     "liver function test",
     "kidney function test",
-    "diabetes test",
-    "preventive health checkup",
+    "diabetes screening",
+    "HbA1c test",
+    "Vitamin D test",
+    "Vitamin B12 test",
+    "cardiac risk profile",
+    "uric acid test",
+    "creatinine test",
     "online lab test booking",
-    "affordable health tests India",
-    "EXECUTIV FULL BODY HEALTH CHECKUP",
-    "COMPLETE HEALTH CHECKUP WITH VITAMINS",
-    "AAROGYAM TAX  SEVER BASIC & ADVANCED",
-    "NEW AAROGYAM BASIC",
-    "AAROGYAM MALE ",
-    "AAROGYAM FEMALE",
-    "SENIOR CITIZEN PROFILE MALE & FEMALE",
-    "Full body checkup",
-    "Preventive checkup",
-    "Healthcare",
-    "Thyrocare blood test",
-    "Body profile",
-    "Online blood test near me",
+    // Tier 3 — Demographics
+    "full body checkup for women",
+    "health checkup for senior citizens",
+    "senior citizen health package",
+    // Tier 3 — City Specific
+    "full body checkup Delhi",
+    "full body checkup Mumbai",
+    "full body checkup Ranchi",
+    "full body checkup Jamshedpur",
+    "full body checkup Bengaluru",
+    "full body checkup Hyderabad",
+    "full body checkup Dhanbad",
+    "Thyrocare home collection Delhi",
+    "Thyrocare home collection Mumbai",
+    // Tier 3 — Price Point
+    "full body checkup under 1000",
+    "affordable health checkup India",
+    "cheap blood test at home",
+    "health package under 999",
+    // Legacy Thyrocare product names
+    "Executive Full Body Health Checkup",
+    "Complete Health Checkup with Vitamins",
+    "Aarogyam Tax Saver",
+    "Senior Citizen Profile Male Female",
+    "NABL accredited lab India",
+    "CAP accredited lab",
+    "preventive healthcare India",
   ],
   authors: [{ name: "Ayropath" }],
   creator: "Ayropath",
@@ -64,23 +103,23 @@ export const metadata: Metadata = {
     locale: "en_IN",
     url: siteUrl,
     siteName: "Ayropath",
-    title: "Ayropath - Health Diagnostics & Lab Tests at Home",
+    title: "Full Body Checkup at Home – Book Health Packages | Ayropath",
     description:
-      "Book health checkups & diagnostic packages online. NABL accredited labs, free home collection, affordable pricing & fast reports. Powered by Thyrocare.",
+      "Book full body checkup with 80+ parameters. NABL & CAP accredited Thyrocare labs, free home sample collection, digital reports in 24–48 hrs. Powered by Thyrocare.",
     images: [
       {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Ayropath - Health Diagnostics & Lab Services",
+        alt: "Ayropath - Full Body Checkup & Health Diagnostics at Home",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ayropath - Health Diagnostics & Lab Tests at Home",
+    title: "Full Body Checkup at Home – Book Lab Tests | Ayropath",
     description:
-      "Book health checkups & diagnostic packages online. Free home sample collection & fast reports.",
+      "Book full body checkup with 80+ parameters. Free home sample collection, NABL accredited Thyrocare labs & fast reports.",
     images: ["/og-image.jpg"],
   },
   alternates: {
@@ -123,7 +162,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en-IN">
       <head>
         <script
           type="application/ld+json"
@@ -133,7 +172,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
+        className={`${inter.variable} ${dmSans.variable} antialiased min-h-screen flex flex-col`}
       >
         <ClientProviders>{children}</ClientProviders>
       </body>

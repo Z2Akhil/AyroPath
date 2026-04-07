@@ -2,11 +2,16 @@ import type { Metadata } from 'next';
 import Image from "next/image";
 
 export const metadata: Metadata = {
-    title: 'About Us - Health Diagnostics Partner',
-    description: 'Learn about Ayropath Technologies Limited — India\'s trusted diagnostics platform in association with Thyrocare. NABL & CAP accredited labs, advanced automation, and affordable health testing across India.',
+    title: 'About Ayropath – NABL Accredited Thyrocare Diagnostics Partner India',
+    description: 'Ayropath Technologies Limited is India\'s trusted diagnostics platform in association with Thyrocare — India\'s largest automated lab. NABL & CAP accredited, free home collection, 200+ cities.',
+    keywords: [
+        'about Ayropath', 'NABL accredited lab India', 'CAP accredited Thyrocare',
+        'Thyrocare partner India', 'health diagnostics India', 'automated lab India',
+        'preventive healthcare company India', 'Ayropath Technologies',
+    ],
     openGraph: {
-        title: 'About Ayropath - Your Trusted Health Diagnostics Partner',
-        description: 'India\'s foremost automated laboratory in association with Thyrocare. NABL & CAP accredited, affordable diagnostics with free home collection.',
+        title: 'About Ayropath – NABL Accredited Thyrocare Diagnostics Partner',
+        description: 'India\'s trusted diagnostics platform in association with Thyrocare. NABL & CAP accredited, affordable diagnostics with free home collection across India.',
         type: 'website',
     },
     alternates: {
@@ -14,9 +19,77 @@ export const metadata: Metadata = {
     },
 };
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ayropath.com';
+
+const medicalOrgJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'MedicalOrganization',
+  name: 'Ayropath Technologies Limited',
+  url: siteUrl,
+  logo: `${siteUrl}/logo.png`,
+  description: 'India\'s trusted health diagnostics platform in association with Thyrocare Technologies. NABL & CAP accredited laboratories, free home sample collection across 200+ cities.',
+  medicalSpecialty: 'Pathology',
+  isPartOf: {
+    '@type': 'Organization',
+    name: 'Thyrocare Technologies Limited',
+  },
+  contactPoint: {
+    '@type': 'ContactPoint',
+    email: 'admin@ayropath.com',
+    contactType: 'customer service',
+    availableLanguage: ['English', 'Hindi'],
+  },
+  areaServed: {
+    '@type': 'Country',
+    name: 'India',
+  },
+  sameAs: ['https://www.instagram.com/ayropath'],
+};
+
 const AboutPage = () => {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(medicalOrgJsonLd) }}
+      />
+
+      {/* ====== STATS TRUST BAR ====== */}
+      <section className="bg-blue-600 text-white py-8 px-4">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          {[
+            { value: '500,000+', label: 'Tests Processed' },
+            { value: '200+', label: 'Cities Covered' },
+            { value: '24 Hrs', label: 'Report Turnaround' },
+            { value: 'NABL & CAP', label: 'Accredited Labs' },
+          ].map((stat, i) => (
+            <div key={i}>
+              <p className="text-3xl font-black mb-1">{stat.value}</p>
+              <p className="text-sm text-blue-200 font-semibold">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ====== ACCREDITATION BADGES ====== */}
+      <section className="bg-green-50 border-y border-green-100 py-6 px-4">
+        <div className="max-w-5xl mx-auto flex flex-wrap justify-center items-center gap-8">
+          {[
+            { label: 'NABL Accredited', sub: 'National Accreditation Board for Testing' },
+            { label: 'CAP Accredited', sub: 'College of American Pathologists' },
+            { label: 'ISO 15189', sub: 'International Lab Quality Standard' },
+          ].map((badge, i) => (
+            <div key={i} className="flex items-center gap-3 bg-white rounded-xl px-5 py-3 border border-green-200 shadow-sm">
+              <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+              <div>
+                <p className="font-extrabold text-green-700 text-sm">{badge.label}</p>
+                <p className="text-xs text-gray-500">{badge.sub}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ====== ABOUT SECTION ====== */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-5">
         <div className=" mb-5">

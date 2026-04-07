@@ -4,6 +4,8 @@ import Profile from '@/lib/models/Profile';
 import Offer from '@/lib/models/Offer';
 import Test from '@/lib/models/Test';
 import { slugify } from '@/lib/slugify';
+import { CITIES } from '@/lib/cityData';
+import { getAllBlogSlugs } from '@/lib/mdx';
 
 export const revalidate = 86400; // Cache for 24 hours
 
@@ -40,6 +42,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     }));
 
+    // City-specific pillar pages — high priority, local SEO
+    const cityUrls: MetadataRoute.Sitemap = CITIES.map((city) => ({
+      url: `${baseUrl}/full-body-checkup/${city.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.9,
+    }));
+
+    // Blog posts
+    const blogSlugs = getAllBlogSlugs();
+    const blogUrls: MetadataRoute.Sitemap = blogSlugs.map((slug) => ({
+      url: `${baseUrl}/blog/${slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    }));
+
     return [
       {
         url: `${baseUrl}/`,
@@ -48,10 +67,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 1.0,
       },
       {
+        url: `${baseUrl}/full-body-checkup`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly',
+        priority: 0.95,
+      },
+      {
         url: `${baseUrl}/profiles`,
         lastModified: new Date(),
         changeFrequency: 'weekly',
-        priority: 0.8,
+        priority: 0.85,
       },
       {
         url: `${baseUrl}/tests`,
@@ -66,10 +91,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.8,
       },
       {
+        url: `${baseUrl}/blog`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly',
+        priority: 0.75,
+      },
+      {
         url: `${baseUrl}/about`,
         lastModified: new Date(),
         changeFrequency: 'monthly',
         priority: 0.5,
+      },
+      {
+        url: `${baseUrl}/lab-standards`,
+        lastModified: new Date(),
+        changeFrequency: 'monthly',
+        priority: 0.6,
       },
       {
         url: `${baseUrl}/privacy-policy`,
@@ -89,6 +126,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: 'monthly',
         priority: 0.3,
       },
+      ...cityUrls,
+      ...blogUrls,
       ...profileUrls,
       ...offerUrls,
       ...testUrls,

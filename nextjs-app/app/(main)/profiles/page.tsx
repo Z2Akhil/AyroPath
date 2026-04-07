@@ -6,16 +6,26 @@ import ProfilesPageClient from './ProfilesPageClient';
 export const revalidate = 3600; // Revalidate every hour
 
 export const metadata: Metadata = {
-    title: 'Health Checkup Packages | Thyrocare Profiles – Ayropath',
-    description: 'Book Thyrocare health checkup packages online with free home sample collection. Full body checkups, diabetes screening, thyroid profiles and more. NABL accredited labs, reports in 24–48 hrs.',
+    title: 'Health Checkup Packages – Full Body & Thyrocare Profiles | Ayropath',
+    description: 'Browse Thyrocare health checkup packages online with free home sample collection. Full body checkups, Aarogyam profiles, diabetes screening, thyroid panels and more. NABL accredited labs, digital reports in 24–48 hrs. Starting ₹499.',
     keywords: [
-        'health checkup packages', 'thyrocare profiles', 'full body checkup online',
-        'blood test packages', 'preventive health checkup', 'home sample collection',
-        'NABL accredited lab', 'affordable health test', 'book health test online India',
+        // Core package keywords
+        'health checkup packages', 'full body checkup packages India', 'Thyrocare profiles',
+        'Aarogyam packages', 'Aarogyam 1.1', 'Aarogyam C', 'Aarogyam B',
+        'Aarogyam Male', 'Aarogyam Female', 'Thyrocare Aarogyam discount',
+        // Condition keywords
+        'full body checkup online', 'diabetes screening package', 'thyroid profile test',
+        'cardiac risk profile', 'liver function test package', 'kidney function test package',
+        // Intent keywords
+        'preventive health checkup', 'affordable health test India', 'best health package under 1000',
+        'health package under 999', 'health checkup under 2000',
+        // Trust keywords
+        'home sample collection', 'NABL accredited lab', 'book health test online India',
+        'free home collection blood test', 'Thyrocare authorised partner',
     ],
     openGraph: {
-        title: 'Health Checkup Packages | Thyrocare Profiles – Ayropath',
-        description: 'Book Thyrocare health packages online. Full body checkups, thyroid profiles and more with free home collection.',
+        title: 'Health Checkup Packages – Full Body & Thyrocare Profiles | Ayropath',
+        description: 'Browse Thyrocare health packages online. Full body checkups, Aarogyam profiles and more with free home collection. NABL accredited.',
         type: 'website',
         siteName: 'Ayropath',
         locale: 'en_IN',
@@ -23,7 +33,7 @@ export const metadata: Metadata = {
     twitter: {
         card: 'summary_large_image',
         title: 'Health Checkup Packages | Thyrocare Profiles – Ayropath',
-        description: 'Book Thyrocare health packages online with free home collection.',
+        description: 'Browse Thyrocare health packages online with free home collection. Starting ₹499.',
     },
     alternates: { canonical: '/profiles' },
 };

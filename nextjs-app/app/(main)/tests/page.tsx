@@ -6,25 +6,31 @@ import TestsPageClient from './TestsPageClient';
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-    title: 'Individual Lab Tests & Diagnostics | Thyrocare – Ayropath',
-    description: 'Book individual Thyrocare lab tests online with free home sample collection. Blood tests, thyroid tests, diabetes tests, liver function, kidney function and more. NABL accredited labs, reports in 24–48 hrs.',
+    title: 'Book Individual Lab Tests Online – Single Blood Tests at Home | Ayropath',
+    description: 'Book individual Thyrocare lab tests online with free home sample collection. CBC, thyroid, HbA1c, Vitamin D, liver, kidney, uric acid tests and more. NABL accredited labs, digital reports in 24–48 hrs.',
     keywords: [
-        'thyrocare individual tests', 'blood test online', 'lab test booking',
-        'thyroid test home collection', 'diabetes test online', 'CBC test price',
-        'liver function test', 'kidney function test', 'NABL lab test india',
-        'diagnostic test booking india',
+        // Individual test keywords
+        'CBC test at home', 'blood test price India', 'thyroid test TSH', 'TSH T3 T4 test online',
+        'HbA1c test home collection', 'Vitamin D test price', 'Vitamin B12 test', 'iron deficiency test',
+        'uric acid test online', 'creatinine test at home', 'SGOT SGPT liver test',
+        'cholesterol test home collection', 'triglycerides test', 'fasting glucose test',
+        // Generic individual test keywords
+        'thyrocare individual tests', 'blood test online India', 'lab test booking',
+        'thyroid test home collection', 'diabetes test online', 'single blood test at home',
+        'liver function test individual', 'kidney function test online', 'NABL lab test India',
+        'diagnostic test booking India', 'affordable blood test', 'book test online',
     ],
     openGraph: {
-        title: 'Individual Lab Tests & Diagnostics | Thyrocare – Ayropath',
-        description: 'Book individual Thyrocare lab tests online with free home collection. NABL accredited labs, affordable pricing.',
+        title: 'Book Individual Lab Tests Online – Single Blood Tests | Ayropath',
+        description: 'Book CBC, thyroid, Vitamin D, HbA1c, liver, kidney and other individual tests online with free home collection. NABL accredited.',
         type: 'website',
         siteName: 'Ayropath',
         locale: 'en_IN',
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'Lab Tests & Diagnostics | Thyrocare – Ayropath',
-        description: 'Book individual Thyrocare lab tests online with free home collection.',
+        title: 'Individual Lab Tests at Home | Ayropath',
+        description: 'Book CBC, thyroid, HbA1c, Vitamin D and other individual tests online. Free home collection.',
     },
     alternates: { canonical: '/tests' },
 };

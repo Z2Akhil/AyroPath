@@ -113,9 +113,15 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
+                <Link href="/full-body-checkup" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
+                  <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
+                  Full Body Checkup
+                </Link>
+              </li>
+              <li>
                 <Link href="/profiles" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
                   <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
-                  Popular Profiles
+                  Health Packages
                 </Link>
               </li>
               <li>
@@ -128,6 +134,18 @@ const Footer = () => {
                 <Link href="/offers" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
                   <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
                   Special Offers
+                </Link>
+              </li>
+              <li>
+                <Link href="/blog" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
+                  <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
+                  Health Blog
+                </Link>
+              </li>
+              <li>
+                <Link href="/lab-standards" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
+                  <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
+                  Lab Standards
                 </Link>
               </li>
               <li>
