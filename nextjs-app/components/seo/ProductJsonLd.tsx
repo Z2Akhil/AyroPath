@@ -57,6 +57,14 @@ export default function ProductJsonLd({ product, displayPrice, canonicalUrl }: P
             question: `How to book ${product.name} online?`,
             answer: `You can book ${product.name} on Ayropath in 3 simple steps: 1) Select your test and preferred time slot, 2) Our certified phlebotomist visits your home for sample collection, 3) Access your reports online within 24–48 hours.`,
         },
+        {
+            question: `Is home sample collection available for ${product.name}?`,
+            answer: `Yes, free home sample collection for ${product.name} is available across major cities in India including Delhi, Mumbai, Bengaluru, Hyderabad, Chennai, Pune, Kolkata, Ranchi, Jamshedpur, and more. A certified Thyrocare phlebotomist visits at your preferred time slot.`,
+        },
+        {
+            question: `How long does it take to get ${product.name} reports?`,
+            answer: `${product.name} reports are typically delivered within 24 to 48 hours after sample collection. Reports are accessible digitally via your Ayropath account and can also be downloaded as a PDF.`,
+        },
     ];
 
     const jsonLdGraph = [
@@ -84,6 +92,8 @@ export default function ProductJsonLd({ product, displayPrice, canonicalUrl }: P
                     url: 'https://ayropath.com',
                 },
             },
+            // NOTE: aggregateRating intentionally omitted — add only after real reviews are collected
+            // to avoid Google manual penalty for fabricated review counts.
         },
         // MedicalTest schema for healthcare vertical
         {
@@ -102,7 +112,7 @@ export default function ProductJsonLd({ product, displayPrice, canonicalUrl }: P
                 })),
             }),
         },
-        // FAQPage schema for expanded rich snippets  
+        // FAQPage schema for expanded rich snippets (7 questions)
         {
             '@type': 'FAQPage',
             mainEntity: faqItems.map(faq => ({
@@ -113,6 +123,15 @@ export default function ProductJsonLd({ product, displayPrice, canonicalUrl }: P
                     text: faq.answer,
                 },
             })),
+        },
+        // Speakable schema — enables Google Assistant to read key sections aloud
+        {
+            '@type': 'WebPage',
+            speakable: {
+                '@type': 'SpeakableSpecification',
+                cssSelector: ['h1', '.product-description', '.product-price', '.faq-section'],
+            },
+            url: canonicalUrl,
         },
     ];
 
