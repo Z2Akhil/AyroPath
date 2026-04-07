@@ -39,7 +39,7 @@ export default async function OffersPage({ limit }: OffersPageProps) {
 
     const [offerDocs, totalCount] = await Promise.all([
         Offer.find({ isActive: true })
-            .select('name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category imageLocation thyrocareData.imageLocation imageMaster thyrocareData.imageMaster')
+            .select('name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category thyrocareData.childs imageLocation thyrocareData.imageLocation imageMaster thyrocareData.imageMaster')
             .limit(fetchLimit)
             .lean(),
         Offer.countDocuments({ isActive: true }),
@@ -55,6 +55,7 @@ export default async function OffersPage({ limit }: OffersPageProps) {
             offerRate: o.thyrocareData?.rate?.offerRate || 0,
         },
         testCount: o.thyrocareData?.testCount || 0,
+        childs: o.thyrocareData?.childs ? JSON.parse(JSON.stringify(o.thyrocareData.childs)) : [],
         fasting: o.thyrocareData?.fasting || '',
         category: o.thyrocareData?.category || '',
         imageLocation: o.imageLocation || null,
