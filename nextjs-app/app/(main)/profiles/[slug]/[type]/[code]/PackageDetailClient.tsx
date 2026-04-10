@@ -31,13 +31,7 @@ const PackageDetailClient = ({ product: pkg }: PackageDetailClientProps) => {
         }, {} as Record<string, string[]>);
     }, [pkg]);
 
-    useEffect(() => {
-        if (Object.keys(groupedTests).length > 0) {
-            if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-                setOpenCategory(new Set(Object.keys(groupedTests)));
-            }
-        }
-    }, [groupedTests]);
+    // Accordion categories load closed by default on all screens
 
     const toggleCategory = (cat: string) => {
         setOpenCategory(prev => {
