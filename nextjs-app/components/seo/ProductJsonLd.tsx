@@ -129,7 +129,7 @@ export default function ProductJsonLd({ product, displayPrice, canonicalUrl }: P
             '@type': 'WebPage',
             speakable: {
                 '@type': 'SpeakableSpecification',
-                cssSelector: ['h1', '.product-description', '.product-price', '.faq-section'],
+                cssSelector: ['h1', '.profile-description', '.profile-faq'],
             },
             url: canonicalUrl,
         },

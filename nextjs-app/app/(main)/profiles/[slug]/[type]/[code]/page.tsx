@@ -7,6 +7,7 @@ import Test from '@/lib/models/Test';
 import { slugify } from '@/lib/slugify';
 import PackageDetailClient from './PackageDetailClient';
 import ProductJsonLd from '@/components/seo/ProductJsonLd';
+import ProfileSEOContent from '@/components/seo/ProfileSEOContent';
 
 interface PageProps {
     params: Promise<{
@@ -75,12 +76,64 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         .filter(Boolean)
         .join(', ');
 
-    // Include 'Thyrocare' in title — critical for ranking on "AAROGYAM C Thyrocare test" queries
-    const title = `${product.name} Thyrocare ${product.type === 'OFFER' ? 'Offer' : 'Test'} – Book at ₹${displayPrice} | Ayropath`;
-    const description = `Book ${product.name} (Thyrocare) online with Ayropath. ${testCount} parameters${testNames ? ` – ${testNames}` : ''}. Starting at ₹${displayPrice}. Free home sample collection, NABL accredited labs, reports in 24–48 hours.`;
+    // ── Intent-specific title: matches real search queries per package type
+    function buildPageTitle(name: string, price: number, pkgType: string): string {
+        const n = name.toLowerCase();
+        if (n.includes('tax')) return `${name} – Thyrocare 80D Health Package | Book at ₹${price}`;
+        if (n.includes('senior')) return `${name} – Senior Citizen Health Checkup Thyrocare | Ayropath`;
+        if (n.includes('executive')) return `${name} – Executive Full Body Health Checkup | Book at ₹${price}`;
+        if (n.includes('vitamin')) return `${name} – Full Body + Vitamin Deficiency Test Thyrocare | Ayropath`;
+        if (n.includes('female') || n.includes('women')) return `${name} – Women's Health Checkup Thyrocare | Book at ₹${price}`;
+        if (n.includes('male') || n.includes('men')) return `${name} – Men's Health Checkup Thyrocare | Book at ₹${price}`;
+        if (n.includes('aarogyam')) return `${name} – Thyrocare Aarogyam Health Profile | Book at ₹${price}`;
+        return `${name} – Thyrocare ${pkgType === 'OFFER' ? 'Offer Package' : 'Health Profile'} | Book at ₹${price}`;
+    }
+
+    // ── Intent-specific description: keyword-rich, matches search intent
+    function buildPageDescription(name: string, price: number, count: number, tests: string, pkgType: string): string {
+        const n = name.toLowerCase();
+        const testsSnippet = tests ? ` Includes ${tests}.` : '';
+        if (n.includes('tax')) return `Book ${name} at ₹${price}. Claim Section 80D tax benefit. ${count} parameters.${testsSnippet} Free home collection, NABL accredited Thyrocare labs.`;
+        if (n.includes('senior')) return `Book ${name} at ₹${price} – Comprehensive health checkup for senior citizens. ${count} parameters.${testsSnippet} Free home collection, Thyrocare labs.`;
+        if (n.includes('executive')) return `Book ${name} at ₹${price} – Complete executive health screening. ${count} parameters.${testsSnippet} Free home collection, NABL & CAP accredited.`;
+        if (n.includes('vitamin')) return `Book ${name} at ₹${price} – Full body + vitamin deficiency screening. ${count} parameters.${testsSnippet} Free home collection, NABL accredited.`;
+        return `Book ${name} at ₹${price}. Thyrocare health profile. ${count} parameters.${testsSnippet} Free home collection, NABL accredited labs, reports in 24–48 hrs.`;
+    }
+
+    const title = buildPageTitle(product.name, displayPrice, product.type);
+    const description = buildPageDescription(product.name, displayPrice, testCount, testNames, product.type);
 
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://ayropath.com';
     const canonicalUrl = `${baseUrl}/profiles/${slug}/${type}/${code}`;
+
+    // Demographic keywords derived from package name
+    const nameLower = product.name.toLowerCase();
+    const demographicKeywords: string[] = [];
+    if (nameLower.includes('male')) {
+        demographicKeywords.push('health checkup for men', 'male health profile', "men's health test");
+    }
+    if (nameLower.includes('female')) {
+        demographicKeywords.push('health checkup for women', 'female health profile', "women's health test");
+    }
+    if (nameLower.includes('senior')) {
+        demographicKeywords.push('senior citizen health checkup', 'health test for elderly', 'health package for aged');
+    }
+    if (nameLower.includes('executive')) {
+        demographicKeywords.push('executive health checkup', 'corporate health screening', 'comprehensive full body checkup');
+    }
+    if (nameLower.includes('vitamin')) {
+        demographicKeywords.push('vitamin deficiency test', 'vitamin D B12 blood test', 'nutritional deficiency screening');
+    }
+    if (nameLower.includes('tax')) {
+        demographicKeywords.push('80D tax saving health checkup', 'section 80D health test', 'tax saver health package');
+    }
+
+    // Test group names as additional topical keywords
+    const groupKeywords = [
+        ...new Set(
+            (product.childs || []).map((c: any) => c.groupName).filter(Boolean)
+        ),
+    ] as string[];
 
     // Dynamic keywords for this specific test
     const keywords = [
@@ -94,6 +147,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         'thyrocare test booking',
         'home sample collection',
         'NABL accredited lab test',
+        ...demographicKeywords,
+        ...groupKeywords,
     ];
 
     return {
@@ -151,6 +206,8 @@ export default async function PackageDetailPage({ params }: PageProps) {
             />
             <ProductJsonLd product={product} displayPrice={displayPrice} canonicalUrl={canonicalUrl} />
             <PackageDetailClient product={product} />
+            {/* Server-rendered content for Google to crawl — description, health areas, FAQ */}
+            <ProfileSEOContent product={product} displayPrice={displayPrice} />
         </>
     );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from "react";
-import { AlertCircle, Home, Percent, Share2, ChevronDown, Calendar, CreditCard, CheckCircle, MapPin } from "lucide-react";
+import { AlertCircle, Home, Share2, ChevronDown, CheckCircle, ShieldCheck, Clock, Microscope } from "lucide-react";
 import BookingForm from "@/components/booking/BookingForm";
 import { getProductDisplayPrice } from "@/lib/productUtils";
 import Link from "next/link";
@@ -191,46 +191,78 @@ const PackageDetailClient = ({ product: pkg }: PackageDetailClientProps) => {
                         />
                     </div>
 
-                    {/* Informational Sections */}
-                    <div className="lg:col-span-2 mt-8 lg:mt-0 space-y-16 py-12 border-t border-gray-100">
-                        {/* Why Book With Us */}
-                        <div className="text-center">
-                            <h2 className="text-2xl font-black text-gray-900 mb-10 tracking-tight">Why Book {pkg.name} With Ayropath?</h2>
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+                    {/* Lab Quality Promise + Package Stats */}
+                    <div className="lg:col-span-2 mt-8 lg:mt-0 py-10 border-t border-gray-100 space-y-8">
+
+                        {/* Key Stats Bar */}
+                        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                            <div className="text-center p-3 sm:p-5 bg-blue-50 rounded-xl sm:rounded-2xl">
+                                <p className="text-xl sm:text-3xl font-black text-blue-700">{pkg.testCount || pkg.childs?.length || 0}+</p>
+                                <p className="text-[10px] sm:text-xs font-bold text-gray-500 mt-1 uppercase tracking-tight sm:tracking-wider leading-tight">Parameters</p>
+                            </div>
+                            <div className="text-center p-3 sm:p-5 bg-emerald-50 rounded-xl sm:rounded-2xl">
+                                <p className="text-lg sm:text-2xl font-black text-emerald-700">24-48h</p>
+                                <p className="text-[10px] sm:text-xs font-bold text-gray-500 mt-1 uppercase tracking-tight sm:tracking-wider leading-tight">Report</p>
+                            </div>
+                            <div className="text-center p-3 sm:p-5 bg-violet-50 rounded-xl sm:rounded-2xl">
+                                <p className="text-lg sm:text-2xl font-black text-violet-700">Free</p>
+                                <p className="text-[10px] sm:text-xs font-bold text-gray-500 mt-1 uppercase tracking-tight sm:tracking-wider leading-tight">Collection</p>
+                            </div>
+                        </div>
+
+                        {/* NABL / CAP Accreditation Panel */}
+                        <div className="bg-linear-to-br from-blue-950 to-blue-800 rounded-3xl p-8 text-white">
+                            <div className="flex items-start gap-4 mb-6">
+                                <ShieldCheck className="w-9 h-9 text-blue-300 shrink-0 mt-0.5" />
+                                <div>
+                                    <h3 className="text-base font-black mb-1 leading-snug">
+                                        NABL &amp; CAP Accredited Thyrocare Laboratories
+                                    </h3>
+                                    <p className="text-blue-200 text-sm leading-relaxed">
+                                        Your {pkg.name} sample is processed at Thyrocare&apos;s state-of-the-art diagnostic facilities —
+                                        certified to the highest national and international quality standards,
+                                        trusted by 2,000+ hospitals across India.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
                                 {[
-                                    { icon: MapPin, text: "100% Safe & Hygienic" },
-                                    { icon: Home, text: "Free Home Collection" },
-                                    { icon: Percent, text: "Heavy Discounts" },
-                                    { icon: Calendar, text: "Reports Online" },
-                                    { icon: CreditCard, text: "Secure Payments" },
+                                    { icon: ShieldCheck, label: "NABL Certified", sub: "National Accreditation" },
+                                    { icon: Microscope,  label: "CAP Accredited", sub: "Global Lab Standards" },
+                                    { icon: CheckCircle, label: "2,000+ Hospitals", sub: "Partner Network" },
+                                    { icon: Clock,       label: "Digitally Signed", sub: "Tamper-Proof Reports" },
                                 ].map((item, i) => (
-                                    <div key={i} className="flex flex-col items-center group">
-                                        <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-600 transition-colors duration-300">
-                                            <item.icon className="w-8 h-8 text-blue-600 group-hover:text-white transition-colors duration-300" />
+                                    <div key={i} className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3">
+                                        <item.icon className="w-4 h-4 text-blue-300 shrink-0" />
+                                        <div>
+                                            <p className="text-xs font-bold text-white leading-none">{item.label}</p>
+                                            <p className="text-[10px] text-blue-300 mt-0.5">{item.sub}</p>
                                         </div>
-                                        <p className="text-xs font-bold text-gray-700 uppercase leading-tight">{item.text}</p>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        {/* How It Works */}
-                        <div className="text-center">
-                            <h2 className="text-2xl font-black text-gray-900 mb-10 tracking-tight">How to Book Your {pkg.name} Test Online</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {/* Booking Steps — compact horizontal */}
+                        <div>
+                            <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4">How It Works</h3>
+                            <div className="flex flex-col sm:flex-row gap-4">
                                 {[
-                                    { title: "1. Book Test", icon: CheckCircle, desc: "Choose your test and preferred slot online easily." },
-                                    { title: "2. Collection", icon: Home, desc: "Our expert phlebotomist collects sample from home." },
-                                    { title: "3. Reports", icon: Calendar, desc: "Access reports online within 24–48 hours." },
+                                    { n: "01", title: "Book Online",      desc: "Pick a slot in under 2 minutes." },
+                                    { n: "02", title: "Home Collection",  desc: "Certified phlebotomist visits you." },
+                                    { n: "03", title: "Digital Report",   desc: `${pkg.name} results in 24–48 hrs.` },
                                 ].map((step, i) => (
-                                    <div key={i} className="bg-gray-50 rounded-3xl p-8 hover:shadow-lg transition-all border border-gray-100">
-                                        <step.icon className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-                                        <h4 className="font-black text-gray-900 mb-2 uppercase">{step.title}</h4>
-                                        <p className="text-gray-500 text-sm font-medium">{step.desc}</p>
+                                    <div key={i} className="flex-1 flex items-start gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                        <span className="text-2xl font-black text-blue-100 leading-none shrink-0">{step.n}</span>
+                                        <div>
+                                            <p className="text-sm font-bold text-gray-900">{step.title}</p>
+                                            <p className="text-xs text-gray-500 mt-0.5">{step.desc}</p>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>

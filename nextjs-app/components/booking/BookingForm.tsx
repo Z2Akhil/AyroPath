@@ -418,19 +418,19 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                             <MapPin className="w-4 h-4 text-blue-500" />
                             Service Area Pincode
                         </label>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                             <input
                                 type="text"
                                 placeholder="6-digit Pincode"
                                 value={pincode}
                                 onChange={(e) => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                className="flex-1 border-2 border-gray-100 rounded-xl px-3 py-2 bg-gray-50 focus:border-blue-500 outline-none transition-all text-sm"
+                                className="flex-1 w-full border-2 border-gray-100 rounded-xl px-3 py-2 bg-gray-50 focus:border-blue-500 outline-none transition-all text-sm"
                             />
                             <button
                                 type="button"
                                 onClick={handlePincodeCheck}
                                 disabled={loading || pincode.length !== 6}
-                                className="px-5 py-2 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-gray-800 transition-all disabled:opacity-50"
+                                className="w-full sm:w-auto sm:px-5 py-2 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-gray-800 transition-all disabled:opacity-50 whitespace-nowrap"
                             >
                                 {loading ? '...' : 'Check'}
                             </button>
