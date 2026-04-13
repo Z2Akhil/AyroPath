@@ -9,6 +9,24 @@ import { getAllBlogSlugs } from '@/lib/mdx';
 
 export const revalidate = 86400; // Cache for 24 hours
 
+// The 9 priority profiles that should be crawled more frequently and with higher priority
+const PRIORITY_PROFILE_NAMES = [
+  'executive full body health checkup',
+  'complete health checkup with vitamins',
+  'aarogyam tax saver basic',
+  'aarogyam tax saver advanced',
+  'new aarogyam basic with ustsh',
+  'aarogyam male',
+  'aarogyam female',
+  'senior citizen profile male',
+  'senior citizen profile female',
+];
+
+function isPriorityProfile(name: string): boolean {
+  const n = (name || '').toLowerCase();
+  return PRIORITY_PROFILE_NAMES.some((p) => n.includes(p));
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://ayropath.com';
 
@@ -21,12 +39,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       Test.find({ isActive: true }).select('name type code updatedAt').lean()
     ]);
 
-    const profileUrls: MetadataRoute.Sitemap = profiles.map((pkg: any) => ({
-      url: `${baseUrl}/profiles/${slugify(pkg.name || 'Health Package')}/${pkg.type || 'PROFILE'}/${pkg.code}`,
-      lastModified: pkg.updatedAt || new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    }));
+    const profileUrls: MetadataRoute.Sitemap = profiles.map((pkg: any) => {
+      const priority = isPriorityProfile(pkg.name) ? 0.95 : 0.8;
+      const changeFrequency = isPriorityProfile(pkg.name) ? 'daily' : 'weekly';
+      return {
+        url: `${baseUrl}/profiles/${slugify(pkg.name || 'Health Package')}/${pkg.type || 'PROFILE'}/${pkg.code}`,
+        lastModified: pkg.updatedAt || new Date(),
+        changeFrequency,
+        priority,
+      };
+    });
 
     const offerUrls: MetadataRoute.Sitemap = offers.map((pkg: any) => ({
       url: `${baseUrl}/profiles/${slugify(pkg.name || 'Health Package')}/${pkg.type || 'OFFER'}/${pkg.code}`,
