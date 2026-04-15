@@ -32,7 +32,7 @@ const createThyrocareOrder = async (order: any, adminSession: any) => {
             address: `${order.contactInfo.address.street}, ${order.contactInfo.address.city}, ${order.contactInfo.address.state}`,
             appt_date: `${order.appointment.date} ${order.appointment.slot.split(' - ')[0]}`,
             order_by: (order.beneficiaries[0]?.name || 'Customer').replace(/[^a-zA-Z0-9]/g, '') || 'Customer',
-            passon: order.package.discountAmount * order.beneficiaries.length,
+            passon: order.package.discountAmount, // already the total discount for all beneficiaries
             pay_type: 'POSTPAID',
             pincode: order.contactInfo.address.pincode,
             products: Array.isArray(order.package.code) ? order.package.code.join(',') : order.package.code,
