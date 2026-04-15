@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
                     mobile: order.contactInfo.mobile,
                     address: `${order.contactInfo.address.street}, ${order.contactInfo.address.city}, ${order.contactInfo.address.state}`,
                     appt_date: `${order.appointment.date} ${order.appointment.slot.split(' - ')[0]}`,
-                    order_by: order.beneficiaries[0]?.name || 'Customer',
+                    order_by: (order.beneficiaries[0]?.name || 'Customer').replace(/[^a-zA-Z0-9]/g, '') || 'Customer',
                     passon: (order.package.discountAmount || 0),
                     pay_type: 'POSTPAID',
                     pincode: order.contactInfo.address.pincode,
