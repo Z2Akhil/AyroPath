@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { AlertCircle, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import adminOrderApi from '@/lib/api/adminOrderApi';

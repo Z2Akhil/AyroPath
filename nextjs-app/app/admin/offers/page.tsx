@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import ProductCatalog from '@/components/admin/ProductCatalog';
 import { Tag } from 'lucide-react';
 

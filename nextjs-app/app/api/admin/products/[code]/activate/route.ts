@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAdminAuth } from '@/lib/auth';
 import AdminActivity from '@/lib/models/AdminActivity';

@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect, useCallback } from 'react';
 import adminDashboardApi from '@/lib/api/adminDashboardApi';
 import MetricCard from '@/components/admin/analytics/MetricCard';

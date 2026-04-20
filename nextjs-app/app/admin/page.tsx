@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 import DashboardCard from '@/components/dashboard/DashboardCard';
