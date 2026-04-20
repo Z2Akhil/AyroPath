@@ -24,39 +24,70 @@ export async function POST(req: NextRequest) {
             }, { status: 400 });
         }
 
-        const user = await User.findOne({ mobileNumber });
+        let user = await User.findOne({ mobileNumber });
 
         if (!user) {
-            return NextResponse.json({
-                success: false,
-                message: 'Mobile number not verified. Please verify OTP first.'
-            }, { status: 400 });
-        }
+            // Check if OTP was verified
+            const otpRecord = await OTP.findOne({ 
+                mobileNumber, 
+                purpose: 'verification', 
+                isUsed: true 
+            }).sort({ createdAt: -1 });
 
-        if (user.isVerified && user.password) {
-            return NextResponse.json({
-                success: false,
-                message: 'User with this mobile number already exists.'
-            }, { status: 400 });
-        }
-
-        user.firstName = firstName;
-        user.lastName = lastName;
-        user.password = password;
-        user.updatedAt = new Date();
-
-        if (email) {
-            const emailExists = await User.findOne({ email });
-            if (emailExists && emailExists._id.toString() !== user._id.toString()) {
+            if (!otpRecord) {
                 return NextResponse.json({
                     success: false,
-                    message: 'Email is already in use by another account'
+                    message: 'Mobile number not verified. Please verify OTP first.'
                 }, { status: 400 });
             }
-            user.email = email;
-        }
 
-        await user.save();
+            user = new User({
+                firstName,
+                lastName,
+                mobileNumber,
+                password,
+                isVerified: true
+            });
+
+            if (email) {
+                const emailExists = await User.findOne({ email });
+                if (emailExists) {
+                    return NextResponse.json({
+                        success: false,
+                        message: 'Email is already in use by another account'
+                    }, { status: 400 });
+                }
+                user.email = email;
+            }
+            
+            await user.save();
+        } else {
+            if (user.isVerified && user.password) {
+                return NextResponse.json({
+                    success: false,
+                    message: 'User with this mobile number already exists.'
+                }, { status: 400 });
+            }
+
+            user.firstName = firstName;
+            user.lastName = lastName;
+            user.password = password;
+            user.isVerified = true;
+            user.updatedAt = new Date();
+
+            if (email) {
+                const emailExists = await User.findOne({ email });
+                if (emailExists && emailExists._id.toString() !== user._id.toString()) {
+                    return NextResponse.json({
+                        success: false,
+                        message: 'Email is already in use by another account'
+                    }, { status: 400 });
+                }
+                user.email = email;
+            }
+
+            await user.save();
+        }
 
         const token = jwt.sign(
             { id: user._id },
