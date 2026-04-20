@@ -285,11 +285,11 @@ export default function UsersClient() {
                                     <tr key={u._id} className="hover:bg-blue-50/30 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
-                                                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold shadow-sm">
-                                                    {u.firstName[0]}{u.lastName[0]}
+                                                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold shadow-sm uppercase">
+                                                    {u.firstName ? u.firstName[0] : '?'}{u.lastName ? u.lastName[0] : ''}
                                                 </div>
                                                 <div className="ml-4">
-                                                    <div className="text-sm font-bold text-gray-900">{u.firstName} {u.lastName}</div>
+                                                    <div className="text-sm font-bold text-gray-900">{u.firstName || 'Unknown'} {u.lastName || ''}</div>
                                                     <div className="text-xs text-gray-500 font-mono">ID: {u._id.slice(-8)}</div>
                                                 </div>
                                             </div>
