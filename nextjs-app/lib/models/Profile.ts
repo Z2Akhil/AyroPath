@@ -247,6 +247,26 @@ ProfileSchema.statics.findOrCreateFromThyroCare = async function (data: Record<s
       };
     }
 
+    // Handle barcodes array - Thyrocare now returns objects instead of plain strings
+    if (cleanedThyrocareData.barcodes !== undefined) {
+      if (typeof cleanedThyrocareData.barcodes === 'string') {
+        try {
+          cleanedThyrocareData.barcodes = JSON.parse(cleanedThyrocareData.barcodes);
+        } catch {
+          cleanedThyrocareData.barcodes = [];
+        }
+      }
+      if (Array.isArray(cleanedThyrocareData.barcodes)) {
+        cleanedThyrocareData.barcodes = cleanedThyrocareData.barcodes.map((b: any) => {
+          if (typeof b === 'string') return b;
+          if (b && typeof b === 'object') return String(b.code || b.specimenType || '');
+          return String(b);
+        });
+      } else {
+        cleanedThyrocareData.barcodes = [];
+      }
+    }
+
     // Handle childs array - ensure it's properly formatted and validated
     if (cleanedThyrocareData.childs) {
       // Handle case where childs is a JSON string instead of array
