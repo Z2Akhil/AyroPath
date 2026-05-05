@@ -137,6 +137,26 @@ testSchema.statics.findOrCreateFromThyroCare = async function(thyrocareProduct) 
         payAmt1: 0
       };
     }
+
+    // Handle barcodes array - Thyrocare now returns objects instead of plain strings
+    if (cleanedThyrocareData.barcodes !== undefined) {
+      if (typeof cleanedThyrocareData.barcodes === 'string') {
+        try {
+          cleanedThyrocareData.barcodes = JSON.parse(cleanedThyrocareData.barcodes);
+        } catch {
+          cleanedThyrocareData.barcodes = [];
+        }
+      }
+      if (Array.isArray(cleanedThyrocareData.barcodes)) {
+        cleanedThyrocareData.barcodes = cleanedThyrocareData.barcodes.map(b => {
+          if (typeof b === 'string') return b;
+          if (b && typeof b === 'object') return String(b.code || b.specimenType || '');
+          return String(b);
+        });
+      } else {
+        cleanedThyrocareData.barcodes = [];
+      }
+    }
     
     // Ensure type is valid
     if (cleanedThyrocareData.type !== 'TEST') {
