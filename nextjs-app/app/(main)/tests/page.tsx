@@ -37,9 +37,11 @@ export const metadata: Metadata = {
 
 interface TestsPageProps {
     limit?: number;
+    showHeader?: boolean;
+    mobileScroll?: boolean;
 }
 
-export default async function TestsPage({ limit }: TestsPageProps) {
+export default async function TestsPage({ limit, showHeader, mobileScroll }: TestsPageProps) {
     await connectToDatabase();
 
     const fetchLimit = limit || 12;
@@ -94,7 +96,7 @@ export default async function TestsPage({ limit }: TestsPageProps) {
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
             />
-            <TestsPageClient initialData={initialData as any} initialTotal={totalCount} limit={limit} />
+            <TestsPageClient initialData={initialData as any} initialTotal={totalCount} limit={limit} showHeader={showHeader} mobileScroll={mobileScroll} />
         </>
     );
 }

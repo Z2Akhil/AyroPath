@@ -11,9 +11,11 @@ interface ProfilesPageClientProps {
     initialData: Product[];
     initialTotal: number;
     limit?: number;
+    showHeader?: boolean;
+    mobileScroll?: boolean;
 }
 
-export default function ProfilesPageClient({ initialData, initialTotal, limit }: ProfilesPageClientProps) {
+export default function ProfilesPageClient({ initialData, initialTotal, limit, showHeader = true, mobileScroll = false }: ProfilesPageClientProps) {
     const [packages, setPackages] = useState<Product[]>(initialData);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -60,23 +62,39 @@ export default function ProfilesPageClient({ initialData, initialTotal, limit }:
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
     return (
-        <div className="max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-10">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800">
-                Health Checkup Packages
-            </h1>
-            <p className="text-gray-500 text-sm mb-6">
-                Book Thyrocare health checkup profiles online with free home sample collection. NABL &amp; CAP accredited labs, reports in 24–48 hours.
-            </p>
+        <div className={limit ? "px-4" : "max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-10"}>
+            {showHeader && (
+                <>
+                    <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800">
+                        Health Checkup Packages
+                    </h1>
+                    <p className="text-gray-500 text-sm mb-6">
+                        Book Thyrocare health checkup profiles online with free home sample collection. NABL &amp; CAP accredited labs, reports in 24–48 hours.
+                    </p>
+                </>
+            )}
 
             {error && (
                 <div className="text-center py-6 text-red-500 text-sm">{error}</div>
             )}
 
-            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className={
+                mobileScroll
+                    ? "flex gap-4 overflow-x-auto pb-2 scrollbar-hide md:grid md:grid-cols-3 lg:grid-cols-4 md:overflow-visible md:pb-0"
+                    : "grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+            }>
                 {loading
-                    ? Array.from({ length: itemsPerPage }).map((_, i) => <SkeletonProfileCard key={i} />)
+                    ? Array.from({ length: itemsPerPage }).map((_, i) => (
+                        <div key={i} className={mobileScroll ? "shrink-0 w-64 md:w-auto" : undefined}>
+                            <SkeletonProfileCard />
+                        </div>
+                    ))
                     : packages.length > 0
-                        ? packages.map((pkg) => <ProfileCard key={pkg.code} pkg={pkg} />)
+                        ? packages.map((pkg) => (
+                            <div key={pkg.code} className={mobileScroll ? "shrink-0 w-64 md:w-auto" : undefined}>
+                                <ProfileCard pkg={pkg} />
+                            </div>
+                        ))
                         : <p className="text-gray-500 col-span-full text-center">No packages available.</p>
                 }
             </div>

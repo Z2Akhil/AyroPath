@@ -76,9 +76,9 @@ const OfferCard: React.FC<OfferCardProps> = ({ pkg }) => {
 
           <Link
             href={detailPath}
-            className="flex min-w-0 items-center justify-center rounded-xl bg-blue-700 px-4 py-2 text-center text-sm font-bold whitespace-nowrap text-white shadow-sm transition-all duration-300 hover:bg-blue-800 active:scale-95"
+            className="flex min-w-0 items-center justify-center rounded-xl bg-gray-100 px-4 py-2 text-center text-sm font-bold whitespace-nowrap text-gray-800 shadow-sm transition-all duration-300 hover:bg-gray-200 active:scale-95"
           >
-            Book
+            View
           </Link>
         </div>
       </div>

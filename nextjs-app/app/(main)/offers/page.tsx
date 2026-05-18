@@ -30,9 +30,11 @@ export const metadata: Metadata = {
 
 interface OffersPageProps {
     limit?: number;
+    showHeader?: boolean;
+    mobileScroll?: boolean;
 }
 
-export default async function OffersPage({ limit }: OffersPageProps) {
+export default async function OffersPage({ limit, showHeader, mobileScroll }: OffersPageProps) {
     await connectToDatabase();
 
     const fetchLimit = limit || 12;
@@ -88,7 +90,7 @@ export default async function OffersPage({ limit }: OffersPageProps) {
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
             />
-            <OffersPageClient initialData={initialData as any} initialTotal={totalCount} limit={limit} />
+            <OffersPageClient initialData={initialData as any} initialTotal={totalCount} limit={limit} showHeader={showHeader} mobileScroll={mobileScroll} />
         </>
     );
 }

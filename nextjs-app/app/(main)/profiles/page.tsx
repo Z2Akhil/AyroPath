@@ -40,9 +40,11 @@ export const metadata: Metadata = {
 
 interface ProfilesPageProps {
     limit?: number;
+    showHeader?: boolean;
+    mobileScroll?: boolean;
 }
 
-export default async function ProfilesPage({ limit }: ProfilesPageProps) {
+export default async function ProfilesPage({ limit, showHeader, mobileScroll }: ProfilesPageProps) {
     await connectToDatabase();
 
     const fetchLimit = limit || 12;
@@ -100,7 +102,7 @@ export default async function ProfilesPage({ limit }: ProfilesPageProps) {
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
             />
-            <ProfilesPageClient initialData={initialData as any} initialTotal={totalCount} limit={limit} />
+            <ProfilesPageClient initialData={initialData as any} initialTotal={totalCount} limit={limit} showHeader={showHeader} mobileScroll={mobileScroll} />
         </>
     );
 }

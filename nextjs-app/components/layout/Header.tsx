@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect, useRef, ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ShoppingCart, Menu, X, User, LogOut, ChevronDown, Settings } from 'lucide-react';
@@ -13,20 +13,21 @@ import SearchBar from '@/components/search/SearchBar';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
 
 const NAV_LINKS = [
-  { label: 'Home', href: '/' },
-  { label: 'Popular Packages', href: '/profiles' },
+  { label: 'Packages', href: '/profiles' },
   { label: 'Offers', href: '/offers' },
-  { label: 'All Tests', href: '/tests' },
+  { label: 'Lab Tests', href: '/tests' },
+  { label: 'Medicines', href: '#', comingSoon: true },
+  { label: 'Doctor Consult', href: '#', comingSoon: true },
   { label: 'About Us', href: '/about' },
 ];
 
 const CartIcon = ({ count }: { count: number }) => (
   <Link href="/cart" aria-label={`Shopping cart with ${count} items`} className="relative group cursor-pointer">
     <div className="p-2 rounded-full bg-gray-100 group-hover:bg-blue-100 transition-colors duration-300">
-      <ShoppingCart className="w-6 h-6 text-gray-700 group-hover:text-blue-600 transition-colors duration-300" />
+      <ShoppingCart className="w-5 h-5 text-gray-700 group-hover:text-blue-600 transition-colors duration-300" />
     </div>
     {count > 0 && (
-      <span className="absolute -top-1 -right-1 bg-linear-to-r from-red-500 to-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg animate-pulse">
+      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
         {count}
       </span>
     )}
@@ -49,44 +50,39 @@ const DesktopNav = ({ user, onLogin, onLogout }: DesktopNavProps) => {
   };
 
   return (
-    <div className="hidden lg:flex items-center gap-4">
+    <div className="hidden lg:flex items-center gap-3">
       {user ? (
         <div className="relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer group"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer group"
           >
-            <div className="w-8 h-8 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-white" />
+            <div className="w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center">
+              <User className="w-3.5 h-3.5 text-white" />
             </div>
             <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600">
-              Hi, {user.firstName}
+              {user.firstName}
             </span>
-            <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-3.5 h-3.5 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {isDropdownOpen && (
             <>
-              <div
-                className="fixed inset-0 z-40"
-                onClick={() => setIsDropdownOpen(false)}
-              />
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 animate-fade-in">
+              <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
+              <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-200 py-1.5 z-50 animate-fade-in">
                 <Link
                   href="/account"
                   onClick={() => setIsDropdownOpen(false)}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                  className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                 >
-                  <Settings className="w-4 h-4" />
-                  Account
+                  <Settings className="w-4 h-4" /> Account
                 </Link>
                 <div className="border-t border-gray-100 my-1" />
                 <button
                   onClick={handleLogoutClick}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors text-left"
+                  className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left"
                 >
-                  <LogOut className="w-4 h-4" />
-                  Logout
+                  <LogOut className="w-4 h-4" /> Logout
                 </button>
               </div>
             </>
@@ -95,10 +91,9 @@ const DesktopNav = ({ user, onLogin, onLogout }: DesktopNavProps) => {
       ) : (
         <button
           onClick={onLogin}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
         >
-          <User className="w-4 h-4" />
-          Sign in
+          <User className="w-4 h-4" /> Sign in
         </button>
       )}
     </div>
@@ -118,66 +113,62 @@ const MobileDrawer = ({ open, user, onLogin, onLogout, onClose }: MobileDrawerPr
 
   return (
     <>
-      <div
-        onClick={onClose}
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 animate-fade-in"
-      />
-      <div className="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 animate-slide-in-right">
+      <div onClick={onClose} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 animate-fade-in" />
+      <div className="fixed top-0 right-0 h-full w-72 bg-white shadow-2xl z-50 animate-slide-in-right">
         <div className="flex flex-col h-full">
-          <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+          <div className="p-5 border-b border-gray-100 flex items-center justify-between">
             {user ? (
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                  <User className="w-6 h-6 text-white" />
+                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                  <User className="w-5 h-5 text-white" />
                 </div>
                 <p className="font-semibold text-gray-900">Hi, {user.firstName}</p>
               </div>
             ) : (
               <button
                 onClick={() => { onLogin(); onClose(); }}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-blue-600 border border-blue-200 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 border border-blue-200 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors"
               >
-                <User className="w-4 h-4" /> Sign in to your account
+                <User className="w-4 h-4" /> Sign in
               </button>
             )}
-
             <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-              <X size={20} className="text-gray-600" />
+              <X size={18} className="text-gray-600" />
             </button>
           </div>
 
-          <nav className="flex-1 p-6 overflow-y-auto">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Navigation</p>
-            <div className="space-y-2">
-              {NAV_LINKS.map(({ label, href }) => (
-                <Link
-                  key={label}
-                  href={href}
-                  onClick={onClose}
-                  className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
-                >
-                  {label}
-                </Link>
-              ))}
+          <nav className="flex-1 p-5 overflow-y-auto">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Navigation</p>
+            <div className="space-y-1">
+              {NAV_LINKS.map(({ label, href, comingSoon }) =>
+                comingSoon ? (
+                  <div
+                    key={label}
+                    className="flex items-center justify-between px-4 py-2.5 text-gray-400 rounded-lg font-medium text-sm"
+                  >
+                    {label}
+                    <span className="text-[10px] bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full font-semibold">Soon</span>
+                  </div>
+                ) : (
+                  <Link
+                    key={label}
+                    href={href}
+                    onClick={onClose}
+                    className="block px-4 py-2.5 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium text-sm"
+                  >
+                    {label}
+                  </Link>
+                )
+              )}
               {user && (
                 <>
-                  <Link
-                    href="/account"
-                    onClick={onClose}
-                    className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
-                  >
-                    My Orders
-                  </Link>
-                  <Link
-                    href="/account"
-                    onClick={onClose}
-                    className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
-                  >
+                  <div className="border-t border-gray-100 my-2" />
+                  <Link href="/account" onClick={onClose} className="block px-4 py-2.5 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium text-sm">
                     My Account
                   </Link>
                   <button
                     onClick={() => { onLogout(); onClose(); }}
-                    className="w-full text-left block px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 font-medium"
+                    className="w-full text-left block px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-all font-medium text-sm"
                   >
                     Logout
                   </button>
@@ -186,8 +177,8 @@ const MobileDrawer = ({ open, user, onLogin, onLogout, onClose }: MobileDrawerPr
             </div>
           </nav>
 
-          <div className="p-6 border-t border-gray-100 bg-gray-50">
-            <p className="text-xs text-gray-500 text-center">© {new Date().getFullYear()} Ayropath. All rights reserved.</p>
+          <div className="p-5 border-t border-gray-100 bg-gray-50">
+            <p className="text-xs text-gray-400 text-center">© {new Date().getFullYear()} Ayropath</p>
           </div>
         </div>
       </div>
@@ -203,6 +194,9 @@ const Header = ({ children }: HeaderProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const [showPillBar, setShowPillBar] = useState(false);
+  const lastScrollY = useRef(0);
+
   const { user, logout } = useUser();
   const { cart } = useCart();
   const cartCount = cart?.items?.length || 0;
@@ -210,18 +204,26 @@ const Header = ({ children }: HeaderProps) => {
   const { openAuth } = useAuthModal();
   const router = useRouter();
 
+  useEffect(() => { setMounted(true); }, []);
+
+  // Show pill nav bar on mobile when scrolling UP past threshold
   useEffect(() => {
-    setMounted(true);
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      if (currentY > 120 && currentY < lastScrollY.current) {
+        setShowPillBar(true);
+      } else if (currentY <= 60 || currentY > lastScrollY.current) {
+        setShowPillBar(false);
+      }
+      lastScrollY.current = currentY;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleLogin = () => {
-    openAuth();
-  };
+  const handleLogin = () => openAuth();
 
-  // Show confirmation dialog instead of logging out immediately
-  const handleLogout = () => {
-    setLogoutConfirmOpen(true);
-  };
+  const handleLogout = () => setLogoutConfirmOpen(true);
 
   const confirmLogout = () => {
     logout();
@@ -230,7 +232,6 @@ const Header = ({ children }: HeaderProps) => {
     router.push('/');
   };
 
-  // Prevent hydration mismatch by not rendering user-dependent content until mounted
   const showUserNav = mounted;
 
   return (
@@ -244,77 +245,108 @@ const Header = ({ children }: HeaderProps) => {
           from { transform: translateX(100%); }
           to { transform: translateX(0); }
         }
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out;
-        }
-        .animate-slide-in-right {
-          animation: slide-in-right 0.3s ease-out;
-        }
+        .animate-fade-in { animation: fade-in 0.25s ease-out; }
+        .animate-slide-in-right { animation: slide-in-right 0.3s ease-out; }
       `}</style>
 
-      <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-white/90 border-b border-gray-200/80 shadow-sm">
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
+      {/* ── MAIN HEADER ────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-xl border-b border-gray-200/80 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          {/* Top bar: logo | search | user+cart */}
+          <div className="flex items-center gap-4 h-16">
             <Logo logo={settings?.logo} loading={loading} />
 
-            <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
+            {/* Search — desktop */}
+            <div className="hidden lg:flex flex-1 max-w-xl">
               <SearchBar />
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 ml-auto">
               <CartIcon count={cartCount} />
-              {showUserNav ? (
-                <DesktopNav
-                  user={user}
-                  onLogin={handleLogin}
-                  onLogout={handleLogout}
-                />
-              ) : (
-                <div className="hidden lg:block w-[100px]" />
+              {showUserNav && (
+                <DesktopNav user={user} onLogin={handleLogin} onLogout={handleLogout} />
               )}
-
               <button
                 onClick={() => setMenuOpen(true)}
-                aria-label="Open navigation menu"
+                aria-label="Open menu"
                 className="lg:hidden p-2 rounded-full hover:bg-gray-100 transition-colors"
               >
-                <Menu size={24} className="text-gray-700" />
+                <Menu size={22} className="text-gray-700" />
               </button>
             </div>
           </div>
 
-          <nav className="hidden lg:block border-t border-gray-100/80">
-            <div className="flex items-center justify-between py-4">
-              <ul className="flex items-center gap-8">
-                {NAV_LINKS.map(({ label, href }) => (
-                  <li key={label}>
-                    <Link
-                      href={href}
-                      className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors duration-200 relative group"
-                    >
+          {/* Desktop quick links — centered */}
+          <nav className="hidden lg:block border-t border-gray-100">
+            <div className="relative flex items-center justify-center py-2.5">
+              <ul className="flex items-center gap-7">
+                {NAV_LINKS.map(({ label, href, comingSoon }) =>
+                  comingSoon ? (
+                    <li key={label} className="flex items-center gap-1.5 text-gray-400 text-sm font-medium cursor-default select-none">
                       {label}
-                      <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
-                    </Link>
-                  </li>
-                ))}
+                      <span className="text-[9px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full font-bold tracking-wide">Soon</span>
+                    </li>
+                  ) : (
+                    <li key={label}>
+                      <Link
+                        href={href}
+                        className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors relative group py-1"
+                      >
+                        {label}
+                        <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300" />
+                      </Link>
+                    </li>
+                  )
+                )}
               </ul>
 
-              <div className="flex items-center gap-4 text-sm">
-                <Link href="/help" className="text-gray-600 hover:text-blue-600 transition-colors">Help Center</Link>
-                <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                {!loading && settings?.helplineNumber && (
-                  <a href={`tel:${settings.helplineNumber}`} className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
-                    📞 {settings.helplineNumber}
-                  </a>
-                )}
-              </div>
+              {/* Helpline — pinned right */}
+              {!loading && settings?.helplineNumber && (
+                <a
+                  href={`tel:${settings.helplineNumber}`}
+                  className="absolute right-0 text-xs text-gray-500 hover:text-blue-600 transition-colors font-medium"
+                >
+                  📞 {settings.helplineNumber}
+                </a>
+              )}
             </div>
           </nav>
         </div>
       </header>
 
-      <div className="lg:hidden bg-white/90 backdrop-blur-xl border-b border-gray-200/80 px-4 py-3 relative z-30">
+      {/* ── MOBILE SEARCH BAR (below header, scrolls away) ─────────── */}
+      <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-2.5 z-30">
         <SearchBar />
+      </div>
+
+      {/* ── MOBILE PILL QUICK-LINKS (fixed, appears on scroll-up) ─── */}
+      <div
+        className={`lg:hidden fixed top-16 left-0 right-0 z-30 bg-white/95 backdrop-blur-xl border-b border-gray-100 transition-transform duration-300 ${
+          showPillBar ? 'translate-y-0 shadow-sm' : '-translate-y-full'
+        }`}
+      >
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 py-2.5">
+          {NAV_LINKS.map(({ label, href, comingSoon }) =>
+            comingSoon ? (
+              <span
+                key={label}
+                className="shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-400 cursor-default"
+              >
+                {label}
+                <span className="text-[9px] bg-gray-200 text-gray-400 px-1 py-0.5 rounded-full font-bold">Soon</span>
+              </span>
+            ) : (
+              <Link
+                key={label}
+                href={href}
+                className="shrink-0 px-3.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100 transition-colors whitespace-nowrap"
+              >
+                {label}
+              </Link>
+            )
+          )}
+        </div>
       </div>
 
       <MobileDrawer
@@ -325,7 +357,6 @@ const Header = ({ children }: HeaderProps) => {
         onClose={() => setMenuOpen(false)}
       />
 
-      {/* Logout Confirmation Dialog */}
       <ConfirmationDialog
         isOpen={logoutConfirmOpen}
         onClose={() => setLogoutConfirmOpen(false)}

@@ -124,9 +124,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ pkg }) => {
           />
           <Link
             href={detailPath}
-            className="bg-blue-700 text-white px-4 py-2 rounded-xl hover:bg-blue-800 transition-all duration-300 shadow-sm active:scale-95 text-sm font-bold flex-1 text-center flex items-center justify-center"
+            className="bg-gray-100 text-gray-800 px-4 py-2 rounded-xl hover:bg-gray-200 transition-all duration-300 shadow-sm active:scale-95 text-sm font-bold flex-1 text-center flex items-center justify-center"
           >
-            Book
+            View
           </Link>
         </div>
 

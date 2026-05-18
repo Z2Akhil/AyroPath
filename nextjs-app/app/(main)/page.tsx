@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Hero from "@/components/home/Hero";
+import CategoryGrid from "@/components/home/CategoryGrid";
 import HomeCarousel from "@/components/home/HomeCarousel";
+import HealthConcernCards from "@/components/home/HealthConcernCards";
+import HowItWorks from "@/components/home/HowItWorks";
+import TrustStats from "@/components/home/TrustStats";
 import ProfilePage from "./profiles/page";
 import OfferPage from "./offers/page";
 import TestPage from "./tests/page";
@@ -148,45 +152,63 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
-      <div className="max-w-7xl mx-auto sm:px-6 py-10">
-        {/* Visually-hidden H1 for SEO — the Hero carries the visual headline */}
+      <div className="max-w-7xl mx-auto">
         <h1 className="sr-only">
           Full Body Checkup at Home – Book Affordable Health Packages by Thyrocare | Ayropath
         </h1>
 
+        {/* Hero — search + trust badges */}
         <Hero />
 
-        {/* Packages Section */}
-        <div className="mb-8">
-          <ProfilePage limit={4} />
-          <div className="text-right px-4 sm:px-6">
-            <Link href="/profiles" className="text-blue-600 hover:underline font-medium">
-              See More
-            </Link>
-          </div>
+        {/* Category tiles */}
+        <CategoryGrid />
+
+        {/* Promotional banners */}
+        <div className="px-4 mb-10">
+          <HomeCarousel />
         </div>
 
-        {/* Offers Section */}
-        <div className="mb-8">
-          <OfferPage limit={8} />
-          <div className="text-right px-4 sm:px-6">
-            <Link href="/offers" className="text-blue-600 hover:underline font-medium">
-              See More
+        {/* Health concern cards */}
+        <HealthConcernCards />
+
+        {/* Popular Health Packages */}
+        <section className="mb-10">
+          <div className="flex items-center justify-between px-4 mb-4">
+            <h2 className="text-lg font-bold text-gray-900">Popular Health Packages</h2>
+            <Link href="/profiles" className="text-sm font-medium text-blue-600 hover:underline">
+              View all →
             </Link>
           </div>
-        </div>
+          <ProfilePage limit={4} showHeader={false} mobileScroll={true} />
+        </section>
 
-        {/* Tests Section */}
-        <div className="mb-8">
-          <TestPage limit={8} />
-          <div className="text-right px-4 sm:px-6">
-            <Link href="/tests" className="text-blue-600 hover:underline font-medium">
-              See More
+        {/* Offers */}
+        <section className="mb-10">
+          <div className="flex items-center justify-between px-4 mb-4">
+            <h2 className="text-lg font-bold text-gray-900">Offers &amp; Discounts</h2>
+            <Link href="/offers" className="text-sm font-medium text-blue-600 hover:underline">
+              View all →
             </Link>
           </div>
-        </div>
+          <OfferPage limit={6} showHeader={false} mobileScroll={true} />
+        </section>
 
-        <HomeCarousel />
+        {/* Popular Lab Tests */}
+        <section className="mb-10">
+          <div className="flex items-center justify-between px-4 mb-4">
+            <h2 className="text-lg font-bold text-gray-900">Popular Lab Tests</h2>
+            <Link href="/tests" className="text-sm font-medium text-blue-600 hover:underline">
+              View all →
+            </Link>
+          </div>
+          <TestPage limit={6} showHeader={false} mobileScroll={true} />
+        </section>
+
+        {/* How it works */}
+        <HowItWorks />
+
+        {/* Trust stat bar */}
+        <TrustStats />
 
 
 

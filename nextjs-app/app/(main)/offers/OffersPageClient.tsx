@@ -11,9 +11,11 @@ interface OffersPageClientProps {
     initialData: Product[];
     initialTotal: number;
     limit?: number;
+    showHeader?: boolean;
+    mobileScroll?: boolean;
 }
 
-export default function OffersPageClient({ initialData, initialTotal, limit }: OffersPageClientProps) {
+export default function OffersPageClient({ initialData, initialTotal, limit, showHeader = true, mobileScroll = false }: OffersPageClientProps) {
     const [offers, setOffers] = useState<Product[]>(initialData);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -60,23 +62,39 @@ export default function OffersPageClient({ initialData, initialTotal, limit }: O
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
     return (
-        <div className="max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-10">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800">
-                Offers on Health Packages
-            </h1>
-            <p className="text-gray-500 text-sm mb-6">
-                Exclusive discounts on Thyrocare health packages. Book online with free home sample collection. Save up to 60% on diagnostic tests.
-            </p>
+        <div className={limit ? "px-4" : "max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-10"}>
+            {showHeader && (
+                <>
+                    <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800">
+                        Offers on Health Packages
+                    </h1>
+                    <p className="text-gray-500 text-sm mb-6">
+                        Exclusive discounts on Thyrocare health packages. Book online with free home sample collection. Save up to 60% on diagnostic tests.
+                    </p>
+                </>
+            )}
 
             {error && (
                 <div className="text-center py-6 text-red-500 text-sm">{error}</div>
             )}
 
-            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className={
+                mobileScroll
+                    ? "flex gap-4 overflow-x-auto pb-2 scrollbar-hide md:grid md:grid-cols-3 lg:grid-cols-4 md:overflow-visible md:pb-0"
+                    : "grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+            }>
                 {loading
-                    ? Array.from({ length: itemsPerPage }).map((_, i) => <SkeletonOfferCard key={i} />)
+                    ? Array.from({ length: itemsPerPage }).map((_, i) => (
+                        <div key={i} className={mobileScroll ? "shrink-0 w-64 md:w-auto" : undefined}>
+                            <SkeletonOfferCard />
+                        </div>
+                    ))
                     : offers.length > 0
-                        ? offers.map((offer) => <OfferCard key={offer.code} pkg={offer} />)
+                        ? offers.map((offer) => (
+                            <div key={offer.code} className={mobileScroll ? "shrink-0 w-64 md:w-auto" : undefined}>
+                                <OfferCard pkg={offer} />
+                            </div>
+                        ))
                         : <p className="text-gray-500 col-span-full text-center">No offers available.</p>
                 }
             </div>
