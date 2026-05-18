@@ -2,6 +2,18 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import validator from 'validator';
 
+export interface AddressDocument {
+    _id: mongoose.Types.ObjectId;
+    houseNo: string;
+    roadName?: string;
+    area?: string;
+    locality?: string;
+    city: string;
+    state: string;
+    pincode: string;
+    isDefault: boolean;
+}
+
 export interface UserDocument extends Document {
     firstName: string;
     lastName: string;
@@ -15,6 +27,7 @@ export interface UserDocument extends Document {
     address?: string;
     city?: string;
     state?: string;
+    addresses: AddressDocument[];
     password?: string;
     isVerified: boolean;
     isActive: boolean;
@@ -27,6 +40,21 @@ export interface UserDocument extends Document {
 
 export interface IUserModel extends Model<UserDocument> { }
 
+const addressSchema = new Schema({
+    houseNo: { type: String, required: [true, 'House no / building name is required'], trim: true, maxlength: 100 },
+    roadName: { type: String, trim: true, maxlength: 100 },
+    area: { type: String, trim: true, maxlength: 100 },
+    locality: { type: String, trim: true, maxlength: 100 },
+    city: { type: String, required: [true, 'City is required'], trim: true, maxlength: 50 },
+    state: { type: String, required: [true, 'State is required'], trim: true, maxlength: 50 },
+    pincode: {
+        type: String,
+        required: [true, 'Pincode is required'],
+        validate: { validator: (v: string) => /^\d{6}$/.test(v), message: 'Pincode must be 6 digits' }
+    },
+    isDefault: { type: Boolean, default: false },
+}, { _id: true });
+
 const userSchema = new Schema<UserDocument, IUserModel>({
     firstName: {
         type: String,
@@ -36,7 +64,7 @@ const userSchema = new Schema<UserDocument, IUserModel>({
     },
     lastName: {
         type: String,
-        required: [true, 'Last name is required'],
+        default: '',
         trim: true,
         maxlength: [50, 'Last name cannot exceed 50 characters']
     },
@@ -95,6 +123,7 @@ const userSchema = new Schema<UserDocument, IUserModel>({
         trim: true,
         maxlength: [50, 'State cannot exceed 50 characters']
     },
+    addresses: { type: [addressSchema], default: [] },
     password: {
         type: String,
         minlength: [6, "Password must be atleast 6 character long."],

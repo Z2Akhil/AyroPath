@@ -24,6 +24,18 @@ export interface SiteSettingsContextType {
   refreshSettings: () => Promise<void>;
 }
 
+export interface Address {
+  _id: string;
+  houseNo: string;
+  roadName?: string;
+  area?: string;
+  locality?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  isDefault: boolean;
+}
+
 export interface User {
   id: string;
   firstName: string;
@@ -42,13 +54,10 @@ export interface User {
 export interface UserContextType {
   user: User | null;
   loading: boolean;
-  login: (identifier: string, password?: string) => Promise<{ success: boolean; message?: string }>;
-  register: (firstName: string, lastName: string, mobileNumber: string, password?: string, email?: string) => Promise<{ success: boolean; message?: string }>;
+  loginWithOTP: (mobileNumber: string, otp: string) => Promise<{ success: boolean; isNewUser?: boolean; message?: string }>;
+  registerWithOTP: (mobileNumber: string, firstName: string, email?: string) => Promise<{ success: boolean; message?: string }>;
+  requestOTP: (mobileNumber: string, purpose?: string) => Promise<{ success: boolean; message?: string; verificationId?: string }>;
   logout: () => void;
-  requestOTP: (mobileNumber: string, purpose?: string) => Promise<{ success: boolean; message?: string }>;
-  verifyOTP: (mobileNumber: string, otp: string, purpose?: string) => Promise<{ success: boolean; message?: string }>;
-  forgotPassword: (mobileNumber: string) => Promise<{ success: boolean; message?: string }>;
-  resetPassword: (mobileNumber: string, otp: string, newPassword?: string) => Promise<{ success: boolean; message?: string }>;
   updateProfile: (data: Partial<User>) => Promise<{ success: boolean; message?: string }>;
 }
 

@@ -15,9 +15,7 @@ export const useUser = () => {
 };
 
 function getErrorMessage(error: unknown): string {
-    if (error instanceof Error) {
-        return error.message;
-    }
+    if (error instanceof Error) return error.message;
     return 'An error occurred';
 }
 
@@ -26,46 +24,57 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         if (typeof window !== 'undefined') {
             const savedUser = localStorage.getItem('user');
             if (savedUser) {
-                try {
-                    return JSON.parse(savedUser);
-                } catch {
-                    return null;
-                }
+                try { return JSON.parse(savedUser); } catch { return null; }
             }
         }
         return null;
     });
     const [loading] = useState(false);
 
-    const login = async (identifier: string, password?: string) => {
+    const setSession = (u: User, token: string) => {
+        setUser(u);
+        localStorage.setItem('user', JSON.stringify(u));
+        localStorage.setItem('authToken', token);
+    };
+
+    const requestOTP = async (mobileNumber: string, purpose: string = 'login') => {
         try {
-            const result = await authApi.login(identifier, password);
-            if (result.success && result.user && result.token) {
-                setUser(result.user);
-                localStorage.setItem('user', JSON.stringify(result.user));
-                localStorage.setItem('authToken', result.token);
-                return { success: true };
-            }
-            return { success: false, message: result.message || 'Login failed' };
+            const result = await authApi.requestOTP(mobileNumber, purpose);
+            return { success: result.success, message: result.message, verificationId: result.verificationId };
         } catch (error) {
-            console.error('Login error', error);
-            return { success: false, message: getErrorMessage(error) || 'Login failed' };
+            return { success: false, message: getErrorMessage(error) };
         }
     };
 
-    const register = async (firstName: string, lastName: string, mobileNumber: string, password?: string, email?: string) => {
+    // Verify OTP → if existing user, sets session and returns success.
+    // If new user, returns { success: true, isNewUser: true } without setting session.
+    const loginWithOTP = async (mobileNumber: string, otp: string) => {
         try {
-            const result = await authApi.register(firstName, lastName, mobileNumber, password, email);
+            const result = await authApi.otpLogin(mobileNumber, otp);
+            if (result.success && !result.isNewUser && result.user && result.token) {
+                setSession(result.user, result.token);
+                return { success: true, isNewUser: false };
+            }
+            if (result.success && result.isNewUser) {
+                return { success: true, isNewUser: true };
+            }
+            return { success: false, message: result.message || 'Login failed' };
+        } catch (error) {
+            return { success: false, message: getErrorMessage(error) };
+        }
+    };
+
+    // Complete registration for new users
+    const registerWithOTP = async (mobileNumber: string, firstName: string, email?: string) => {
+        try {
+            const result = await authApi.otpRegister(mobileNumber, firstName, email);
             if (result.success && result.user && result.token) {
-                setUser(result.user);
-                localStorage.setItem('user', JSON.stringify(result.user));
-                localStorage.setItem('authToken', result.token);
+                setSession(result.user, result.token);
                 return { success: true };
             }
             return { success: false, message: result.message || 'Registration failed' };
         } catch (error) {
-            console.error('Registration error', error);
-            return { success: false, message: getErrorMessage(error) || 'Registration failed' };
+            return { success: false, message: getErrorMessage(error) };
         }
     };
 
@@ -75,43 +84,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
     };
 
-    const requestOTP = async (mobileNumber: string, purpose: string = 'verification') => {
-        try {
-            const result = await authApi.requestOTP(mobileNumber, purpose);
-            return { success: result.success, message: result.message };
-        } catch (error) {
-            return { success: false, message: getErrorMessage(error) || 'Failed to request OTP' };
-        }
-    };
-
-    const verifyOTP = async (mobileNumber: string, otp: string, purpose: string = 'verification') => {
-        try {
-            const result = await authApi.verifyOTP(mobileNumber, otp, purpose);
-            return { success: result.success, message: result.message };
-        } catch (error) {
-            return { success: false, message: getErrorMessage(error) || 'Failed to verify OTP' };
-        }
-    };
-
-    const forgotPassword = async (mobileNumber: string) => {
-        try {
-            const result = await authApi.forgotPassword(mobileNumber);
-            return { success: result.success, message: result.message };
-        } catch (error) {
-            return { success: false, message: getErrorMessage(error) || 'Failed to request password reset' };
-        }
-    };
-
-    const resetPassword = async (mobileNumber: string, otp: string, newPassword?: string) => {
-        try {
-            const result = await authApi.resetPassword(mobileNumber, otp, newPassword);
-            return { success: result.success, message: result.message };
-        } catch (error) {
-            return { success: false, message: getErrorMessage(error) || 'Failed to reset password' };
-        }
-    };
-
-    const updateProfile = async (data: Partial<import('@/types').User>) => {
+    const updateProfile = async (data: Partial<User>) => {
         try {
             const result = await authApi.updateProfile(data);
             if (result.success && result.user) {
@@ -127,13 +100,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     const value: UserContextType = {
         user,
         loading,
-        login,
-        register,
-        logout,
+        loginWithOTP,
+        registerWithOTP,
         requestOTP,
-        verifyOTP,
-        forgotPassword,
-        resetPassword,
+        logout,
         updateProfile,
     };
 

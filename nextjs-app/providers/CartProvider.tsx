@@ -151,7 +151,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     const addToCart = async (item: any) => {
         // Block unauthenticated users — open login modal instead.
         if (!user) {
-            openAuth('login');
+            openAuth();
             return { success: false, message: 'Please login to add items to cart' };
         }
 

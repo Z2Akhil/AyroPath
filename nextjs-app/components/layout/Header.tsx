@@ -95,9 +95,10 @@ const DesktopNav = ({ user, onLogin, onLogout }: DesktopNavProps) => {
       ) : (
         <button
           onClick={onLogin}
-          className="px-6 py-2.5 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-full hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
         >
-          Login
+          <User className="w-4 h-4" />
+          Sign in
         </button>
       )}
     </div>
@@ -134,9 +135,9 @@ const MobileDrawer = ({ open, user, onLogin, onLogout, onClose }: MobileDrawerPr
             ) : (
               <button
                 onClick={() => { onLogin(); onClose(); }}
-                className="px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium shadow-lg"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-blue-600 border border-blue-200 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors"
               >
-                Login to Your Account
+                <User className="w-4 h-4" /> Sign in to your account
               </button>
             )}
 
@@ -214,7 +215,7 @@ const Header = ({ children }: HeaderProps) => {
   }, []);
 
   const handleLogin = () => {
-    openAuth('login');
+    openAuth();
   };
 
   // Show confirmation dialog instead of logging out immediately

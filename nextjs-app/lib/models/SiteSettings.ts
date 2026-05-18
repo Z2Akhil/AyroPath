@@ -13,7 +13,7 @@ const siteSettingsSchema = new Schema<SiteSettingsDocument>(
     },
     heroImage: {
       type: String,
-      default: '/assets/default-hero.webp',
+      default: '',
     },
     helplineNumber: {
       type: String,
