@@ -297,6 +297,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
 
                 showSuccessCard({
                     orderId: result.data.orderId,
+                    labRef: result.data.thyrocareOrderNo,
                     packageName: pkgNames.join(", "),
                     amount: finalAmount.toFixed(2)
                 });

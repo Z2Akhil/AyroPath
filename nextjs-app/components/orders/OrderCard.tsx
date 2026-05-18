@@ -122,7 +122,12 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, showContactSupport = true 
                     <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                             <FileText className="h-5 w-5 text-blue-600" />
-                            <h3 className="font-semibold text-gray-800">Order #{order.orderId}</h3>
+                            <h3 className="font-semibold text-gray-800">
+                                {thyrocareInfo.orderNo
+                                    ? <>Lab Ref: <span className="font-mono">{thyrocareInfo.orderNo}</span></>
+                                    : <>Order #{order.orderId}</>
+                                }
+                            </h3>
                             {canDownloadReports() && (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full">
                                     <FileDown className="h-3 w-3" />

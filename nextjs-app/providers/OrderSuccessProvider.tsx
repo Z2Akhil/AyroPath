@@ -40,6 +40,7 @@ export const OrderSuccessProvider = ({ children }: { children: ReactNode }) => {
             {isOrderSuccess && orderData && (
                 <OrderSuccessCard
                     orderId={orderData.orderId}
+                    labRef={orderData.labRef}
                     packageName={orderData.packageName}
                     amount={orderData.amount}
                     onClose={hideSuccessCard}

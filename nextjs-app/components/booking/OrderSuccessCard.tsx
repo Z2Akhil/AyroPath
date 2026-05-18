@@ -5,12 +5,13 @@ import { X, CheckCircle2 } from 'lucide-react';
 
 interface OrderSuccessCardProps {
     orderId: string;
+    labRef?: string;
     packageName: string;
     amount: string | number;
     onClose: () => void;
 }
 
-const OrderSuccessCard: React.FC<OrderSuccessCardProps> = ({ orderId, packageName, amount, onClose }) => {
+const OrderSuccessCard: React.FC<OrderSuccessCardProps> = ({ orderId, labRef, packageName, amount, onClose }) => {
     return (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center p-4 z-[9999] animate-in fade-in duration-300">
             <div
@@ -36,9 +37,15 @@ const OrderSuccessCard: React.FC<OrderSuccessCardProps> = ({ orderId, packageNam
 
                 {/* Details Section */}
                 <div className="bg-gray-50/80 border border-gray-100 rounded-3xl p-6 mb-8 space-y-4">
+                    {labRef && (
+                        <div className="flex justify-between items-start gap-4">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Lab Ref No.</span>
+                            <span className="text-sm font-mono font-bold text-emerald-500 bg-emerald-50 px-3 py-1 rounded-lg">{labRef}</span>
+                        </div>
+                    )}
                     <div className="flex justify-between items-start gap-4">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Order ID</span>
-                        <span className="text-sm font-mono font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">#{orderId}</span>
+                        <span className="text-sm font-mono font-bold text-blue-400 bg-blue-50 px-3 py-1 rounded-lg">#{orderId}</span>
                     </div>
 
                     <div className="space-y-1">

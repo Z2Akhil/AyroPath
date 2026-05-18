@@ -26,7 +26,7 @@ export interface OrderReport {
 
 export interface OrderThyrocare {
     status?: string;
-    referenceId?: string;
+    orderNo?: string;
     lastSyncedAt?: string;
 }
 

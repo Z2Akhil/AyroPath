@@ -310,7 +310,12 @@ export default function AccountPage() {
                                             <PackageIcon className="h-4 w-4" />
                                         </div>
                                         <div>
-                                            <p className="font-medium text-sm">Order #{order.orderId}</p>
+                                            <p className="font-medium text-sm">
+                                                {order.thyrocare?.orderNo
+                                                    ? <>Lab Ref: <span className="font-mono">{order.thyrocare.orderNo}</span></>
+                                                    : <>Order #{order.orderId}</>
+                                                }
+                                            </p>
                                             <p className="text-xs text-gray-500">{order.package?.name}</p>
                                         </div>
                                     </div>
