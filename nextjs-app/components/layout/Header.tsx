@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShoppingCart, Menu, X, User, LogOut, ChevronDown, Settings } from 'lucide-react';
+import { ShoppingCart, Menu, X, User, LogOut, ChevronDown, Settings, Package } from 'lucide-react';
 import { useSiteSettings } from '@/providers/SiteSettingsProvider';
 import { useCart } from '@/providers/CartProvider';
 import { useAuthModal } from '@/providers/AuthModalProvider';
@@ -69,13 +69,20 @@ const DesktopNav = ({ user, onLogin, onLogout }: DesktopNavProps) => {
           {isDropdownOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
-              <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-200 py-1.5 z-50 animate-fade-in">
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-1.5 z-50 animate-fade-in">
                 <Link
                   href="/account"
                   onClick={() => setIsDropdownOpen(false)}
                   className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                 >
                   <Settings className="w-4 h-4" /> Account
+                </Link>
+                <Link
+                  href="/orders"
+                  onClick={() => setIsDropdownOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                >
+                  <Package className="w-4 h-4" /> My Orders
                 </Link>
                 <div className="border-t border-gray-100 my-1" />
                 <button
@@ -177,6 +184,9 @@ const MobileDrawer = ({ open, user, mounted, onLogin, onLogout, onClose }: Mobil
                   <div className="border-t border-gray-100 my-2" />
                   <Link href="/account" onClick={onClose} className="block px-4 py-2.5 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium text-sm">
                     My Account
+                  </Link>
+                  <Link href="/orders" onClick={onClose} className="block px-4 py-2.5 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium text-sm">
+                    My Orders
                   </Link>
                   <button
                     onClick={() => { onLogout(); onClose(); }}
