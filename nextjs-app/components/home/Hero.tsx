@@ -11,8 +11,7 @@ export default function Hero() {
   return (
     <section className="px-4 pt-8 pb-6 md:pt-12 md:pb-8 text-center">
       <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 leading-tight mb-3">
-        Lab Tests &amp; Full Body Checkups{" "}
-        <span className="text-blue-600">at Home</span>
+        Everything for your healthcare needs
       </h1>
 
       <div className="flex flex-wrap justify-center gap-2 mb-6">
