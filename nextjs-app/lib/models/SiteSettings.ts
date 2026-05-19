@@ -11,7 +11,15 @@ const siteSettingsSchema = new Schema<SiteSettingsDocument>(
       type: String,
       default: '/assets/default-logo.png',
     },
+    logoPublicId: {
+      type: String,
+      default: '',
+    },
     heroImage: {
+      type: String,
+      default: '',
+    },
+    heroImagePublicId: {
       type: String,
       default: '',
     },

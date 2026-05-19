@@ -89,6 +89,9 @@ const AdminMobileDrawer: React.FC<MobileDrawerProps> = ({
                                         <Link href="/admin/tests" onClick={onClose} className="block px-4 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
                                             Tests
                                         </Link>
+                                        <Link href="/admin/medicines" onClick={onClose} className="block px-4 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
+                                            Medicines
+                                        </Link>
                                     </div>
                                 )}
                             </div>

@@ -8,7 +8,9 @@ export interface SocialMedia {
 export interface SiteSettings {
   _id?: string;
   logo: string;
+  logoPublicId?: string;
   heroImage: string;
+  heroImagePublicId?: string;
   helplineNumber: string;
   email: string;
   socialMedia: SocialMedia;

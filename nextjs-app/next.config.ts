@@ -5,8 +5,14 @@ const nextConfig: NextConfig = {
   compress: true, // Gzip compression — improves TTFB which affects Core Web Vitals
   poweredByHeader: false, // Remove X-Powered-By header (security + minor perf)
   images: {
-    formats: ["image/avif", "image/webp"], // Serve modern formats — reduces image payload
-    minimumCacheTTL: 86400, // Cache images 24h
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+    ],
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 86400,
   },
   async headers() {
     return [

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db/mongoose';
 import SiteSettings from '@/lib/models/SiteSettings';
 import { adminAuth } from '@/lib/auth';
+import { uploadBuffer, deleteFromCloudinary, FOLDERS } from '@/lib/cloudinary';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,19 +67,21 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Handle File Uploads
+    // Handle File Uploads — upload to Cloudinary, store URL in DB
     if (logoFile && logoFile.size > 0 && typeof logoFile.arrayBuffer === 'function') {
+      if (settings.logoPublicId) await deleteFromCloudinary(settings.logoPublicId).catch(() => {});
       const buffer = Buffer.from(await logoFile.arrayBuffer());
-      const base64Str = buffer.toString('base64');
-      const mimeType = logoFile.type || 'image/png';
-      updates.logo = `data:${mimeType};base64,${base64Str}`;
+      const result = await uploadBuffer(buffer, { folder: FOLDERS.SITE, publicId: 'logo' });
+      updates.logo = result.url;
+      updates.logoPublicId = result.publicId;
     }
 
     if (heroImageFile && heroImageFile.size > 0 && typeof heroImageFile.arrayBuffer === 'function') {
+      if (settings.heroImagePublicId) await deleteFromCloudinary(settings.heroImagePublicId).catch(() => {});
       const buffer = Buffer.from(await heroImageFile.arrayBuffer());
-      const base64Str = buffer.toString('base64');
-      const mimeType = heroImageFile.type || 'image/jpeg';
-      updates.heroImage = `data:${mimeType};base64,${base64Str}`;
+      const result = await uploadBuffer(buffer, { folder: FOLDERS.SITE, publicId: 'hero' });
+      updates.heroImage = result.url;
+      updates.heroImagePublicId = result.publicId;
     }
 
     Object.assign(settings, updates);

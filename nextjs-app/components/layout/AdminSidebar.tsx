@@ -101,6 +101,9 @@ const AdminSidebar: React.FC<SidebarProps> = ({
                         <Link href="/admin/tests" className="block px-3 py-2 rounded-md hover:bg-blue-100 transition-colors duration-200 text-gray-600">
                             Tests
                         </Link>
+                        <Link href="/admin/medicines" className="block px-3 py-2 rounded-md hover:bg-blue-100 transition-colors duration-200 text-gray-600">
+                            Medicines
+                        </Link>
                     </div>
                 )}
 
