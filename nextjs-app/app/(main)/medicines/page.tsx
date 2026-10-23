@@ -107,9 +107,6 @@ function MedicinesContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Mobile filter toggle + result count */}
           <div className="flex items-center justify-between mb-6">
-            <p className="text-sm text-gray-500">
-              {loading ? 'Loading...' : <><span className="font-bold text-gray-900">{total}</span> medicines found</>}
-            </p>
             <button
               onClick={() => setShowFilterDrawer(v => !v)}
               className="lg:hidden flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 shadow-sm"
