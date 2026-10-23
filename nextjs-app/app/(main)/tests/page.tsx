@@ -6,31 +6,45 @@ import TestsPageClient from './TestsPageClient';
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-    title: 'Book Individual Lab Tests Online – Single Blood Tests at Home | Ayropath',
-    description: 'Book individual Thyrocare lab tests online with free home sample collection. CBC, thyroid, HbA1c, Vitamin D, liver, kidney, uric acid tests and more. NABL accredited labs, digital reports in 24–48 hrs.',
+    title: {
+        absolute: 'Individual Blood Tests & Diagnostics Online | Ayropath',
+    },
+    description: 'Book individual lab tests online with Ayropath. Free home sample collection, NABL accredited results & reports in 24-48 hours. Diabetes, thyroid, B12 & more.',
     keywords: [
-        // Individual test keywords
+        // Target keywords from content document
+        'lab tests online',
+        'diabetes blood results',
+        'hemoglobin blood results',
+        'vitamin b12 blood results',
+        'liver function test price online',
+        'diabetes test price online',
+        'blood sugar test online',
+        'thyroid test online',
+        'beta hcg blood test online',
+        'beta hcg test for pregnancy',
+        // Primary and AI suggested keywords from SEO audit deck
+        'individual blood tests', 'single blood tests at home',
+        'home sample collection', 'at-home blood sample collection',
+        'diagnostic tests online', 'NABL accredited lab tests',
+        'blood testing services', 'diagnostic services India', 'medical test booking', 'affordable lab tests',
+        // Specific tests
         'CBC test at home', 'blood test price India', 'thyroid test TSH', 'TSH T3 T4 test online',
         'HbA1c test home collection', 'Vitamin D test price', 'Vitamin B12 test', 'iron deficiency test',
         'uric acid test online', 'creatinine test at home', 'SGOT SGPT liver test',
-        'cholesterol test home collection', 'triglycerides test', 'fasting glucose test',
-        // Generic individual test keywords
-        'thyrocare individual tests', 'blood test online India', 'lab test booking',
-        'thyroid test home collection', 'diabetes test online', 'single blood test at home',
-        'liver function test individual', 'kidney function test online', 'NABL lab test India',
-        'diagnostic test booking India', 'affordable blood test', 'book test online',
+        'cholesterol test home collection', 'fasting glucose test',
+        'Thyrocare individual tests', 'blood test online India', 'lab test booking',
     ],
     openGraph: {
-        title: 'Book Individual Lab Tests Online – Single Blood Tests | Ayropath',
-        description: 'Book CBC, thyroid, Vitamin D, HbA1c, liver, kidney and other individual tests online with free home collection. NABL accredited.',
+        title: 'Individual Blood Tests & Diagnostics Online | Ayropath',
+        description: 'Book individual lab tests online with Ayropath. Free home sample collection, NABL accredited results & reports in 24-48 hours. Diabetes, thyroid, B12 & more.',
         type: 'website',
         siteName: 'Ayropath',
         locale: 'en_IN',
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'Individual Lab Tests at Home | Ayropath',
-        description: 'Book CBC, thyroid, HbA1c, Vitamin D and other individual tests online. Free home collection.',
+        title: 'Individual Blood Tests & Diagnostics Online | Ayropath',
+        description: 'Book individual lab tests online with Ayropath. Free home sample collection, NABL accredited results & reports in 24-48 hours.',
     },
     alternates: { canonical: '/tests' },
 };
@@ -87,25 +101,99 @@ export default async function TestsPage({ limit, showHeader, mobileScroll }: Tes
     }));
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ayropath.com';
-    const itemListJsonLd = {
+    const collectionPageJsonLd = {
         '@context': 'https://schema.org',
-        '@type': 'ItemList',
-        name: 'Individual Lab Tests',
-        description: 'Individual Thyrocare diagnostic tests available for online booking at Ayropath',
-        numberOfItems: totalCount,
-        itemListElement: initialData.slice(0, 10).map((test, i) => ({
-            '@type': 'ListItem',
-            position: i + 1,
-            name: test.name,
-            url: `${siteUrl}/profiles/${test.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '')}/${test.type}/${test.code}`,
-        })),
+        '@type': 'CollectionPage',
+        name: 'Lab Tests Online – Book Individual Blood Tests with Home Sample Pickup',
+        description: 'Book individual lab tests online with Ayropath. Free home sample collection, NABL accredited results & reports in 24-48 hours. Diabetes, thyroid, B12 & more.',
+        url: `${siteUrl}/tests`,
+        mainEntity: {
+            '@type': 'ItemList',
+            name: 'Individual Lab Tests & Diagnostics',
+            numberOfItems: totalCount,
+            itemListElement: initialData.slice(0, 10).map((test, i) => ({
+                '@type': 'ListItem',
+                position: i + 1,
+                item: {
+                    '@type': 'Product',
+                    name: test.name,
+                    description: `${test.name} individual blood test with free home collection. Processed at NABL accredited laboratories.`,
+                    url: `${siteUrl}/profiles/${test.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '')}/${test.type}/${test.code}`,
+                    offers: {
+                        '@type': 'Offer',
+                        price: test.sellingPrice,
+                        priceCurrency: 'INR',
+                        availability: 'https://schema.org/InStock',
+                    },
+                },
+            })),
+        },
+    };
+
+    const faqTestsJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+            {
+                '@type': 'Question',
+                name: 'Can I book a single blood test without a full package?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'Yes. You can order any individual test from our catalogue of 550+ tests without having to book a full health package.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: 'Is home sample collection free for individual tests?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'Yes. Ayropath provides free home sample collection for individual tests and packages alike, with no extra travel charge.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: "Do I need a doctor's prescription?",
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'Most routine tests (sugar, thyroid, CBC, vitamins, lipid) do not require a prescription. You can book them directly online.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: 'How should I prepare for a fasting blood test?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'Fast for 8 to 12 hours overnight. Drink only plain water. Avoid morning tea, coffee, breakfast, tobacco and strenuous exercise before sample collection.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: 'When will I receive my test report?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'Most routine test reports are ready within 24 hours of sample pickup. Specialized tests may take 36 to 48 hours. You will receive an SMS and WhatsApp notification with your download link.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: 'How do I know the results are accurate?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'All samples are processed at NABL and CAP accredited Thyrocare laboratories using automated robotic analysers with internal and external quality control checks.',
+                },
+            },
+        ],
     };
 
     return (
         <>
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionPageJsonLd) }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(faqTestsJsonLd) }}
             />
             <TestsPageClient initialData={initialData as any} initialTotal={totalCount} limit={limit} showHeader={showHeader} mobileScroll={mobileScroll} />
         </>

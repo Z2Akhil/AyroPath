@@ -32,7 +32,7 @@ const OfferCard: React.FC<OfferCardProps> = ({ pkg }) => {
         <div className="relative h-40 sm:h-44 shrink-0 overflow-hidden">
           <img
             src={imgSrc}
-            alt={name}
+            alt={`Image of '${name}' offer details - Special Health Checkup Offer at Ayropath`}
             loading="lazy"
             referrerPolicy="no-referrer"
             onClick={() => setShowPreview(true)}

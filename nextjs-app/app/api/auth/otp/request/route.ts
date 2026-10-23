@@ -31,18 +31,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const validPurposes = ['verification', 'forgot_password', 'login'] as const;
+    const otpPurpose = validPurposes.includes(purpose)
+      ? (purpose as typeof validPurposes[number])
+      : 'verification';
+
     // Create OTP record - always use MessageCentral
     const otpData: {
       mobileNumber: string;
       otp: string;
-      purpose: string;
+      purpose: 'verification' | 'forgot_password' | 'login';
       expiresAt: Date;
       provider: 'MessageCentral';
       verificationId?: string;
     } = {
       mobileNumber,
       otp,
-      purpose,
+      purpose: otpPurpose,
       expiresAt,
       provider: 'MessageCentral',
     };

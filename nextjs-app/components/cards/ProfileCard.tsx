@@ -33,7 +33,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ pkg }) => {
         <div className="relative h-40 sm:h-44 shrink-0 overflow-hidden">
           <img
             src={imgSrc}
-            alt={name}
+            alt={`Image of '${name}' package details - ${category ? category + ' ' : ''}Health Checkup at Ayropath`}
             loading="lazy"
             referrerPolicy="no-referrer"
             onClick={() => setShowPreview(true)}

@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         const otpData: {
             mobileNumber: string;
             otp: string;
-            purpose: string;
+            purpose: 'verification' | 'forgot_password' | 'login';
             expiresAt: Date;
             provider: 'MessageCentral';
             verificationId?: string;

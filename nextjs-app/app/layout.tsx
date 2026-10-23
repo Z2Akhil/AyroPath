@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Inter, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { ClientProviders } from "@/providers/Providers";
@@ -19,6 +20,9 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ayropath.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
+  verification: {
+    google: "qu3nq13Rl72mDOye-iMMmR_efMTHr28VcO4-6lou-0s",
+  },
   title: {
     default: "Full Body Checkup at Home – Book Health Packages | Ayropath",
     template: "%s | Ayropath",
@@ -164,6 +168,25 @@ export default function RootLayout({
   return (
     <html lang="en-IN">
       <head>
+        <meta
+          name="google-site-verification"
+          content="qu3nq13Rl72mDOye-iMMmR_efMTHr28VcO4-6lou-0s"
+        />
+        {/* Google tag (gtag.js) */}
+        <Script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-27R59JFV18"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-27R59JFV18');
+          `}
+        </Script>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

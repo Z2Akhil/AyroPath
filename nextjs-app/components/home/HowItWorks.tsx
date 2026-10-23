@@ -2,6 +2,7 @@ const STEPS = [
   {
     step: "1",
     icon: "🔍",
+    alt: "Icon of a magnifying glass over a document, symbolizing 'Choose Your Test'",
     title: "Choose Your Test",
     desc: "Search from 500+ lab tests and health packages at best prices.",
     bg: "bg-blue-50",
@@ -11,6 +12,7 @@ const STEPS = [
   {
     step: "2",
     icon: "🏠",
+    alt: "Icon of a phlebotomist visiting a home, symbolizing 'Home Collection'",
     title: "Home Collection",
     desc: "Our certified phlebotomist visits your home at a time that suits you.",
     bg: "bg-green-50",
@@ -20,6 +22,7 @@ const STEPS = [
   {
     step: "3",
     icon: "📋",
+    alt: "Icon of a digital device displaying health reports, symbolizing 'Get Your Reports'",
     title: "Get Your Reports",
     desc: "Receive digital reports within 24–48 hours directly on your phone.",
     bg: "bg-purple-50",
@@ -38,7 +41,12 @@ export default function HowItWorks() {
             {i < STEPS.length - 1 && (
               <div className="absolute top-5 left-[calc(50%+1.5rem)] right-[calc(-50%+1.5rem)] h-0.5 bg-gray-200 z-0" />
             )}
-            <div className={`relative z-10 w-10 h-10 rounded-xl ring-1 ${s.bg} ${s.ring} flex items-center justify-center text-xl mb-2 shadow-sm`}>
+            <div
+              role="img"
+              aria-label={s.alt}
+              title={s.alt}
+              className={`relative z-10 w-10 h-10 rounded-xl ring-1 ${s.bg} ${s.ring} flex items-center justify-center text-xl mb-2 shadow-sm`}
+            >
               {s.icon}
             </div>
             <span className={`text-[10px] font-bold uppercase tracking-widest mb-0.5 ${s.num}`}>Step {s.step}</span>

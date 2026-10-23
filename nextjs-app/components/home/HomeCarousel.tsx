@@ -6,11 +6,11 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
 const carouselItems = [
-  { id: 1, title: "Free Home Pickup", img: "/carousel/homePickup.webp" },
-  { id: 2, title: "Online Reports", img: "/carousel/onlineReport.webp" },
-  { id: 3, title: "NABL Certified Labs", img: "/carousel/nablCertified.webp" },
-  { id: 4, title: "Full Body Checkups", img: "/carousel/fullBodyCheckup.webp" },
-  { id: 5, title: "Special Offers", img: "/carousel/specialOffer.webp" },
+  { id: 1, title: "Convenient Free Home Sample Collection for Your Comfort", img: "/carousel/homePickup.webp" },
+  { id: 2, title: "Fast & Secure Online Reports for All Your Lab Tests", img: "/carousel/onlineReport.webp" },
+  { id: 3, title: "Trusted NABL & CAP Certified Labs for Accurate Results", img: "/carousel/nablCertified.webp" },
+  { id: 4, title: "Comprehensive Full Body Checkups for Proactive Health", img: "/carousel/fullBodyCheckup.webp" },
+  { id: 5, title: "Unlock Savings with Our Special Health Checkup Offers", img: "/carousel/specialOffer.webp" },
 ];
 
 const HomeCarousel = () => {
@@ -56,9 +56,9 @@ const HomeCarousel = () => {
                 />
               </div>
               <div className="p-4 bg-white">
-                <h3 className="font-semibold text-gray-900 truncate">
+                <p className="font-semibold text-gray-900 truncate" title={item.title}>
                   {item.title}
-                </h3>
+                </p>
               </div>
             </div>
           </div>

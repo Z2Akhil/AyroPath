@@ -6,34 +6,49 @@ import ProfilesPageClient from './ProfilesPageClient';
 export const revalidate = 3600; // Revalidate every hour
 
 export const metadata: Metadata = {
-    title: 'Health Checkup Packages – Full Body & Thyrocare Profiles | Ayropath',
-    description: 'Browse Thyrocare health checkup packages online with free home sample collection. Full body checkups, Aarogyam profiles, diabetes screening, thyroid panels and more. NABL accredited labs, digital reports in 24–48 hrs. Starting ₹499.',
+    title: {
+        absolute: 'Thyrocare & Aarogyam Full Body Checkup at Home | Ayropath',
+    },
+    description: "Book a full body checkup at home with Ayropath's Thyrocare health packages. Enjoy free home sample collection and digital reports in 24-48 hrs.",
     keywords: [
-        // Core package keywords
-        'health checkup packages', 'full body checkup packages India', 'Thyrocare profiles',
-        'Aarogyam packages', 'Aarogyam 1.1', 'Aarogyam C', 'Aarogyam B',
-        'Aarogyam Male', 'Aarogyam Female', 'Thyrocare Aarogyam discount',
-        // Condition keywords
-        'full body checkup online', 'diabetes screening package', 'thyroid profile test',
-        'cardiac risk profile', 'liver function test package', 'kidney function test package',
-        // Intent keywords
-        'preventive health checkup', 'affordable health test India', 'best health package under 1000',
-        'health package under 999', 'health checkup under 2000',
-        // Trust keywords
-        'home sample collection', 'NABL accredited lab', 'book health test online India',
-        'free home collection blood test', 'Thyrocare authorised partner',
+        // Target keywords from content document
+        'full body checkup at home',
+        'normal routine urine test',
+        'routine urine analysis report online',
+        'aarogyam male health checkup',
+        'aarogyam female health checkup',
+        'full body checkup thyrocare',
+        'aarogyam advanced health checkup',
+        'aarogyam xl pro health checkup',
+        // Supporting high-intent keywords
+        'Thyrocare profiles',
+        'health checkup packages',
+        'Thyrocare packages online',
+        'diagnostic test packages',
+        'blood test at home',
+        'health screening tests',
+        'Aarogyam profile price',
+        'home sample collection',
+        'NABL accredited labs',
+        'digital reports',
+        'preventive health checkups',
+        'full body checkup packages India',
+        'Aarogyam packages',
+        'preventive health checkup',
+        'affordable health test India',
+        'Thyrocare authorised partner',
     ],
     openGraph: {
-        title: 'Health Checkup Packages – Full Body & Thyrocare Profiles | Ayropath',
-        description: 'Browse Thyrocare health packages online. Full body checkups, Aarogyam profiles and more with free home collection. NABL accredited.',
+        title: 'Thyrocare & Aarogyam Full Body Checkup at Home | Ayropath',
+        description: "Book a full body checkup at home with Ayropath's Thyrocare health packages. Enjoy free home sample collection and digital reports in 24-48 hrs.",
         type: 'website',
         siteName: 'Ayropath',
         locale: 'en_IN',
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'Health Checkup Packages | Thyrocare Profiles – Ayropath',
-        description: 'Browse Thyrocare health packages online with free home collection. Starting ₹499.',
+        title: 'Thyrocare & Aarogyam Full Body Checkup at Home | Ayropath',
+        description: "Book a full body checkup at home with Ayropath's Thyrocare health packages. Enjoy free home sample collection and digital reports in 24-48 hrs.",
     },
     alternates: { canonical: '/profiles' },
 };
@@ -91,27 +106,101 @@ export default async function ProfilesPage({ limit, showHeader, mobileScroll }: 
         isActive: p.isActive,
     }));
 
-    // ItemList JSON-LD for listing page
+    // CollectionPage & ItemList JSON-LD for listing page
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ayropath.com';
-    const itemListJsonLd = {
+    const collectionPageJsonLd = {
         '@context': 'https://schema.org',
-        '@type': 'ItemList',
-        name: 'Health Checkup Packages',
-        description: 'Thyrocare health checkup profiles available for online booking at Ayropath',
-        numberOfItems: totalCount,
-        itemListElement: initialData.slice(0, 10).map((pkg, i) => ({
-            '@type': 'ListItem',
-            position: i + 1,
-            name: pkg.name,
-            url: `${siteUrl}/profiles/${pkg.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '')}/${pkg.type}/${pkg.code}`,
-        })),
+        '@type': 'CollectionPage',
+        name: 'Full Body Checkup & Thyrocare Health Packages Online',
+        description: "Book a full body checkup at home with Ayropath's Thyrocare health packages. Enjoy free home sample collection and digital reports in 24-48 hrs.",
+        url: `${siteUrl}/profiles`,
+        mainEntity: {
+            '@type': 'ItemList',
+            name: 'Health Checkup Packages & Thyrocare Profiles',
+            numberOfItems: totalCount,
+            itemListElement: initialData.slice(0, 10).map((pkg, i) => ({
+                '@type': 'ListItem',
+                position: i + 1,
+                item: {
+                    '@type': 'Product',
+                    name: pkg.name,
+                    description: `${pkg.name} with ${pkg.testCount} tests. Free home sample collection by NABL accredited lab.`,
+                    url: `${siteUrl}/profiles/${pkg.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '')}/${pkg.type}/${pkg.code}`,
+                    offers: {
+                        '@type': 'Offer',
+                        price: pkg.sellingPrice,
+                        priceCurrency: 'INR',
+                        availability: 'https://schema.org/InStock',
+                    },
+                },
+            })),
+        },
+    };
+
+    const faqProfilesJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+            {
+                '@type': 'Question',
+                name: 'How long does the home collection visit take?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'The phlebotomist usually completes the blood draw and sample collection in 10 to 15 minutes.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: 'Do I need to fast before a full body checkup?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'Most full body checkups require 10 to 12 hours of overnight fasting for accurate blood sugar and lipid readings. You may drink plain water.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: 'How quickly do I receive my reports?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'Digital reports are delivered to your registered email and Ayropath dashboard within 24 to 48 hours.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: 'Are Ayropath reports accepted by doctors and hospitals?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'Yes. All tests are processed at NABL and CAP accredited Thyrocare laboratories, making the reports valid across India.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: 'Can I book for multiple family members in one slot?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'Yes. You can add tests for family members during booking and the phlebotomist will collect all samples in the same visit.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: 'Is home sample collection really free?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'Yes. Free home sample collection is included with every package on Ayropath with no hidden technician or travel fees.',
+                },
+            },
+        ],
     };
 
     return (
         <>
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionPageJsonLd) }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(faqProfilesJsonLd) }}
             />
             <ProfilesPageClient initialData={initialData as any} initialTotal={totalCount} limit={limit} showHeader={showHeader} mobileScroll={mobileScroll} />
         </>

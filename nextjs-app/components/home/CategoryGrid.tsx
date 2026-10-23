@@ -43,6 +43,9 @@ export default function CategoryGrid() {
 
   return (
     <section className="px-4 mb-10">
+      <p className="text-center text-xs sm:text-sm text-gray-500 max-w-3xl mx-auto mb-4 leading-relaxed">
+        Discover Ayropath&apos;s comprehensive range of health services, designed for your ultimate convenience and well-being. Easily browse individual lab tests or explore extensive health packages to save significantly. You can effortlessly upload prescriptions, order medicines delivered home, and look forward to upcoming doctor consultations. Your complete healthcare journey starts here.
+      </p>
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide md:grid md:grid-cols-7 md:overflow-visible md:pb-0">
         {(CATEGORIES as Category[]).map((cat) => {
           if (cat.comingSoon) {

@@ -143,7 +143,7 @@ export async function GET(req: NextRequest) {
 
     const filter = {
       userId: (user as any)._id,
-      status: { $nin: ['pending_payment', 'payment_failed'] },
+      status: { $nin: ['pending_payment', 'payment_failed'] as const },
     };
 
     const [orders, total] = await Promise.all([
