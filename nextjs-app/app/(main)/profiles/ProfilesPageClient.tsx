@@ -144,66 +144,18 @@ export default function ProfilesPageClient({
 
             {/* Header */}
             {showHeader && (
-                <div className="mb-8">
-                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 mb-3">
-                        Full Body Checkup &amp; Thyrocare Health Packages Online
-                    </h1>
-                    <div className="space-y-3 text-sm sm:text-base text-gray-600 max-w-4xl leading-relaxed mb-4">
-                        <p>
-                            A regular health checkup is one of the simplest ways to catch problems early, yet most of us keep postponing it. Ayropath brings preventive health testing directly to your doorstep. You do not need to take time off work or travel to a clinic. Our certified phlebotomists visit your home or office, collect samples using single use sterile kits and transport them under controlled conditions to NABL accredited Thyrocare laboratories.
-                        </p>
-                        <p>
-                            Packages start at ₹499, and each listing shows the number of tests, the price and whether fasting is needed, so you can compare options without guesswork.
+                <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+                            Available Health Packages
+                        </h1>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                            Browse full body checkup and preventive health packages from Thyrocare
                         </p>
                     </div>
-                    <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-50 px-3 py-1 rounded-full mb-6">
+                    <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-50 px-3 py-1 rounded-full self-start sm:self-auto">
                         <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                         {totalItems.toLocaleString()} packages available
-                    </div>
-
-                    {/* Section: How to Choose the Right Health Package? */}
-                    <div className="bg-gradient-to-br from-blue-50/70 via-gray-50 to-indigo-50/40 rounded-3xl p-6 sm:p-8 border border-blue-100/70 mb-8">
-                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
-                            How to Choose the Right Health Package?
-                        </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
-                            <div className="bg-white/80 backdrop-blur-xs p-4 rounded-2xl border border-blue-100/60 shadow-xs">
-                                <h3 className="font-bold text-gray-900 text-sm mb-1.5 flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
-                                    Under 30 and generally healthy
-                                </h3>
-                                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                                    A basic screening covering complete blood count, fasting blood sugar, lipid profile, liver function and kidney function is usually enough. It gives you a reliable baseline without unnecessary tests.
-                                </p>
-                            </div>
-                            <div className="bg-white/80 backdrop-blur-xs p-4 rounded-2xl border border-blue-100/60 shadow-xs">
-                                <h3 className="font-bold text-gray-900 text-sm mb-1.5 flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
-                                    30 to 45 years
-                                </h3>
-                                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                                    Look for packages that add thyroid function (TSH), vitamin D and vitamin B12. Sedentary work, stress and irregular diets often show up first in these numbers.
-                                </p>
-                            </div>
-                            <div className="bg-white/80 backdrop-blur-xs p-4 rounded-2xl border border-blue-100/60 shadow-xs">
-                                <h3 className="font-bold text-gray-900 text-sm mb-1.5 flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
-                                    Above 45 years
-                                </h3>
-                                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                                    Consider comprehensive panels that include cardiac risk markers, iron deficiency parameters, HbA1c for long term sugar monitoring, and urine analysis.
-                                </p>
-                            </div>
-                            <div className="bg-white/80 backdrop-blur-xs p-4 rounded-2xl border border-blue-100/60 shadow-xs">
-                                <h3 className="font-bold text-gray-900 text-sm mb-1.5 flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-indigo-600 shrink-0" />
-                                    Specific concerns
-                                </h3>
-                                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                                    If you have a family history of diabetes, heart trouble or thyroid conditions, choose a profile that checks those areas in depth.
-                                </p>
-                            </div>
-                        </div>
                     </div>
                 </div>
             )}
@@ -548,6 +500,70 @@ export default function ProfilesPageClient({
                                 <p className="text-xs sm:text-sm text-emerald-900 leading-relaxed">
                                     Under Section 80D of the Income Tax Act, you can claim a deduction of up to ₹5,000 per financial year for preventive health checkups for yourself, your spouse, children and dependent parents. Ayropath provides a valid tax invoice with every booking.
                                 </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Section: Full Body Checkup & Thyrocare Health Packages Online */}
+                    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-xs">
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
+                            Full Body Checkup &amp; Thyrocare Health Packages Online
+                        </h2>
+                        <div className="space-y-3 text-sm text-gray-600 max-w-4xl leading-relaxed mb-4">
+                            <p>
+                                A regular health checkup is one of the simplest ways to catch problems early, yet most of us keep postponing it. Ayropath brings preventive health testing directly to your doorstep. You do not need to take time off work or travel to a clinic. Our certified phlebotomists visit your home or office, collect samples using single use sterile kits and transport them under controlled conditions to NABL accredited Thyrocare laboratories.
+                            </p>
+                            <p>
+                                Packages start at ₹499, and each listing shows the number of tests, the price and whether fasting is needed, so you can compare options without guesswork.
+                            </p>
+                        </div>
+                        <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-50 px-3 py-1 rounded-full mb-8">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                            {totalItems.toLocaleString()} packages available
+                        </div>
+
+                        {/* Section: How to Choose the Right Health Package? */}
+                        <div className="bg-gradient-to-br from-blue-50/70 via-gray-50 to-indigo-50/40 rounded-2xl p-6 sm:p-8 border border-blue-100/70">
+                            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
+                                How to Choose the Right Health Package?
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+                                <div className="bg-white/80 backdrop-blur-xs p-4 rounded-2xl border border-blue-100/60 shadow-xs">
+                                    <h4 className="font-bold text-gray-900 text-sm mb-1.5 flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                                        Under 30 and generally healthy
+                                    </h4>
+                                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                                        A basic screening covering complete blood count, fasting blood sugar, lipid profile, liver function and kidney function is usually enough. It gives you a reliable baseline without unnecessary tests.
+                                    </p>
+                                </div>
+                                <div className="bg-white/80 backdrop-blur-xs p-4 rounded-2xl border border-blue-100/60 shadow-xs">
+                                    <h4 className="font-bold text-gray-900 text-sm mb-1.5 flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
+                                        30 to 45 years
+                                    </h4>
+                                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                                        Look for packages that add thyroid function (TSH), vitamin D and vitamin B12. Sedentary work, stress and irregular diets often show up first in these numbers.
+                                    </p>
+                                </div>
+                                <div className="bg-white/80 backdrop-blur-xs p-4 rounded-2xl border border-blue-100/60 shadow-xs">
+                                    <h4 className="font-bold text-gray-900 text-sm mb-1.5 flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
+                                        Above 45 years
+                                    </h4>
+                                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                                        Consider comprehensive panels that include cardiac risk markers, iron deficiency parameters, HbA1c for long term sugar monitoring, and urine analysis.
+                                    </p>
+                                </div>
+                                <div className="bg-white/80 backdrop-blur-xs p-4 rounded-2xl border border-blue-100/60 shadow-xs">
+                                    <h4 className="font-bold text-gray-900 text-sm mb-1.5 flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-indigo-600 shrink-0" />
+                                        Specific concerns
+                                    </h4>
+                                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                                        If you have a family history of diabetes, heart trouble or thyroid conditions, choose a profile that checks those areas in depth.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>

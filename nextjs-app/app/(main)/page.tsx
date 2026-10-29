@@ -173,80 +173,6 @@ export default function Home() {
         {/* Hero — includes main H1 + introductory prose */}
         <Hero />
 
-        {/* Why Customers Trust Us for Preventive Health Checkups? */}
-        <section className="px-4 mb-10 max-w-4xl mx-auto">
-          <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/50 to-teal-50/60 rounded-3xl p-6 sm:p-8 border border-blue-100">
-            <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 mb-3">
-              Why Customers Trust Us for Preventive Health Checkups?
-            </h2>
-            <p className="text-sm text-gray-700 leading-relaxed mb-4">
-              People choose Ayropath because we keep the process simple and the pricing honest. Here is what you can expect:
-            </p>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm text-gray-700">
-              <li className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">✓</span>
-                <span>Testing at NABL &amp; CAP accredited laboratories</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">✓</span>
-                <span>Over 500 tests and health packages to choose from</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">✓</span>
-                <span>Individual tests starting from ₹199</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">✓</span>
-                <span>Service across 200+ cities in India</span>
-              </li>
-              <li className="flex items-center gap-2 sm:col-span-2">
-                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">✓</span>
-                <span>Special offers and seasonal discounts on popular packages</span>
-              </li>
-            </ul>
-          </div>
-        </section>
-
-        {/* Full Body Checkup with Free Home Collection Online */}
-        <section className="px-4 mb-10 max-w-4xl mx-auto">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-xs">
-            <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 mb-3">
-              Full Body Checkup with Free Home Collection Online
-            </h2>
-            <p className="text-sm text-gray-700 leading-relaxed mb-4">
-              Many of us postpone routine screening because visiting a diagnostic centre feels like a chore. This is especially true for working professionals, new parents and senior citizens. A <strong>full body checkup with free home collection online</strong> removes that barrier. You pick a package and a time slot, and a certified phlebotomist arrives at your door at no extra cost.
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
-              <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                <h3 className="font-bold text-gray-900 text-base mb-3">How the Home Visit Works?</h3>
-                <ol className="space-y-2.5 text-xs sm:text-sm text-gray-600 leading-relaxed list-decimal list-inside">
-                  <li><strong>Book online:</strong> Choose a package and a time slot, then enter your address.</li>
-                  <li><strong>Prepare:</strong> Most packages need an overnight fast of 10 to 12 hours. Plain water is fine. Your booking confirmation explains exactly how to prepare.</li>
-                  <li><strong>Sample collection:</strong> The phlebotomist uses sterile, single-use equipment and carries your samples in bio-safe containers directly to the lab.</li>
-                  <li><strong>Get reports:</strong> Results reach your email and your Ayropath account within 24 to 48 hours of pickup.</li>
-                </ol>
-              </div>
-              <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 flex flex-col justify-between">
-                <div>
-                  <h3 className="font-bold text-gray-900 text-base mb-3">Who Benefits The Most?</h3>
-                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                    This option suits elderly parents who find travel difficult, people with tight work schedules, and anyone who wants a stress-free first checkup. It also works well when the whole family wants to be tested on the same day.
-                  </p>
-                </div>
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <a
-                    href="tel:9955955296"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-xs"
-                  >
-                    <span>📞</span> Contact Us: 9955955296
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Category tiles */}
         <CategoryGrid />
 
@@ -448,6 +374,80 @@ export default function Home() {
 
         {/* Trust stat bar */}
         <TrustStats />
+
+        {/* Why Customers Trust Us for Preventive Health Checkups? */}
+        <section className="px-4 mt-16 mb-10 max-w-4xl mx-auto">
+          <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/50 to-teal-50/60 rounded-3xl p-6 sm:p-8 border border-blue-100">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 mb-3">
+              Why Customers Trust Us for Preventive Health Checkups?
+            </h2>
+            <p className="text-sm text-gray-700 leading-relaxed mb-4">
+              People choose Ayropath because we keep the process simple and the pricing honest. Here is what you can expect:
+            </p>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm text-gray-700">
+              <li className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">✓</span>
+                <span>Testing at NABL &amp; CAP accredited laboratories</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">✓</span>
+                <span>Over 500 tests and health packages to choose from</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">✓</span>
+                <span>Individual tests starting from ₹199</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">✓</span>
+                <span>Service across 200+ cities in India</span>
+              </li>
+              <li className="flex items-center gap-2 sm:col-span-2">
+                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">✓</span>
+                <span>Special offers and seasonal discounts on popular packages</span>
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        {/* Full Body Checkup with Free Home Collection Online */}
+        <section className="px-4 mb-10 max-w-4xl mx-auto">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-xs">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 mb-3">
+              Full Body Checkup with Free Home Collection Online
+            </h2>
+            <p className="text-sm text-gray-700 leading-relaxed mb-4">
+              Many of us postpone routine screening because visiting a diagnostic centre feels like a chore. This is especially true for working professionals, new parents and senior citizens. A <strong>full body checkup with free home collection online</strong> removes that barrier. You pick a package and a time slot, and a certified phlebotomist arrives at your door at no extra cost.
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
+              <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                <h3 className="font-bold text-gray-900 text-base mb-3">How the Home Visit Works?</h3>
+                <ol className="space-y-2.5 text-xs sm:text-sm text-gray-600 leading-relaxed list-decimal list-inside">
+                  <li><strong>Book online:</strong> Choose a package and a time slot, then enter your address.</li>
+                  <li><strong>Prepare:</strong> Most packages need an overnight fast of 10 to 12 hours. Plain water is fine. Your booking confirmation explains exactly how to prepare.</li>
+                  <li><strong>Sample collection:</strong> The phlebotomist uses sterile, single-use equipment and carries your samples in bio-safe containers directly to the lab.</li>
+                  <li><strong>Get reports:</strong> Results reach your email and your Ayropath account within 24 to 48 hours of pickup.</li>
+                </ol>
+              </div>
+              <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 flex flex-col justify-between">
+                <div>
+                  <h3 className="font-bold text-gray-900 text-base mb-3">Who Benefits The Most?</h3>
+                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                    This option suits elderly parents who find travel difficult, people with tight work schedules, and anyone who wants a stress-free first checkup. It also works well when the whole family wants to be tested on the same day.
+                  </p>
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <a
+                    href="tel:9955955296"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-xs"
+                  >
+                    <span>📞</span> Contact Us: 9955955296
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* ── Why Ayropath? ─────────────────────────────────────────────────────── */}
         <section aria-labelledby="why-ayropath-heading" className="mt-16 px-4 sm:px-0 bg-gray-50 rounded-3xl p-8 md:p-12">

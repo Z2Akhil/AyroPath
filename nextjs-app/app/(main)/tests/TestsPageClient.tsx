@@ -132,34 +132,18 @@ export default function TestsPageClient({
 
             {/* Page header */}
             {showHeader && (
-                <div className="mb-8">
-                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 mb-3">
-                        Lab Tests Online – Book Individual Blood Tests with Home Sample Pickup
-                    </h1>
-                    <div className="space-y-3 text-sm sm:text-base text-gray-600 max-w-4xl leading-relaxed mb-4">
-                        <p>
-                            Sometimes you do not need a full health package. Your doctor may have asked for a single test, you may be tracking a condition, or you may simply want to check one number. Ayropath makes this easy. Our lab tests online catalogue lists more than 550 individual tests covering everything from routine blood counts to specialized hormone and vitamin assays.
-                        </p>
-                        <p>
-                            All samples are processed at NABL and CAP accredited Thyrocare laboratories, and a certified phlebotomist visits your home for collection at no extra charge. Reports are delivered digitally in 24 to 48 hours.
+                <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+                            Available Lab Tests
+                        </h1>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                            Book individual blood and diagnostic tests with free home sample pickup
                         </p>
                     </div>
-                    <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-50 px-3 py-1 rounded-full mb-6">
+                    <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-50 px-3 py-1 rounded-full self-start sm:self-auto">
                         <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                        Discover over {totalItems.toLocaleString()} individual lab tests available for booking
-                    </div>
-
-                    {/* How to Find the Right Test? Banner */}
-                    <div className="bg-gradient-to-br from-blue-50/70 via-gray-50 to-indigo-50/40 rounded-3xl p-5 sm:p-6 border border-blue-100/70 mb-6">
-                        <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
-                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 111 11a6 6 0 0116 0z" />
-                            </svg>
-                            How to Find the Right Test?
-                        </h2>
-                        <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                            Use the search bar below to type any test name, organ (like liver, thyroid, kidney) or parameter (like TSH, HbA1c, B12). You can sort results by price or alphabetical order to find what you need quickly.
-                        </p>
+                        Discover over {totalItems.toLocaleString()} individual tests
                     </div>
                 </div>
             )}
@@ -546,6 +530,38 @@ export default function TestsPageClient({
                                     Fasting is not strictly required for thyroid tests, but having the sample collected in the morning before breakfast is recommended because TSH levels follow a daily circadian rhythm. If you take thyroid medication, take your tablet after the blood draw unless your doctor advises otherwise.
                                 </p>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Section: Lab Tests Online – Book Individual Blood Tests with Home Sample Pickup */}
+                    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-xs">
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
+                            Lab Tests Online – Book Individual Blood Tests with Home Sample Pickup
+                        </h2>
+                        <div className="space-y-3 text-sm text-gray-600 max-w-4xl leading-relaxed mb-4">
+                            <p>
+                                Sometimes you do not need a full health package. Your doctor may have asked for a single test, you may be tracking a condition, or you may simply want to check one number. Ayropath makes this easy. Our lab tests online catalogue lists more than 550 individual tests covering everything from routine blood counts to specialized hormone and vitamin assays.
+                            </p>
+                            <p>
+                                All samples are processed at NABL and CAP accredited Thyrocare laboratories, and a certified phlebotomist visits your home for collection at no extra charge. Reports are delivered digitally in 24 to 48 hours.
+                            </p>
+                        </div>
+                        <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-50 px-3 py-1 rounded-full mb-6">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                            Discover over {totalItems.toLocaleString()} individual lab tests available for booking
+                        </div>
+
+                        {/* How to Find the Right Test? Banner */}
+                        <div className="bg-gradient-to-br from-blue-50/70 via-gray-50 to-indigo-50/40 rounded-2xl p-5 sm:p-6 border border-blue-100/70">
+                            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+                                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 111 11a6 6 0 0116 0z" />
+                                </svg>
+                                How to Find the Right Test?
+                            </h3>
+                            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                                Use the search bar to type any test name, organ (like liver, thyroid, kidney) or parameter (like TSH, HbA1c, B12). You can sort results by price or alphabetical order to find what you need quickly.
+                            </p>
                         </div>
                     </div>
 
