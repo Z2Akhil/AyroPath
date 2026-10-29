@@ -36,7 +36,6 @@ StaffSchema.methods.verifyPassword = async function (password: string): Promise<
   return bcrypt.compare(password, this.passwordHash);
 };
 
-StaffSchema.index({ username: 1 });
 StaffSchema.index({ isActive: 1 });
 
 const Staff =

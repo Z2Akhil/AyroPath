@@ -90,7 +90,6 @@ const DoctorSchema = new Schema<DoctorDocument>(
   { timestamps: true }
 );
 
-DoctorSchema.index({ slug: 1 });
 DoctorSchema.index({ specialization: 1 });
 DoctorSchema.index({ isPublished: 1, isDeleted: 1 });
 
