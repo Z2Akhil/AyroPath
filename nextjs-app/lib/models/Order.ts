@@ -43,11 +43,17 @@ export interface OrderDocument extends Document {
         email: string;
         mobile: string;
         address: {
+            // Legacy flat fields (still required for backward compatibility)
             street: string;
             city: string;
             state: string;
             pincode: string;
             landmark?: string;
+            // Extended fields for new Thyrocare address contract
+            houseNo?: string;
+            addressLine1?: string;
+            addressLine2?: string;
+            country?: string;
         };
     };
     appointment: {
@@ -182,6 +188,19 @@ const orderSchema = new Schema<OrderDocument, IOrderModel>({
                 required: true
             },
             landmark: {
+                type: String
+            },
+            // Extended fields for new Thyrocare address contract (optional)
+            houseNo: {
+                type: String
+            },
+            addressLine1: {
+                type: String
+            },
+            addressLine2: {
+                type: String
+            },
+            country: {
                 type: String
             }
         }

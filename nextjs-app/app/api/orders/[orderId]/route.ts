@@ -6,6 +6,7 @@ import Order from '@/lib/models/Order';
 import AdminSession from '@/lib/models/AdminSession';
 import User from '@/lib/models/User';
 import { ThyrocareService } from '@/lib/services/thyrocare';
+import { buildAddressString } from '@/lib/utils/address';
 
 // Helper to get user from token
 const getUserFromToken = async (token: string | null) => {
@@ -34,7 +35,7 @@ const createThyrocareOrder = async (order: any) => {
             ref_order_id: order.orderId,
             email: order.contactInfo.email,
             mobile: order.contactInfo.mobile,
-            address: `${order.contactInfo.address.street}, ${order.contactInfo.address.city}, ${order.contactInfo.address.state}`,
+            address: buildAddressString(order.contactInfo.address),
             appt_date: `${order.appointment.date} ${order.appointment.slot.split(' - ')[0]}`,
             order_by: (order.beneficiaries[0]?.name || 'Customer').replace(/[^a-zA-Z0-9]/g, '') || 'Customer',
             passon: order.package.discountAmount,

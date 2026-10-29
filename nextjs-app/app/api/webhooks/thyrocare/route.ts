@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db/mongoose';
 import Order from '@/lib/models/Order';
+import { normalizeThyrocareAddress } from '@/lib/utils/address';
 
 export const dynamic = 'force-dynamic';
 
@@ -88,9 +89,17 @@ async function processThyrocareWebhook(body: any): Promise<void> {
         });
         order.thyrocare.lastSyncedAt = new Date();
 
-        // Store full orderData payload for reference/debugging
+        // Store full orderData payload for reference/debugging.
+        // Also run address normalization so any consumer that reads
+        // order.thyrocare.response always gets a reliable fullAddress string,
+        // even when Thyrocare has collapsed all address text into addressLine1
+        // and blanked the individual sub-fields.
         if (body.orderData) {
-            order.thyrocare.response = body.orderData;
+            const normalizedAddress = normalizeThyrocareAddress(body.orderData);
+            order.thyrocare.response = {
+                ...body.orderData,
+                _normalizedAddress: normalizedAddress,
+            };
         }
 
         // Flip outer Order.status

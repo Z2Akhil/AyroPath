@@ -8,6 +8,7 @@ import AdminActivity from '@/lib/models/AdminActivity';
 import axios from 'axios';
 import { ThyrocareService } from '@/lib/services/thyrocare';
 import AdminSession from '@/lib/models/AdminSession';
+import { buildAddressString } from '@/lib/utils/address';
 
 export async function POST(req: NextRequest) {
     const startTime = Date.now();
@@ -110,7 +111,7 @@ export async function POST(req: NextRequest) {
                     ref_order_id: order.orderId,
                     email: order.contactInfo.email,
                     mobile: order.contactInfo.mobile,
-                    address: `${order.contactInfo.address.street}, ${order.contactInfo.address.city}, ${order.contactInfo.address.state}`,
+                    address: buildAddressString(order.contactInfo.address),
                     appt_date: `${order.appointment.date} ${order.appointment.slot.split(' - ')[0]}`,
                     order_by: (order.beneficiaries[0]?.name || 'Customer').replace(/[^a-zA-Z0-9]/g, '') || 'Customer',
                     passon: Math.max(0, Math.floor(order.package.discountAmount || 0)),

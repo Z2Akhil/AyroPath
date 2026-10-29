@@ -5,6 +5,7 @@ import connectToDatabase from '@/lib/db/mongoose';
 import Order from '@/lib/models/Order';
 import User from '@/lib/models/User';
 import { ThyrocareService } from '@/lib/services/thyrocare';
+import { buildAddressString } from '@/lib/utils/address';
 
 // Helper to get user from token
 const getUserFromToken = async (token: string | null) => {
@@ -35,7 +36,7 @@ const createThyrocareOrder = async (order: any) => {
             ref_order_id: order.orderId,
             email: order.contactInfo.email,
             mobile: order.contactInfo.mobile,
-            address: `${order.contactInfo.address.street}, ${order.contactInfo.address.city}, ${order.contactInfo.address.state}`,
+            address: buildAddressString(order.contactInfo.address),
             appt_date: `${order.appointment.date} ${order.appointment.slot.split(' - ')[0]}`,
             order_by: (order.beneficiaries[0]?.name || 'Customer').replace(/[^a-zA-Z0-9]/g, '') || 'Customer',
             passon: order.package.discountAmount,
@@ -109,7 +110,8 @@ export async function POST(req: NextRequest) {
             contactInfo,
             appointment,
             selectedSlot,
-            reports
+            reports,
+            addressTruncationAllowed
         } = await req.json();
 
         // Validate required fields
@@ -118,6 +120,20 @@ export async function POST(req: NextRequest) {
                 { success: false, message: 'Missing required fields' },
                 { status: 400 }
             );
+        }
+
+        // Validate address length constraint BEFORE creating the DB record.
+        // If the caller explicitly opts out of truncation and the address is
+        // too long, fail fast with a clear 400 instead of silently truncating.
+        if (addressTruncationAllowed === false && contactInfo?.address) {
+            try {
+                buildAddressString(contactInfo.address, { addressTruncationAllowed: false });
+            } catch (addrErr: any) {
+                return NextResponse.json(
+                    { success: false, message: addrErr.message },
+                    { status: 400 }
+                );
+            }
         }
 
         // Generate order ID
@@ -148,7 +164,12 @@ export async function POST(req: NextRequest) {
                     city: contactInfo.address.city,
                     state: contactInfo.address.state,
                     pincode: contactInfo.address.pincode,
-                    landmark: contactInfo.address.landmark || ''
+                    landmark: contactInfo.address.landmark || '',
+                    // Extended fields — optional, passed through if present
+                    ...(contactInfo.address.houseNo     && { houseNo:     contactInfo.address.houseNo }),
+                    ...(contactInfo.address.addressLine1 && { addressLine1: contactInfo.address.addressLine1 }),
+                    ...(contactInfo.address.addressLine2 && { addressLine2: contactInfo.address.addressLine2 }),
+                    ...(contactInfo.address.country     && { country:     contactInfo.address.country }),
                 }
             },
             appointment: {
