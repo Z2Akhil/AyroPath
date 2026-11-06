@@ -90,6 +90,18 @@ const worker = new Worker<ReminderJobData>(
     } else {
       console.log(`[ReminderWorker] Reminders sent for ${data.shortId} to ${results.length} recipient(s)`);
     }
+
+    if (data.appointmentId) {
+      try {
+        await connectDB();
+        await ConsultationAppointment.updateOne(
+          { _id: data.appointmentId },
+          { $set: { reminderSent: true } }
+        );
+      } catch (err) {
+        console.error(`[ReminderWorker] Failed to update reminderSent for ${data.appointmentId}:`, err);
+      }
+    }
   },
   {
     connection: getRedisConnection(),

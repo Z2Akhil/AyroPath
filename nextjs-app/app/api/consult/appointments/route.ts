@@ -112,18 +112,7 @@ export async function POST(req: NextRequest) {
 
     const consultationFee = doctor.consultationFee || 0;
     const platformDiscount = 0;
-
-    let couponDiscount = 0;
-    let appliedCoupon = '';
-    if (couponCode === 'AYRO20') {
-      couponDiscount = Math.round(consultationFee * 0.2);
-      appliedCoupon = 'AYRO20';
-    } else if (couponCode === 'FIRST100') {
-      couponDiscount = Math.min(100, consultationFee);
-      appliedCoupon = 'FIRST100';
-    }
-
-    const finalAmount = Math.max(0, consultationFee - couponDiscount);
+    const finalAmount = Math.max(0, consultationFee);
 
     // Verify Cashfree payment when amount > 0
     if (finalAmount > 0) {
@@ -167,8 +156,8 @@ export async function POST(req: NextRequest) {
       meetLink: '',
       consultationFee,
       platformDiscount,
-      couponCode: appliedCoupon,
-      couponDiscount,
+      couponCode: '',
+      couponDiscount: 0,
       finalAmount,
       status: 'pending',
       reportUrls: reportUrls || [],

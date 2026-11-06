@@ -48,7 +48,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     try {
         await connectToDatabase();
 
-        const auth = await adminOrStaffAuth(req, PERMISSIONS.APPOINTMENTS_VIEW);
+        const auth = await adminOrStaffAuth(req, PERMISSIONS.APPOINTMENTS_EDIT);
         if (!auth.authenticated) {
             return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
         }

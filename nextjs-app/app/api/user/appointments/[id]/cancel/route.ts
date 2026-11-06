@@ -12,12 +12,17 @@ import {
 const CANCEL_WINDOW_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 function getUserId(req: NextRequest): string | null {
-  const token = req.headers.get('authorization')?.replace('Bearer', '').trim();
-  if (!token) return null;
   try {
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.startsWith('Bearer ')
+      ? authHeader.slice(7)
+      : (req.cookies.get('token')?.value ?? null);
+    if (!token) return null;
     const d = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as { id: string };
-    return d.id;
-  } catch { return null; }
+    return d.id ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
