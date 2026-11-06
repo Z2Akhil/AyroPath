@@ -17,7 +17,6 @@ import {
   Upload,
   X,
   Loader2,
-  ExternalLink,
 } from 'lucide-react';
 import { useToast } from '@/providers/ToastProvider';
 import { useUser } from '@/providers/UserProvider';
@@ -224,41 +223,30 @@ function SuccessOverlay({ data, onHome }: { data: SuccessData; onHome: () => voi
         </div>
       </div>
 
-      <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 w-full max-w-sm mb-3">
-        <p className="text-xs text-gray-500 mb-1">Confirmation ID</p>
-        <p className="font-mono font-bold text-blue-700 text-sm">
-          #{data._id.slice(-8).toUpperCase()}
-        </p>
-        <p className="text-xs text-gray-500 mt-2">
+      <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 w-full max-w-sm mb-6 text-left">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-600">Confirmation ID</span>
+          <span className="font-mono font-bold text-blue-800 text-xs">
+            #{data._id.slice(-8).toUpperCase()}
+          </span>
+        </div>
+        <p className="text-xs text-gray-600 leading-relaxed">
           {data.consultationMode === 'video'
-            ? 'Join the meeting link below at the scheduled time.'
-            : 'Your doctor will call you at the scheduled time.'}
+            ? 'Your video call link will be active at the scheduled time. You can access it anytime from your Account → Appointments, and we will also send you a reminder on WhatsApp.'
+            : 'Your doctor will call you on your registered mobile number at the scheduled time.'}
         </p>
       </div>
 
-      {data.consultationMode === 'video' && data.meetLink && (
-        <a
-          href={data.meetLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full max-w-sm bg-blue-600 text-white font-bold py-3 rounded-xl text-sm hover:bg-blue-700 transition-colors mb-3"
-        >
-          <Video className="w-4 h-4" />
-          Join Meeting
-          <ExternalLink className="w-3.5 h-3.5" />
-        </a>
-      )}
-
-      <div className="flex gap-3 w-full max-w-sm">
+      <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
         <button
           onClick={() => router.push('/account/appointments')}
-          className="flex-1 border border-blue-200 text-blue-600 font-bold py-3 rounded-xl text-sm hover:bg-blue-50 transition-colors"
+          className="flex-1 bg-blue-600 text-white font-bold py-3.5 rounded-xl text-sm hover:bg-blue-700 transition-colors shadow-md"
         >
-          My Appointments
+          View in Appointments
         </button>
         <button
           onClick={onHome}
-          className="flex-1 bg-gray-900 text-white font-bold py-3 rounded-xl text-sm hover:bg-gray-800 transition-colors"
+          className="flex-1 border border-gray-200 text-gray-700 font-bold py-3.5 rounded-xl text-sm hover:bg-gray-50 transition-colors"
         >
           Back to Home
         </button>
