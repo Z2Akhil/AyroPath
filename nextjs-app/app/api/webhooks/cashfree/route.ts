@@ -28,9 +28,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Reject replays older than 5 minutes
-    const tsMs = Number(timestamp) * 1000;
-    if (Math.abs(Date.now() - tsMs) > 5 * 60 * 1000) {
+    // Reject replays older than 5 minutes.
+    // Cashfree sends x-webhook-timestamp in milliseconds (13 digits), but handle seconds (10 digits) safely as well.
+    const rawTs = Number(timestamp);
+    const tsMs = rawTs < 1e12 ? rawTs * 1000 : rawTs;
+    if (isNaN(tsMs) || Math.abs(Date.now() - tsMs) > 5 * 60 * 1000) {
       return NextResponse.json({ error: 'Webhook expired' }, { status: 401 });
     }
 

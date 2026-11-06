@@ -20,6 +20,9 @@ export async function initiateRefund(
   refundAmount: number,
   note: string
 ): Promise<RefundResult> {
+  if (!cfOrderId || typeof refundAmount !== 'number' || refundAmount <= 0) {
+    return { refundId: '', status: 'failed', error: 'Invalid order ID or refund amount (must be greater than 0)' };
+  }
   const { randomUUID } = await import('crypto');
   const refundId = `rfnd_${randomUUID().replace(/-/g, '').slice(0, 16)}`;
   try {

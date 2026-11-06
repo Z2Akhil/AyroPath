@@ -22,7 +22,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ success: false, error: 'Refund only applicable for cancelled appointments' }, { status: 400 });
 
   if (appt.payment?.status !== 'paid')
-    return NextResponse.json({ success: false, error: 'No payment to refund' }, { status: 400 });
+    return NextResponse.json({ success: false, error: 'No completed payment to refund' }, { status: 400 });
+
+  if (!appt.payment?.cfOrderId)
+    return NextResponse.json({ success: false, error: 'No online payment order ID found for this appointment' }, { status: 400 });
+
+  if (!appt.finalAmount || appt.finalAmount <= 0)
+    return NextResponse.json({ success: false, error: 'No refundable amount (consultation was free)' }, { status: 400 });
 
   // Guard undefined refundStatus (old docs) + already initiated
   const rs = (appt.payment as any).refundStatus;

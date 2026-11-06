@@ -41,8 +41,8 @@ const worker = new Worker<ReminderJobData>(
 
       console.log(`[ReminderWorker] Marked ${appointmentId} as no_show (was: ${appt.status})`);
 
-      // Refund only if NEVER confirmed AND no refund already in progress (guard against race with user cancel)
-      if (!wasConfirmed && appt.payment?.status === 'paid' && (appt.payment as any).cfOrderId && !(appt.payment as any).refundId) {
+      // Refund only if NEVER confirmed, paid online, amount > 0, and no refund already in progress (guard against race with user cancel)
+      if (!wasConfirmed && appt.payment?.status === 'paid' && (appt.payment as any).cfOrderId && !(appt.payment as any).refundId && (appt.finalAmount || 0) > 0) {
         const { refundId, status } = await initiateRefund(
           (appt.payment as any).cfOrderId,
           appt.finalAmount,

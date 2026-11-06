@@ -65,7 +65,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   let refundInitiated = false;
   const payment  = appt.payment as any;
-  const isPaid   = payment?.status === 'paid' && payment?.cfOrderId;
+  const isPaid   = payment?.status === 'paid' && payment?.cfOrderId && (appt.finalAmount || 0) > 0;
   const noRefund = payment?.refundId;
 
   if (isPaid && !noRefund) {

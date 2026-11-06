@@ -227,6 +227,17 @@ export default function AppointmentDetailPage() {
                     } />
                     {appt.payment?.cfOrderId && <Row label="CF Order ID" value={<span className="font-mono text-xs">{appt.payment.cfOrderId}</span>} />}
                     {appt.payment?.paidAt && <Row label="Paid At" value={fmt(appt.payment.paidAt)} />}
+                    {canEdit &&
+                     appt.status === 'cancelled' &&
+                     appt.payment?.status === 'paid' &&
+                     appt.finalAmount > 0 &&
+                     !appt.payment?.refundId &&
+                     (appt.payment as any)?.refundStatus !== 'initiated' &&
+                     (appt.payment as any)?.refundStatus !== 'processed' && (
+                        <div className="pt-2">
+                            <RefundButton apptId={appt._id} />
+                        </div>
+                    )}
                 </Section>
 
                 {/* Doctor & consultation */}

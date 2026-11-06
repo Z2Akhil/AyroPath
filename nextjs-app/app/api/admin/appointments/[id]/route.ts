@@ -90,9 +90,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             sendConsultCancelledEmail(updated).catch(console.error);
             sendDoctorAppointmentCancelledEmail(updated).catch(console.error);
 
-            // Auto-refund if paid online and no refund already in progress
+            // Auto-refund only if paid online, amount > 0, and no refund already in progress
             const payment = updated?.payment as any;
-            if (payment?.status === 'paid' && payment?.cfOrderId && !payment?.refundId) {
+            if (payment?.status === 'paid' && payment?.cfOrderId && !payment?.refundId && (updated?.finalAmount || 0) > 0) {
                 const { refundId, status: refundStatus } = await initiateRefund(
                     payment.cfOrderId,
                     updated.finalAmount,
