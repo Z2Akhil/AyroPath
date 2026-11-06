@@ -10,7 +10,7 @@ const CATEGORIES = [
   { emoji: "📦", label: "Health Packages", sub: "From ₹499", href: "/profiles", bg: "bg-green-50", ring: "ring-green-200" },
   { emoji: "📋", label: "Upload", sub: "prescription", href: "/prescription", bg: "bg-rose-50", ring: "ring-rose-200", authGate: true },
   { emoji: "💊", label: "Medicines", sub: "Delivered home", href: "/medicines", bg: "bg-orange-50", ring: "ring-orange-200" },
-  { emoji: "🩺", label: "Doctor Consult", sub: "Coming soon", href: "#", bg: "bg-purple-50", ring: "ring-purple-200", comingSoon: true },
+  { emoji: "🩺", label: "Doctor Consult", sub: "Top Specialists", href: "/consult", bg: "bg-purple-50", ring: "ring-purple-200" },
   { emoji: "🎁", label: "Offers", sub: "Upto 60% off", href: "/offers", bg: "bg-yellow-50", ring: "ring-yellow-200" },
   { emoji: "📝", label: "Health Blogs", sub: "health stories", href: "/blog", bg: "bg-teal-50", ring: "ring-teal-200"},
 ];
@@ -44,7 +44,7 @@ export default function CategoryGrid() {
   return (
     <section className="px-4 mb-10">
       <p className="text-center text-xs sm:text-sm text-gray-500 max-w-3xl mx-auto mb-4 leading-relaxed">
-        Discover Ayropath&apos;s comprehensive range of health services, designed for your ultimate convenience and well-being. Easily browse individual lab tests or explore extensive health packages to save significantly. You can effortlessly upload prescriptions, order medicines delivered home, and look forward to upcoming doctor consultations. Your complete healthcare journey starts here.
+        Discover Ayropath&apos;s comprehensive range of health services, designed for your ultimate convenience and well-being. Easily browse individual lab tests or explore extensive health packages to save significantly. You can effortlessly upload prescriptions, order medicines delivered home, and book expert doctor consultations online. Your complete healthcare journey starts here.
       </p>
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide md:grid md:grid-cols-7 md:overflow-visible md:pb-0">
         {(CATEGORIES as Category[]).map((cat) => {

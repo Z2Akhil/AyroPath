@@ -13,12 +13,12 @@ import { Logo } from '@/components/ui';
 import SearchBar from '@/components/search/SearchBar';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
 
-const NAV_LINKS = [
+const NAV_LINKS: { label: string; href: string; comingSoon?: boolean }[] = [
   { label: 'Packages', href: '/profiles' },
   { label: 'Offers', href: '/offers' },
   { label: 'Lab Tests', href: '/tests' },
   { label: 'Medicines', href: '/medicines' },
-  { label: 'Doctor Consult', href: '/consult', comingSoon: true },
+  { label: 'Doctor Consult', href: '/consult' },
   { label: 'About Us', href: '/about' },
 ];
 
